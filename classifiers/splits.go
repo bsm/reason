@@ -144,9 +144,7 @@ func (VRSplitCriterion) Merit(pre *core.NumSeries, post []core.NumSeries) float6
 	merit := pre.Variance()
 	for _, n := range post {
 		ratio := n.TotalWeight() / total
-		if merit -= n.Variance() * ratio; merit <= 0 {
-			return 0.0
-		}
+		merit -= n.Variance() * ratio
 	}
 	return merit
 }

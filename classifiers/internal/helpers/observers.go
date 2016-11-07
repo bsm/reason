@@ -63,7 +63,7 @@ func (o *nominalCObserver) BestSplit(criterion classifiers.CSplitCriterion, pred
 
 	return &SplitSuggestion{
 		cond:      NewNominalMultiwaySplitCondition(predictor),
-		merit:     criterion.Merit(preSplit, postSplit),
+		merit:     normMerit(criterion.Merit(preSplit, postSplit)),
 		mrange:    criterion.Range(preSplit),
 		preStats:  newCObservationStats(preSplit),
 		postStats: newCObservationStatsSlice(postSplit),
@@ -146,7 +146,7 @@ func (o *gaussianCObserver) BestSplit(criterion classifiers.CSplitCriterion, pre
 
 		best = &SplitSuggestion{
 			cond:      &numericBinarySplitCondition{predictor: predictor, splitValue: splitVal},
-			merit:     merit,
+			merit:     normMerit(merit),
 			mrange:    criterion.Range(preSplit),
 			preStats:  newCObservationStats(preSplit),
 			postStats: newCObservationStatsSlice(postSplit),
@@ -213,7 +213,7 @@ func (o *nominalRObserver) Observe(tv, pv core.AttributeValue, weight float64) {
 func (o *nominalRObserver) BestSplit(criterion classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *core.NumSeries) *SplitSuggestion {
 	return &SplitSuggestion{
 		cond:      NewNominalMultiwaySplitCondition(predictor),
-		merit:     criterion.Merit(preSplit, o.postSplit),
+		merit:     normMerit(criterion.Merit(preSplit, o.postSplit)),
 		preStats:  newRObservationStats(preSplit),
 		postStats: newRObservationStatsSlice(o.postSplit),
 	}
@@ -266,7 +266,7 @@ func (o *gaussianRObserver) BestSplit(criterion classifiers.RSplitCriterion, pre
 
 		best = &SplitSuggestion{
 			cond:      &numericBinarySplitCondition{predictor: predictor, splitValue: pivot},
-			merit:     merit,
+			merit:     normMerit(merit),
 			preStats:  newRObservationStats(preSplit),
 			postStats: newRObservationStatsSlice(postSplit),
 		}
@@ -284,6 +284,13 @@ func (o *gaussianRObserver) postSplit(pivot float64) []core.NumSeries {
 		}
 	}
 	return res
+}
+
+func normMerit(merit float64) float64 {
+	if merit < 0 {
+		return 0.0
+	}
+	return merit
 }
 
 // --------------------------------------------------------------------
