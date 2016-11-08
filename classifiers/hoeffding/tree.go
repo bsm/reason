@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"math"
+	"sort"
 	"sync"
 
 	"github.com/bsm/reason/classifiers/internal/helpers"
@@ -12,9 +13,10 @@ import (
 
 // TreeInfo contains tree information/stats
 type TreeInfo struct {
-	NumNodes  int
-	NumLeaves int
-	MaxDepth  int
+	NumNodes          int
+	NumActiveLeaves   int
+	NumInactiveLeaves int
+	MaxDepth          int
 }
 
 // Tree is an implementation of a HoeffdingTree
@@ -24,6 +26,8 @@ type Tree struct {
 
 	model      *core.Model
 	regression bool
+
+	leaves leafNodeSlice
 
 	mu sync.RWMutex
 }
@@ -43,15 +47,23 @@ func New(model *core.Model, conf *Config) *Tree {
 	}
 }
 
-// Info returns information about the tree
-func (t *Tree) Info() *TreeInfo {
+func (t *Tree) HeapSize() int {
 	t.mu.RLock()
-	root := t.root
+	heapSize := t.root.HeapSize()
 	t.mu.RUnlock()
 
-	var info TreeInfo
-	info.NumNodes, info.NumLeaves, info.MaxDepth = root.Info()
-	return &info
+	return heapSize
+}
+
+// Info returns information about the tree
+func (t *Tree) Info() *TreeInfo {
+	info := new(TreeInfo)
+
+	t.mu.RLock()
+	t.root.ReadInfo(1, info)
+	t.mu.RUnlock()
+
+	return info
 }
 
 // WriteGraph write a graph in dot notation to a writer
@@ -64,10 +76,9 @@ func (t *Tree) WriteGraph(w io.Writer) error {
 	}
 
 	t.mu.RLock()
-	root := t.root
-	t.mu.RUnlock()
+	defer t.mu.RUnlock()
 
-	if err := root.AppendToGraph(buf, "N"); err != nil {
+	if err := t.root.AppendToGraph(buf, "N"); err != nil {
 		return err
 	}
 	if _, err := buf.WriteString("}\n"); err != nil {
@@ -104,6 +115,10 @@ func (t *Tree) Train(inst core.Instance) {
 			}
 		}
 		leaf.SetWeightOnLastEval(weight)
+
+		if heapSize := t.root.HeapSize(); heapSize >= t.conf.HeapTarget {
+			t.prune(heapSize)
+		}
 	}
 }
 
@@ -122,7 +137,7 @@ func (t *Tree) Predict(inst core.Instance) core.Prediction {
 }
 
 func (t *Tree) attemptSplit(leaf *leafNode, weight float64) *splitNode {
-	if !leaf.stats.IsSufficient() {
+	if !leaf.stats.IsSufficient() || !leaf.IsActive() {
 		return nil
 	}
 
@@ -153,4 +168,27 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64) *splitNode {
 		)
 	}
 	return nil
+}
+
+func (t *Tree) prune(heapSize int) {
+	target := int(float64(t.conf.HeapTarget) * 0.95)
+
+	t.leaves = t.root.FindLeaves(t.leaves[:0])
+	sort.Sort(sort.Reverse(t.leaves))
+
+	piv := 0
+	for ; piv < len(t.leaves); piv++ {
+		if n := t.leaves[piv]; n.IsActive() {
+			heapSize -= n.HeapSize()
+			n.Deactivate()
+
+			if heapSize <= target {
+				break
+			}
+		}
+	}
+
+	for ; piv < len(t.leaves); piv++ {
+		t.leaves[piv].Activate()
+	}
 }

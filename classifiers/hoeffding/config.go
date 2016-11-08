@@ -9,6 +9,11 @@ type Config struct {
 	// Default: 200
 	GracePeriod int
 
+	// The target heap size consumed by the tree.
+	// Please note that this is a rough estimate.
+	// Default: 128*1024*1024 (128MB)
+	HeapTarget int
+
 	// The split criterion to use for classifications.
 	SplitCriterion classifiers.SplitCriterion
 
@@ -25,6 +30,9 @@ type Config struct {
 func (c *Config) norm(isRegression bool) {
 	if c.GracePeriod <= 0 {
 		c.GracePeriod = 200
+	}
+	if c.HeapTarget <= 0 {
+		c.HeapTarget = 128 * 1024 * 1024
 	}
 	if c.SplitConfidence <= 0 {
 		c.SplitConfidence = 1e-7

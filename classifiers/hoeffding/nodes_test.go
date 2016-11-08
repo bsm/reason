@@ -39,6 +39,10 @@ var _ = Describe("leafNode", func() {
 			Expect(subject.observers).To(HaveLen(4))
 		})
 
+		It("should estimate heap-size", func() {
+			Expect(subject.HeapSize()).To(Equal(304))
+		})
+
 		It("should calc promise split", func() {
 			Expect(subject.Promise()).To(Equal(5.0))
 		})
@@ -79,6 +83,10 @@ var _ = Describe("leafNode", func() {
 			Expect(subject.observers).To(HaveLen(4))
 		})
 
+		It("should estimate heap-size", func() {
+			Expect(subject.HeapSize()).To(Equal(464))
+		})
+
 		It("should calc promise split", func() {
 			Expect(subject.Promise()).To(Equal(14.0))
 		})
@@ -108,6 +116,10 @@ var _ = Describe("splitNode", func() {
 
 	It("should initialize", func() {
 		Expect(subject.children).To(HaveLen(2))
+	})
+
+	It("should find leaves", func() {
+		Expect(subject.FindLeaves(nil)).To(HaveLen(2))
 	})
 
 })

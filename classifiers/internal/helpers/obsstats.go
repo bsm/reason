@@ -17,6 +17,8 @@ type ObservationStats interface {
 	NewObserver(isNominal bool) Observer
 	// TotalWeight returns the total weight observed
 	TotalWeight() float64
+	// HeapSize returns an in-memory heap-size estimate
+	HeapSize() int
 	// Promise returns the promise for making predictions
 	Promise() float64
 	// BestSplit returns a SplitSuggestion
@@ -61,6 +63,8 @@ func newRObservationStatsSlice(postSplit []core.NumSeries) []ObservationStats {
 type obsCStats struct {
 	preSplit util.NumVector
 }
+
+func (s *obsCStats) HeapSize() int { return 40 + len(s.preSplit)*8 }
 
 func (s *obsCStats) TotalWeight() float64 { return s.preSplit.Sum() }
 
@@ -113,6 +117,7 @@ type obsRStats struct {
 	preSplit core.NumSeries
 }
 
+func (s *obsRStats) HeapSize() int        { return 40 }
 func (s *obsRStats) TotalWeight() float64 { return s.preSplit.TotalWeight() }
 func (s *obsRStats) Promise() float64     { return s.preSplit.TotalWeight() }
 func (s *obsRStats) IsSufficient() bool   { return s.preSplit.SampleVariance() != 0 }

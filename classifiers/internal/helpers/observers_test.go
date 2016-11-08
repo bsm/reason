@@ -27,7 +27,7 @@ var _ = Describe("nominalCObserver", func() {
 	It("should observe", func() {
 		o := subject.(*nominalCObserver)
 		Expect(o.postSplit).To(HaveLen(2))
-		Expect(o.ByteSize()).To(Equal(56))
+		Expect(o.HeapSize()).To(Equal(56))
 	})
 
 	DescribeTable("should calculate probabilty",
@@ -110,7 +110,7 @@ var _ = Describe("gaussianCObserver", func() {
 		o := subject.(*gaussianCObserver)
 		Expect(o.minMax.Points(4)).To(Equal([]float64{2.3, 3.3, 4.3, 5.3}))
 		Expect(o.postSplit).To(HaveLen(3))
-		Expect(o.ByteSize()).To(Equal(240))
+		Expect(o.HeapSize()).To(Equal(240))
 	})
 
 	It("should not calculate probability", func() {
@@ -182,7 +182,7 @@ var _ = Describe("nominalRObserver", func() {
 		Expect(o.postSplit[0].StdDev()).To(BeNumerically("~", 7.78, 0.01))
 		Expect(o.postSplit[1].StdDev()).To(BeNumerically("~", 3.49, 0.01))
 		Expect(o.postSplit[2].StdDev()).To(BeNumerically("~", 10.87, 0.01))
-		Expect(o.ByteSize()).To(Equal(112))
+		Expect(o.HeapSize()).To(Equal(112))
 	})
 
 	It("should calculate best split", func() {
@@ -235,7 +235,7 @@ var _ = Describe("gaussianRObserver", func() {
 		o := subject.(*gaussianRObserver)
 		Expect(o.minMax.SplitPoints(5)).To(Equal([]float64{1.1, 1.4, 1.7, 2, 2.3}))
 		Expect(o.tuples).To(HaveLen(12))
-		Expect(o.ByteSize()).To(Equal(368))
+		Expect(o.HeapSize()).To(Equal(368))
 	})
 
 	It("should calculate best split", func() {

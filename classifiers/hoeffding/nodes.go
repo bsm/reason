@@ -3,6 +3,7 @@ package hoeffding
 import (
 	"bufio"
 	"fmt"
+	"math"
 
 	"github.com/bsm/reason/classifiers/internal/helpers"
 	"github.com/bsm/reason/core"
@@ -16,11 +17,22 @@ var (
 type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
 	AppendToGraph(*bufio.Writer, string) error
-	Info() (numNodes, numLeaves, maxDepth int)
+	HeapSize() int
+	ReadInfo(int, *TreeInfo)
 	Predict() core.Prediction
+	FindLeaves(leafNodeSlice) leafNodeSlice
 }
 
 // --------------------------------------------------------------------
+
+type leafNodeSlice []*leafNode
+
+func (p leafNodeSlice) Len() int      { return len(p) }
+func (p leafNodeSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p leafNodeSlice) Less(i, j int) bool {
+	a, b := p[i].Promise(), p[j].Promise()
+	return a < b || math.IsNaN(a) && !math.IsNaN(b)
+}
 
 type leafNode struct {
 	stats     helpers.ObservationStats
@@ -37,11 +49,24 @@ func newLeafNode(stats helpers.ObservationStats) *leafNode {
 	}
 }
 
+func (n *leafNode) IsActive() bool { return n.observers != nil }
+
 func (n *leafNode) Promise() float64 { return n.stats.Promise() }
 
 func (n *leafNode) Predict() core.Prediction { return n.stats.State() }
 
-func (n *leafNode) Info() (numNodes, numLeaves, maxDepth int) { return 1, 1, 1 }
+func (n *leafNode) ReadInfo(depth int, info *TreeInfo) {
+	info.NumNodes++
+
+	if n.IsActive() {
+		info.NumActiveLeaves++
+	} else {
+		info.NumInactiveLeaves++
+	}
+	if depth > info.MaxDepth {
+		info.MaxDepth = depth
+	}
+}
 
 func (n *leafNode) Filter(_ core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int) {
 	return n, parent, parentIndex
@@ -62,12 +87,23 @@ func (n *leafNode) SetWeightOnLastEval(w float64) {
 	}
 }
 
+func (n *leafNode) HeapSize() int {
+	size := n.stats.HeapSize()
+	if n.observers != nil {
+		size += 24
+	}
+	for _, obs := range n.observers {
+		size += obs.HeapSize()
+	}
+	return size
+}
+
 func (n *leafNode) Deactivate() {
 	n.observers = nil
 }
 
 func (n *leafNode) Activate() {
-	if n.observers == nil {
+	if !n.IsActive() {
 		n.observers = []helpers.Observer{}
 	}
 }
@@ -83,8 +119,8 @@ func (n *leafNode) Learn(inst core.Instance, tree *Tree) {
 	weight := inst.GetInstanceWeight()
 	n.stats.UpdatePreSplit(tv, weight)
 
-	// Skip the remaining steps if this node is deactivated
-	if n.observers == nil {
+	// Skip the remaining steps if this node is inactive
+	if !n.IsActive() {
 		return
 	}
 
@@ -110,7 +146,7 @@ func (n *leafNode) Learn(inst core.Instance, tree *Tree) {
 }
 
 func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
-	if n.observers == nil {
+	if !n.IsActive() {
 		return nil
 	}
 
@@ -129,6 +165,8 @@ func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
 	// Rank the suggestions by merit
 	return suggestions.Rank()
 }
+
+func (n *leafNode) FindLeaves(acc leafNodeSlice) leafNodeSlice { return append(acc, n) }
 
 // --------------------------------------------------------------------
 
@@ -152,6 +190,15 @@ func newSplitNode(condition helpers.SplitCondition, preSplit helpers.Observation
 	}
 }
 
+func (n *splitNode) HeapSize() int {
+	size := n.stats.HeapSize() + 64
+	for _, c := range n.children {
+		size += 8
+		size += c.HeapSize()
+	}
+	return size
+}
+
 func (n *splitNode) Predict() core.Prediction { return n.stats.State() }
 
 func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int) {
@@ -164,16 +211,11 @@ func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex in
 	return n, parent, parentIndex
 }
 
-func (n *splitNode) Info() (numNodes, numLeaves, maxDepth int) {
+func (n *splitNode) ReadInfo(depth int, info *TreeInfo) {
+	info.NumNodes++
 	for _, child := range n.children {
-		cNodes, cLeaves, cMaxDepth := child.Info()
-		numNodes += cNodes
-		numLeaves += cLeaves
-		if cMaxDepth > maxDepth {
-			maxDepth = cMaxDepth
-		}
+		child.ReadInfo(depth+1, info)
 	}
-	return numNodes + 1, numLeaves, maxDepth + 1
 }
 
 func (n *splitNode) AppendToGraph(w *bufio.Writer, nodeName string) error {
@@ -195,3 +237,10 @@ func (n *splitNode) AppendToGraph(w *bufio.Writer, nodeName string) error {
 }
 
 func (n *splitNode) SetChild(branch int, child treeNode) { n.children[branch] = child }
+
+func (n *splitNode) FindLeaves(acc leafNodeSlice) leafNodeSlice {
+	for _, c := range n.children {
+		acc = c.FindLeaves(acc)
+	}
+	return acc
+}

@@ -11,8 +11,8 @@ type Observer interface {
 	// Observe records an instance and updates the attribute stats
 	Observe(target, predictor core.AttributeValue, weight float64)
 
-	// ByteSize estimates the in-memory byte-size
-	ByteSize() int
+	// HeapSize estimates the in-memory heap-size
+	HeapSize() int
 }
 
 // CObserver instances monitor and collect distribution stats for
@@ -34,7 +34,7 @@ type nominalCObserver struct {
 	postSplit util.NumMatrix
 }
 
-func (o *nominalCObserver) ByteSize() int {
+func (o *nominalCObserver) HeapSize() int {
 	return 40 + len(o.postSplit)*8
 }
 
@@ -104,7 +104,7 @@ type gaussianCObserver struct {
 	postSplit []core.NumSeries
 }
 
-func (o *gaussianCObserver) ByteSize() int {
+func (o *gaussianCObserver) HeapSize() int {
 	return 96 + o.minMax.Len()*24 + len(o.postSplit)*24
 }
 
@@ -193,7 +193,7 @@ type nominalRObserver struct {
 	postSplit []core.NumSeries
 }
 
-func (o *nominalRObserver) ByteSize() int {
+func (o *nominalRObserver) HeapSize() int {
 	return 40 + len(o.postSplit)*24
 }
 
@@ -240,7 +240,7 @@ type gaussianRObserver struct {
 
 type gaussianRTuple struct{ pval, tval, weight float64 }
 
-func (o *gaussianRObserver) ByteSize() int {
+func (o *gaussianRObserver) HeapSize() int {
 	return 80 + len(o.tuples)*24
 }
 

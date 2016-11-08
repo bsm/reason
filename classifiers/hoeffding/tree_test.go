@@ -29,21 +29,21 @@ var _ = Describe("Tree", func() {
 		},
 
 		Entry("1,000", 1000, &TreeInfo{
-			NumNodes:  6,
-			NumLeaves: 5,
-			MaxDepth:  2,
+			NumNodes:        6,
+			NumActiveLeaves: 5,
+			MaxDepth:        2,
 		}, 71.1, 34.8),
 
 		Entry("10,000", 10000, &TreeInfo{
-			NumNodes:  38,
-			NumLeaves: 30,
-			MaxDepth:  4,
+			NumNodes:        38,
+			NumActiveLeaves: 30,
+			MaxDepth:        4,
 		}, 80.3, 59.1),
 
 		Entry("20,000", 20000, &TreeInfo{
-			NumNodes:  63,
-			NumLeaves: 47,
-			MaxDepth:  4,
+			NumNodes:        63,
+			NumActiveLeaves: 47,
+			MaxDepth:        4,
 		}, 84.6, 68.2),
 	)
 
@@ -63,21 +63,21 @@ var _ = Describe("Tree", func() {
 		},
 
 		Entry("1,000", 1000, &TreeInfo{
-			NumNodes:  603,
-			NumLeaves: 602,
-			MaxDepth:  2,
+			NumNodes:        603,
+			NumActiveLeaves: 602,
+			MaxDepth:        2,
 		}, 0.13, 0.80),
 
 		Entry("10,000", 10000, &TreeInfo{
-			NumNodes:  4736,
-			NumLeaves: 4732,
-			MaxDepth:  3,
+			NumNodes:        4736,
+			NumActiveLeaves: 4732,
+			MaxDepth:        3,
 		}, 0.21, 0.89),
 
 		Entry("20,000", 20000, &TreeInfo{
-			NumNodes:  8733,
-			NumLeaves: 8725,
-			MaxDepth:  3,
+			NumNodes:        8733,
+			NumActiveLeaves: 8725,
+			MaxDepth:        3,
 		}, 0.31, 0.42),
 	)
 
