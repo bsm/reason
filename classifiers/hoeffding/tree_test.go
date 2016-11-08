@@ -57,32 +57,34 @@ var _ = Describe("Tree", func() {
 			stats := eval.NewRegression(model)
 			info, err := runBigDataTest(model, stats, n, "../../testdata/bigreg.csv", nil)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(info).To(Equal(expInfo))
+			Expect(info.NumNodes).To(BeNumerically("~", expInfo.NumNodes, 100))
+			Expect(info.NumActiveLeaves).To(BeNumerically("~", expInfo.NumActiveLeaves, 100))
+			Expect(info.NumInactiveLeaves).To(BeNumerically("~", expInfo.NumInactiveLeaves, 100))
+			Expect(info.MaxDepth).To(Equal(expInfo.MaxDepth))
 			Expect(stats.R2()).To(BeNumerically("~", expR2, 0.01))
 			Expect(stats.RMSE()).To(BeNumerically("~", expRMSE, 0.01))
 		},
 
 		Entry("1,000", 1000, &TreeInfo{
-			NumNodes:        603,
-			NumActiveLeaves: 602,
+			NumNodes:        1,
+			NumActiveLeaves: 1,
+			MaxDepth:        1,
+		}, 0.00, 0.85),
+
+		Entry("2,000", 2000, &TreeInfo{
+			NumNodes:        1071,
+			NumActiveLeaves: 1070,
 			MaxDepth:        2,
-		}, 0.13, 0.80),
+		}, 0.22, 0.70),
+
+		Entry("10,000", 10000, &TreeInfo{
+			NumNodes:          3690,
+			NumActiveLeaves:   1980,
+			NumInactiveLeaves: 1700,
+			MaxDepth:          2,
+		}, 0.21, 0.88),
 	)
 
-	It("should prune", func() {
-		model := testdata.BigRegressionModel()
-		stats := eval.NewRegression(model)
-		info, err := runBigDataTest(model, stats, 5000, "../../testdata/bigreg.csv", &Config{
-			HeapTarget: 2 * 1024 * 1024,
-		})
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(info.NumInactiveLeaves).To(BeNumerically("~", 2100, 100))
-		Expect(info.NumNodes).To(BeNumerically("~", 2500, 100))
-		Expect(info.NumActiveLeaves).To(BeNumerically("~", 400, 100))
-		Expect(stats.R2()).To(BeNumerically("~", 0.17, 0.01))
-		Expect(stats.RMSE()).To(BeNumerically("~", 0.97, 0.01))
-	})
 })
 
 func TestSuite(t *testing.T) {
@@ -106,9 +108,10 @@ func runBigDataTest(model *core.Model, stats eval.Evaluator, n int, fname string
 	for _, inst := range insts[:n] {
 		tree.Train(inst)
 	}
-	for _, inst := range insts[n:] {
-		stats.Record(inst, tree.Predict(inst))
+	if stats != nil {
+		for _, inst := range insts[n:] {
+			stats.Record(inst, tree.Predict(inst))
+		}
 	}
-
 	return tree.Info(), nil
 }

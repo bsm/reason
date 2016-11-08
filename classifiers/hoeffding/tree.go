@@ -27,6 +27,7 @@ type Tree struct {
 	model      *core.Model
 	regression bool
 
+	traces chan *Trace
 	leaves leafNodeSlice
 
 	mu sync.RWMutex
@@ -44,6 +45,7 @@ func New(model *core.Model, conf *Config) *Tree {
 		model:      model,
 		regression: regression,
 		root:       newLeafNode(helpers.NewObservationStats(regression)),
+		traces:     make(chan *Trace, 3),
 	}
 }
 
@@ -64,6 +66,13 @@ func (t *Tree) Info() *TreeInfo {
 	t.mu.RUnlock()
 
 	return info
+}
+
+// Traces allows users to subscribe to debug traces. When enabled,
+// events (can be nil) will be emitted via this channel after each
+// training cycle.
+func (t *Tree) Traces() <-chan *Trace {
+	return t.traces
 }
 
 // WriteGraph write a graph in dot notation to a writer
@@ -93,6 +102,11 @@ func (t *Tree) Train(inst core.Instance) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	var trace *Trace
+	if t.conf.EnableTracing {
+		defer func() { t.traces <- trace }()
+	}
+
 	node, parent, parentIndex := t.root.Filter(inst, nil, -1)
 	if node == nil {
 		node = newLeafNode(helpers.NewObservationStats(t.regression))
@@ -107,11 +121,15 @@ func (t *Tree) Train(inst core.Instance) {
 			return
 		}
 
-		if split := t.attemptSplit(leaf, weight); split != nil {
+		var split *splitNode
+		if split, trace = t.attemptSplit(leaf, weight, trace); split != nil {
 			if parent == nil {
 				t.root = split
 			} else {
 				parent.SetChild(parentIndex, split)
+			}
+			if trace != nil {
+				trace.SplitPredictor = split.condition.Predictor().Name
 			}
 		}
 		leaf.SetWeightOnLastEval(weight)
@@ -136,9 +154,13 @@ func (t *Tree) Predict(inst core.Instance) core.Prediction {
 	return res
 }
 
-func (t *Tree) attemptSplit(leaf *leafNode, weight float64) *splitNode {
+func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*splitNode, *Trace) {
 	if !leaf.stats.IsSufficient() || !leaf.IsActive() {
-		return nil
+		return nil, trace
+	}
+
+	if t.conf.EnableTracing {
+		trace = new(Trace)
 	}
 
 	// Calculate best splits
@@ -151,23 +173,42 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64) *splitNode {
 		meritGain -= splits[1].Merit()
 	}
 
+	// Update trace
+	if trace != nil {
+		trace.MeritGain = meritGain
+		trace.PossibleSplits = make([]TracePossibleSplit, len(splits))
+		for i, split := range splits {
+			if cond := split.Condition(); cond != nil {
+				trace.PossibleSplits[i].Predictor = cond.Predictor().Name
+			} else {
+				trace.PossibleSplits[i].Predictor = "(NULL)"
+			}
+			trace.PossibleSplits[i].Merit = split.Merit()
+		}
+	}
+
 	// Don't split if there is no merit gain
 	if meritGain <= 0 {
-		return nil
+		return nil, trace
 	}
 
 	// Calculate hoeffding bound, evaluate split
 	srange := bestSplit.Range()
 	hbound := math.Sqrt(srange * srange * math.Log(1.0/t.conf.SplitConfidence) / (2.0 * weight))
 
+	// Update trace
+	if trace != nil {
+		trace.HoeffdingBound = hbound
+	}
+
 	if meritGain > hbound || hbound < t.conf.TieThreshold {
 		return newSplitNode(
 			bestSplit.Condition(),
 			bestSplit.PreStats(),
 			bestSplit.PostStats(),
-		)
+		), trace
 	}
-	return nil
+	return nil, trace
 }
 
 func (t *Tree) prune(heapSize int) {

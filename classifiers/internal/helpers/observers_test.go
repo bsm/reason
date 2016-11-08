@@ -56,6 +56,7 @@ var _ = Describe("nominalCObserver", func() {
 			[]float64{9.0, 5.0},
 		)
 		Expect(s.Merit()).To(BeNumerically("~", 0.247, 0.001))
+		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&nominalMultiwaySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
 
@@ -137,6 +138,7 @@ var _ = Describe("gaussianCObserver", func() {
 			[]float64{3.0, 5.0, 4.0},
 		)
 		Expect(s.Merit()).To(BeNumerically("~", 0.811, 0.001))
+		Expect(s.Range()).To(BeNumerically("~", 1.585, 0.001))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("len"))
 		Expect(s.Condition().(*numericBinarySplitCondition).splitValue).To(Equal(2.30))
@@ -192,6 +194,7 @@ var _ = Describe("nominalRObserver", func() {
 			preSplit,
 		)
 		Expect(s.Merit()).To(BeNumerically("~", 19.572, 0.001))
+		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&nominalMultiwaySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
 	})
@@ -245,6 +248,7 @@ var _ = Describe("gaussianRObserver", func() {
 			preSplit,
 		)
 		Expect(s.Merit()).To(BeNumerically("~", 1.911, 0.001))
+		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("area"))
 		Expect(s.Condition().(*numericBinarySplitCondition).splitValue).To(Equal(1.7))

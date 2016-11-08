@@ -25,6 +25,13 @@ type Config struct {
 	// Threshold below which a split will be forced to break ties
 	// Default: 0.05
 	TieThreshold float64
+
+	// By enabling this option, tracing notification events will be
+	// emitted via the Traces channel after each training cycle. This
+	// is for debug purposes only. When enabled, you must consume
+	// the Traces channel to avoid locked threads.
+	// Default: false
+	EnableTracing bool
 }
 
 func (c *Config) norm(isRegression bool) {

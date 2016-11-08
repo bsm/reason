@@ -214,6 +214,7 @@ func (o *nominalRObserver) BestSplit(criterion classifiers.RSplitCriterion, pred
 	return &SplitSuggestion{
 		cond:      NewNominalMultiwaySplitCondition(predictor),
 		merit:     normMerit(criterion.Merit(preSplit, o.postSplit)),
+		mrange:    criterion.Range(preSplit),
 		preStats:  newRObservationStats(preSplit),
 		postStats: newRObservationStatsSlice(o.postSplit),
 	}
@@ -267,6 +268,7 @@ func (o *gaussianRObserver) BestSplit(criterion classifiers.RSplitCriterion, pre
 		best = &SplitSuggestion{
 			cond:      &numericBinarySplitCondition{predictor: predictor, splitValue: pivot},
 			merit:     normMerit(merit),
+			mrange:    criterion.Range(preSplit),
 			preStats:  newRObservationStats(preSplit),
 			postStats: newRObservationStatsSlice(postSplit),
 		}
