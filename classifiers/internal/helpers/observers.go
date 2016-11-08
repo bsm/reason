@@ -11,7 +11,7 @@ type Observer interface {
 	// Observe records an instance and updates the attribute stats
 	Observe(target, predictor core.AttributeValue, weight float64)
 
-	// HeapSize estimates the in-memory heap-size
+	// HeapSize estimates the required heap-size
 	HeapSize() int
 }
 

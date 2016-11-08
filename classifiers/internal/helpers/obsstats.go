@@ -17,7 +17,7 @@ type ObservationStats interface {
 	NewObserver(isNominal bool) Observer
 	// TotalWeight returns the total weight observed
 	TotalWeight() float64
-	// HeapSize returns an in-memory heap-size estimate
+	// HeapSize returns a required heap-size estimate
 	HeapSize() int
 	// Promise returns the promise for making predictions
 	Promise() float64
