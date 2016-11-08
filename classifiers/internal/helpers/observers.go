@@ -11,7 +11,7 @@ type Observer interface {
 	// Observe records an instance and updates the attribute stats
 	Observe(target, predictor core.AttributeValue, weight float64)
 
-	// ByteSize estimates in-memory byte-size
+	// ByteSize estimates the in-memory byte-size
 	ByteSize() int
 }
 

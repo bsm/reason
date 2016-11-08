@@ -39,10 +39,6 @@ var _ = Describe("leafNode", func() {
 			Expect(subject.observers).To(HaveLen(4))
 		})
 
-		It("should estimate byte-size", func() {
-			Expect(subject.ByteSize()).To(Equal(304))
-		})
-
 		It("should calc promise split", func() {
 			Expect(subject.Promise()).To(Equal(5.0))
 		})
@@ -81,10 +77,6 @@ var _ = Describe("leafNode", func() {
 			Expect(state[0].Value.Value()).To(BeNumerically("~", 39.8, 0.1))
 			Expect(subject.weightOnLastEval).To(Equal(0.0))
 			Expect(subject.observers).To(HaveLen(4))
-		})
-
-		It("should estimate byte-size", func() {
-			Expect(subject.ByteSize()).To(Equal(464))
 		})
 
 		It("should calc promise split", func() {

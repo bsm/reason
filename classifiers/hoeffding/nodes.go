@@ -16,7 +16,6 @@ var (
 type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
 	AppendToGraph(*bufio.Writer, string) error
-	ByteSize() int
 	Info() (numNodes, numLeaves, maxDepth int)
 	Predict() core.Prediction
 }
@@ -63,17 +62,6 @@ func (n *leafNode) SetWeightOnLastEval(w float64) {
 	}
 }
 
-func (n *leafNode) ByteSize() int {
-	size := n.stats.ByteSize()
-	if n.observers != nil {
-		size += 24
-	}
-	for _, obs := range n.observers {
-		size += obs.ByteSize()
-	}
-	return size
-}
-
 func (n *leafNode) Deactivate() {
 	n.observers = nil
 }
@@ -85,23 +73,27 @@ func (n *leafNode) Activate() {
 }
 
 func (n *leafNode) Learn(inst core.Instance, tree *Tree) {
+	// Get the target value, skip this instance if missing
 	tv := tree.model.Target().Value(inst)
 	if tv.IsMissing() {
 		return
 	}
 
+	// Get instance weight and update pre-split distribution stats
 	weight := inst.GetInstanceWeight()
 	n.stats.UpdatePreSplit(tv, weight)
 
+	// Skip the remaining steps if this node is deactivated
 	if n.observers == nil {
 		return
 	}
 
+	// Update each predictor's observer with a target-value, predictor-value
+	// and weight tuple
 	predictors := tree.model.Predictors()
 	if len(n.observers) == 0 {
 		n.observers = make([]helpers.Observer, len(predictors))
 	}
-
 	for i, predictor := range predictors {
 		pv := predictor.Value(inst)
 		if pv.IsMissing() {
@@ -122,17 +114,19 @@ func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
 		return nil
 	}
 
-	// init split-suggestions, including a null suggestion
+	// Init split-suggestions, including a null suggestion
 	suggestions := make(helpers.SplitSuggestions, 1, len(n.observers)+1)
+
+	// Calculate a split suggestion for each of the observed predictors
 	predictors := tree.model.Predictors()
 	for i, obs := range n.observers {
 		if obs != nil {
-			suggestions = append(
-				suggestions,
-				n.stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i]),
-			)
+			split := n.stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
+			suggestions = append(suggestions, split)
 		}
 	}
+
+	// Rank the suggestions by merit
 	return suggestions.Rank()
 }
 
@@ -156,15 +150,6 @@ func newSplitNode(condition helpers.SplitCondition, preSplit helpers.Observation
 		condition: condition,
 		children:  children,
 	}
-}
-
-func (n *splitNode) ByteSize() int {
-	size := n.stats.ByteSize() + 64
-	for _, c := range n.children {
-		size += 8
-		size += c.ByteSize()
-	}
-	return size
 }
 
 func (n *splitNode) Predict() core.Prediction { return n.stats.State() }
