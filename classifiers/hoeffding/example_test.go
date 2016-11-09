@@ -2,7 +2,6 @@ package hoeffding_test
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bsm/reason/classifiers/hoeffding"
 	"github.com/bsm/reason/core"
@@ -39,21 +38,15 @@ func ExampleWeather() {
 	}
 
 	// Train the tree
-	tree := hoeffding.New(model, &hoeffding.Config{GracePeriod: 1, SplitConfidence: 0.1, EnableTracing: true})
+	tree := hoeffding.New(model, &hoeffding.Config{GracePeriod: 1, SplitConfidence: 0.1})
 	for _, inst := range trainingSet {
 		tree.Train(inst)
-		trace := <-tree.Traces()
-
-		if trace != nil {
-			fmt.Println(trace)
-		}
 	}
-	tree.WriteGraph(os.Stdout)
 
 	// Predict
 	predicted := tree.Predict(core.MapInstance{"outlook": "sunny", "temperature": 85, "humidity": 85, "windy": "FALSE"})
 
 	fmt.Println(predicted.Top().Value)
 	// Output:
-	// 0
+	// 1
 }
