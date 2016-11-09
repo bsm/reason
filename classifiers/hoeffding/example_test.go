@@ -13,7 +13,7 @@ func ExampleWeather() {
 		// Target
 		&core.Attribute{Name: "play", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("yes", "no")},
 
-		// Predictores
+		// Predictors
 		&core.Attribute{Name: "outlook", Kind: core.AttributeKindNominal},
 		&core.Attribute{Name: "temperature", Kind: core.AttributeKindNumeric},
 		&core.Attribute{Name: "humidity", Kind: core.AttributeKindNumeric},
@@ -39,13 +39,13 @@ func ExampleWeather() {
 	}
 
 	// Train the tree
-	tree := hoeffding.New(model, &hoeffding.Config{GracePeriod: 1, EnableTracing: true})
+	tree := hoeffding.New(model, &hoeffding.Config{GracePeriod: 1, SplitConfidence: 0.1, EnableTracing: true})
 	for _, inst := range trainingSet {
 		tree.Train(inst)
 		trace := <-tree.Traces()
 
 		if trace != nil {
-			fmt.Printf("%#v\n", trace)
+			fmt.Println(trace)
 		}
 	}
 	tree.WriteGraph(os.Stdout)
