@@ -14,12 +14,13 @@ func ExampleWeather() {
 		&core.Attribute{Name: "play", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("yes", "no")},
 
 		// Predictores
-		&core.Attribute{Name: "outlook", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("sunny", "overcast", "rainy")},
+		&core.Attribute{Name: "outlook", Kind: core.AttributeKindNominal},
 		&core.Attribute{Name: "temperature", Kind: core.AttributeKindNumeric},
 		&core.Attribute{Name: "humidity", Kind: core.AttributeKindNumeric},
-		&core.Attribute{Name: "windy", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("TRUE", "FALSE")},
+		&core.Attribute{Name: "windy", Kind: core.AttributeKindNominal},
 	)
 
+	// Training set data
 	trainingSet := []core.MapInstance{
 		{"outlook": "sunny", "temperature": 85, "humidity": 85, "windy": "FALSE", "play": "no"},
 		{"outlook": "sunny", "temperature": 80, "humidity": 90, "windy": "TRUE", "play": "no"},
@@ -37,7 +38,7 @@ func ExampleWeather() {
 		{"outlook": "rainy", "temperature": 71, "humidity": 91, "windy": "TRUE", "play": "no"},
 	}
 
-	// Train
+	// Train the tree
 	tree := hoeffding.New(model, &hoeffding.Config{GracePeriod: 1, EnableTracing: true})
 	for _, inst := range trainingSet {
 		tree.Train(inst)
