@@ -6,7 +6,7 @@ import (
 )
 
 type Trace struct {
-	SplitPredictor string
+	Split          bool
 	MeritGain      float64
 	HoeffdingBound float64
 	PossibleSplits []TracePossibleSplit
@@ -17,10 +17,10 @@ type TracePossibleSplit struct {
 	Merit     float64
 }
 
-func (t Trace) String() string {
+func (t *Trace) String() string {
 	splits := make([]string, 0, len(t.PossibleSplits))
 	for _, split := range t.PossibleSplits {
-		splits = append(splits, fmt.Sprintf("%s: %f", split.Predictor, split.Merit))
+		splits = append(splits, fmt.Sprintf("%s: %.2f", split.Predictor, split.Merit))
 	}
-	return fmt.Sprintf("Predictor: %s, MeritGain: %f, HBound: %f, Splits: [%s]", t.SplitPredictor, t.MeritGain, t.HoeffdingBound, strings.Join(splits, ", "))
+	return fmt.Sprintf("Split: %v, MeritGain: %.2f, HBound: %.2f, BestSplits: [%s]", t.Split, t.MeritGain, t.HoeffdingBound, strings.Join(splits, ", "))
 }

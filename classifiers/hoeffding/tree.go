@@ -129,7 +129,7 @@ func (t *Tree) Train(inst core.Instance) {
 				parent.SetChild(parentIndex, split)
 			}
 			if trace != nil {
-				trace.SplitPredictor = split.condition.Predictor().Name
+				trace.Split = true
 			}
 		}
 		leaf.SetWeightOnLastEval(weight)
