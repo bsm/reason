@@ -22,7 +22,7 @@ type ObservationStats interface {
 	// Promise returns the promise for making predictions
 	Promise() float64
 	// BestSplit returns a SplitSuggestion
-	BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion
+	BestSplit(crit classifiers.SplitCriterion, pen classifiers.SplitPenalty, obs Observer, predictor *core.Attribute) *SplitSuggestion
 	// State returns the current state as a prediction
 	State() core.Prediction
 }
@@ -98,8 +98,8 @@ func (s *obsCStats) NewObserver(isNominal bool) Observer {
 	return NewNumericCObserver(10)
 }
 
-func (s *obsCStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {
-	return obs.(CObserver).BestSplit(crit.(classifiers.CSplitCriterion), predictor, s.preSplit)
+func (s *obsCStats) BestSplit(crit classifiers.SplitCriterion, pen classifiers.SplitPenalty, obs Observer, predictor *core.Attribute) *SplitSuggestion {
+	return obs.(CObserver).BestSplit(crit.(classifiers.CSplitCriterion), pen, predictor, s.preSplit)
 }
 
 func (s *obsCStats) State() core.Prediction {
@@ -139,6 +139,6 @@ func (s *obsRStats) State() core.Prediction {
 	}
 }
 
-func (s *obsRStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {
-	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), predictor, &s.preSplit)
+func (s *obsRStats) BestSplit(crit classifiers.SplitCriterion, pen classifiers.SplitPenalty, obs Observer, predictor *core.Attribute) *SplitSuggestion {
+	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), pen, predictor, &s.preSplit)
 }

@@ -100,7 +100,10 @@ func (c *nominalMultiwaySplitCondition) Branch(inst core.Instance) int {
 	return c.predictor.Value(inst).Index()
 }
 func (c *nominalMultiwaySplitCondition) Describe(branch int) string {
-	if vals := c.predictor.Values.Values(); branch > -1 && branch < len(vals) {
+	if branch < 0 {
+		return ""
+	}
+	if vals := c.predictor.Values.Values(); branch < len(vals) {
 		return vals[branch]
 	}
 	return ""

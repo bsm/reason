@@ -82,8 +82,8 @@ var _ = Describe("RSplitCriterion", func() {
 		Expect(ok).To(BeTrue())
 	})
 
-	Describe("VRSplitCriterion", func() {
-		var subject = VRSplitCriterion{}
+	Describe("VarReductionSplitCriterion", func() {
+		var subject = VarReductionSplitCriterion{}
 
 		It("should have range", func() {
 			Expect(subject.Range(nil)).To(Equal(1.0))

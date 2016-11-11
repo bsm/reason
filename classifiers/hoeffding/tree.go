@@ -29,6 +29,7 @@ type Tree struct {
 
 	traces chan *Trace
 	leaves leafNodeSlice
+	cycles int64
 
 	mu sync.RWMutex
 }
@@ -87,7 +88,7 @@ func (t *Tree) WriteGraph(w io.Writer) error {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if err := t.root.AppendToGraph(buf, "N"); err != nil {
+	if err := t.root.WriteGraph(buf, "N"); err != nil {
 		return err
 	}
 	if _, err := buf.WriteString("}\n"); err != nil {
@@ -95,6 +96,21 @@ func (t *Tree) WriteGraph(w io.Writer) error {
 	}
 
 	return nil
+}
+
+// WriteText writes text-based tree output to a writer
+func (t *Tree) WriteText(w io.Writer) error {
+	buf := bufio.NewWriter(w)
+	defer buf.Flush()
+
+	if _, err := buf.WriteString("ROOT"); err != nil {
+		return err
+	}
+
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	return t.root.WriteText(buf, "\t")
 }
 
 // Train passes an instance to the tree for training purposes
@@ -116,6 +132,12 @@ func (t *Tree) Train(inst core.Instance) {
 	if leaf, ok := node.(*leafNode); ok {
 		leaf.Learn(inst, t)
 
+		if t.cycles++; t.cycles%int64(t.conf.PrunePeriod) == 0 {
+			if heapSize := t.root.HeapSize(); heapSize >= t.conf.HeapTarget*2 {
+				t.prune(heapSize)
+			}
+		}
+
 		weight := leaf.stats.TotalWeight()
 		if int(weight-leaf.WeightOnLastEval()) < t.conf.GracePeriod {
 			return
@@ -133,10 +155,6 @@ func (t *Tree) Train(inst core.Instance) {
 			}
 		}
 		leaf.SetWeightOnLastEval(weight)
-
-		if heapSize := t.root.HeapSize(); heapSize >= t.conf.HeapTarget {
-			t.prune(heapSize)
-		}
 	}
 }
 
@@ -176,14 +194,15 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 	// Update trace
 	if trace != nil {
 		trace.MeritGain = meritGain
-		trace.PossibleSplits = make([]TracePossibleSplit, len(splits))
-		for i, split := range splits {
+		trace.PossibleSplits = make([]TracePossibleSplit, 0, len(splits))
+
+		for _, split := range splits {
 			if cond := split.Condition(); cond != nil {
-				trace.PossibleSplits[i].Predictor = cond.Predictor().Name
-			} else {
-				trace.PossibleSplits[i].Predictor = "(NULL)"
+				trace.PossibleSplits = append(trace.PossibleSplits, TracePossibleSplit{
+					Predictor: cond.Predictor().Name,
+					Merit:     split.Merit(),
+				})
 			}
-			trace.PossibleSplits[i].Merit = split.Merit()
 		}
 	}
 
@@ -212,11 +231,10 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 }
 
 func (t *Tree) prune(heapSize int) {
-	target := int(float64(t.conf.HeapTarget) * 0.95)
-
 	t.leaves = t.root.FindLeaves(t.leaves[:0])
 	sort.Sort(sort.Reverse(t.leaves))
 
+	target := t.conf.HeapTarget
 	piv := 0
 	for ; piv < len(t.leaves); piv++ {
 		if n := t.leaves[piv]; n.IsActive() {

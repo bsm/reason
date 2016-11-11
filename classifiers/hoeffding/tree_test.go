@@ -48,14 +48,14 @@ var _ = Describe("Tree", func() {
 	)
 
 	DescribeTable("should perform regression",
-		func(n int, expInfo *TreeInfo, expR2, expRMSE float64) {
+		func(n int, c *Config, expInfo *TreeInfo, expR2, expRMSE float64) {
 			if testing.Short() && n > 1000 {
 				return
 			}
 
 			model := testdata.BigRegressionModel()
 			stats := eval.NewRegression(model)
-			info, err := runBigDataTest(model, stats, n, "../../testdata/bigreg.csv", nil)
+			info, err := runBigDataTest(model, stats, n, "../../testdata/bigreg.csv", c)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(info.NumNodes).To(BeNumerically("~", expInfo.NumNodes, 100))
 			Expect(info.NumActiveLeaves).To(BeNumerically("~", expInfo.NumActiveLeaves, 100))
@@ -65,22 +65,22 @@ var _ = Describe("Tree", func() {
 			Expect(stats.RMSE()).To(BeNumerically("~", expRMSE, 0.01))
 		},
 
-		Entry("1,000", 1000, &TreeInfo{
+		Entry("1,000", 1000, nil, &TreeInfo{
 			NumNodes:        1,
 			NumActiveLeaves: 1,
 			MaxDepth:        1,
 		}, 0.00, 0.85),
 
-		Entry("2,000", 2000, &TreeInfo{
+		Entry("2,000", 2000, nil, &TreeInfo{
 			NumNodes:        1071,
 			NumActiveLeaves: 1070,
 			MaxDepth:        2,
 		}, 0.22, 0.70),
 
-		Entry("10,000", 10000, &TreeInfo{
+		Entry("10,000", 10000, nil, &TreeInfo{
 			NumNodes:          3690,
-			NumActiveLeaves:   1980,
-			NumInactiveLeaves: 1700,
+			NumActiveLeaves:   3690,
+			NumInactiveLeaves: 0,
 			MaxDepth:          2,
 		}, 0.21, 0.88),
 	)
@@ -113,5 +113,6 @@ func runBigDataTest(model *core.Model, stats eval.Evaluator, n int, fname string
 			stats.Record(inst, tree.Predict(inst))
 		}
 	}
+
 	return tree.Info(), nil
 }

@@ -24,10 +24,6 @@ var _ = Describe("", func() {
 		Expect(math.IsNaN(Max(null))).To(BeTrue())
 		Expect(Min(N)).To(Equal(170.0))
 		Expect(Max(N)).To(Equal(600.0))
-
-		Expect(MaxIndex(null)).To(Equal(-1))
-		Expect(MaxIndex(N)).To(Equal(1))
-		Expect(MaxIndex(D)).To(Equal(8))
 	})
 
 	It("should calc mean", func() {

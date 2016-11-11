@@ -128,8 +128,9 @@ func (a *Attribute) ValueOf(v InstanceValue) AttributeValue {
 
 // AttributeValues hold a slice of possible values
 type AttributeValues struct {
-	vi map[string]int
-	iv []string
+	vi   map[string]int
+	vals []string
+
 	mu sync.RWMutex
 }
 
@@ -162,39 +163,32 @@ func (v *AttributeValues) Values() []string {
 		return nil
 	}
 
+	var vals []string
+	var ok bool
+
 	v.mu.RLock()
-	vals := v.iv
+	if len(v.vals) == len(v.vi) {
+		vals = v.vals
+		ok = true
+	}
 	v.mu.RUnlock()
 
-	if vals != nil {
+	if ok {
 		return vals
 	}
 
-	v.mu.RLock()
-	vals = make([]string, len(v.vi))
-	for val, i := range v.vi {
-		vals[i] = val
-	}
-	v.mu.RUnlock()
-
 	v.mu.Lock()
-	if v.iv == nil {
-		v.iv = vals
-	} else {
-		vals = v.iv
-	}
-	v.mu.Unlock()
-	return vals
-}
+	defer v.mu.Unlock()
 
-// ValueAt returns the value at an index
-func (v *AttributeValues) ValueAt(i int) (string, bool) {
-	if v != nil && i > -1 {
-		if vals := v.Values(); i < len(vals) {
-			return vals[i], true
-		}
+	if len(v.vals) == len(v.vi) {
+		return v.vals
 	}
-	return "", false
+
+	v.vals = make([]string, len(v.vi))
+	for val, i := range v.vi {
+		v.vals[i] = val
+	}
+	return v.vals
 }
 
 // IndexOf returns the index of a value. If the value has not
@@ -213,6 +207,7 @@ func (v *AttributeValues) IndexOf(s string) int {
 		n = len(v.vi)
 		v.vi[s] = n
 	}
+	v.vals = v.vals[:0]
 	v.mu.Unlock()
 	return n
 }

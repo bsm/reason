@@ -30,7 +30,7 @@ var _ = Describe("nominalCObserver", func() {
 		Expect(o.HeapSize()).To(Equal(56))
 	})
 
-	DescribeTable("should calculate probabilty",
+	DescribeTable("should calculate probability",
 		func(tv, pv string, p float64) {
 			Expect(subject.Probability(
 				target.ValueOf(tv),
@@ -52,6 +52,7 @@ var _ = Describe("nominalCObserver", func() {
 	It("should calculate best split", func() {
 		s := subject.BestSplit(
 			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
+			nil,
 			predictor,
 			[]float64{9.0, 5.0},
 		)
@@ -74,6 +75,33 @@ var _ = Describe("nominalCObserver", func() {
 			{Value: 0, Votes: 3},
 			{Value: 1, Votes: 2},
 		}))
+	})
+
+	It("should calculate best split with penalty", func() {
+		s := subject.BestSplit(
+			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
+			classifiers.SplitPenaltyLog2,
+			predictor,
+			[]float64{9.0, 5.0},
+		)
+		Expect(s.Merit()).To(BeNumerically("~", 0.156, 0.001))
+		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
+	})
+
+	It("should require at least two observed values for best split", func() {
+		inst := instances[0]
+
+		o := NewNominalCObserver()
+		o.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
+		o.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
+		o.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
+
+		Expect(o.BestSplit(
+			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
+			nil,
+			predictor,
+			[]float64{3.0},
+		)).To(BeNil())
 	})
 
 })
@@ -134,6 +162,7 @@ var _ = Describe("gaussianCObserver", func() {
 	It("should calculate best split", func() {
 		s := subject.BestSplit(
 			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
+			nil,
 			predictor,
 			[]float64{3.0, 5.0, 4.0},
 		)
@@ -153,6 +182,17 @@ var _ = Describe("gaussianCObserver", func() {
 			{Value: 1, Votes: 5},
 			{Value: 2, Votes: 4},
 		}))
+	})
+
+	It("should calculate best split with penalty", func() {
+		s := subject.BestSplit(
+			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
+			classifiers.SplitPenaltyLog2,
+			predictor,
+			[]float64{0.0, 3.0, 5.0, 4.0},
+		)
+		Expect(s.Merit()).To(BeNumerically("~", 1.0, 0.001))
+		Expect(s.Condition().Predictor().Name).To(Equal("len"))
 	})
 
 })
@@ -189,7 +229,8 @@ var _ = Describe("nominalRObserver", func() {
 
 	It("should calculate best split", func() {
 		s := subject.BestSplit(
-			classifiers.VRSplitCriterion{},
+			classifiers.VarReductionSplitCriterion{},
+			nil,
 			predictor,
 			preSplit,
 		)
@@ -197,6 +238,33 @@ var _ = Describe("nominalRObserver", func() {
 		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&nominalMultiwaySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
+	})
+
+	It("should calculate best split with penalty", func() {
+		s := subject.BestSplit(
+			classifiers.VarReductionSplitCriterion{},
+			classifiers.SplitPenaltyLog2,
+			predictor,
+			preSplit,
+		)
+		Expect(s.Merit()).To(BeNumerically("~", 12.408, 0.001))
+		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
+	})
+
+	It("should require at least two observed values for best split", func() {
+		inst := instances[0]
+
+		o := NewNominalRObserver()
+		o.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
+		o.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
+		o.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
+
+		Expect(o.BestSplit(
+			classifiers.VarReductionSplitCriterion{},
+			nil,
+			predictor,
+			preSplit,
+		)).To(BeNil())
 	})
 
 })
@@ -243,7 +311,8 @@ var _ = Describe("gaussianRObserver", func() {
 
 	It("should calculate best split", func() {
 		s := subject.BestSplit(
-			classifiers.VRSplitCriterion{},
+			classifiers.VarReductionSplitCriterion{},
+			nil,
 			predictor,
 			preSplit,
 		)
@@ -252,6 +321,17 @@ var _ = Describe("gaussianRObserver", func() {
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("area"))
 		Expect(s.Condition().(*numericBinarySplitCondition).splitValue).To(Equal(1.7))
+	})
+
+	It("should calculate best split with penalty", func() {
+		s := subject.BestSplit(
+			classifiers.VarReductionSplitCriterion{},
+			classifiers.SplitPenaltyLog2,
+			predictor,
+			preSplit,
+		)
+		Expect(s.Merit()).To(BeNumerically("~", 2.941, 0.001))
+		Expect(s.Condition().Predictor().Name).To(Equal("area"))
 	})
 
 })

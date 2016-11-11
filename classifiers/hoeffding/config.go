@@ -9,13 +9,25 @@ type Config struct {
 	// Default: 200
 	GracePeriod int
 
-	// The target heap size consumed by the tree.
-	// Please note that this is a rough estimate.
+	// The number of training instances the tree should observe
+	// between pruning attempts.
+	// Default: 1000
+	PrunePeriod int
+
+	// The target heap size consumed by the tree. By default, trees are
+	// allowed to grow twice the target heap size before they are pruned.
+	// Please note that this is a rough estimate. Overall memory usage is
+	// likely to be substantially higher.
 	// Default: 128*1024*1024 (128MB)
 	HeapTarget int
 
-	// The split criterion to use for classifications.
+	// The split criterion to use for evaluating splits
+	// Default: InformationGainSplitCriterion or VarReductionSplitCriterion
 	SplitCriterion classifiers.SplitCriterion
+
+	// The split penalty to apply to reduce impact of super-attributes
+	// Default: none
+	SplitPenalty classifiers.SplitPenalty
 
 	// The allowable error in a split decision - values closer
 	// to zero will take longer to decide.
@@ -37,6 +49,9 @@ type Config struct {
 func (c *Config) norm(isRegression bool) {
 	if c.GracePeriod <= 0 {
 		c.GracePeriod = 200
+	}
+	if c.PrunePeriod <= 0 {
+		c.PrunePeriod = 1000
 	}
 	if c.HeapTarget <= 0 {
 		c.HeapTarget = 128 * 1024 * 1024

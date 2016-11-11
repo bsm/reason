@@ -126,20 +126,6 @@ func Entropy(s []float64) float64 {
 	return 0.0
 }
 
-func MaxIndex(s []float64) int {
-	if len(s) == 0 {
-		return -1
-	}
-
-	n, m := 0, s[0]
-	for i, v := range s[1:] {
-		if v > m {
-			n, m = i+1, v
-		}
-	}
-	return n
-}
-
 const sqrth = 7.07106781186547524401E-1
 
 // NormProb returns the area under the Normal (Gaussian) probability

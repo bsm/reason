@@ -16,7 +16,8 @@ var (
 
 type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
-	AppendToGraph(*bufio.Writer, string) error
+	WriteGraph(*bufio.Writer, string) error
+	WriteText(*bufio.Writer, string) error
 	HeapSize() int
 	ReadInfo(int, *TreeInfo)
 	Predict() core.Prediction
@@ -72,8 +73,16 @@ func (n *leafNode) Filter(_ core.Instance, parent *splitNode, parentIndex int) (
 	return n, parent, parentIndex
 }
 
-func (n *leafNode) AppendToGraph(w *bufio.Writer, nodeName string) error {
+func (n *leafNode) WriteGraph(w *bufio.Writer, nodeName string) error {
 	_, err := fmt.Fprintf(w, "  %s [label=\"%.0f\", fontsize=10, shape=circle];\n", nodeName, n.stats.TotalWeight())
+	return err
+}
+
+func (n *leafNode) WriteText(w *bufio.Writer, _ string) error {
+	_, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n",
+		n.Predict().Top().Value.Value(),
+		n.stats.TotalWeight(),
+	)
 	return err
 }
 
@@ -157,7 +166,7 @@ func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
 	predictors := tree.model.Predictors()
 	for i, obs := range n.observers {
 		if obs != nil {
-			split := n.stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
+			split := n.stats.BestSplit(tree.conf.SplitCriterion, tree.conf.SplitPenalty, obs, predictors[i])
 			suggestions = append(suggestions, split)
 		}
 	}
@@ -202,11 +211,11 @@ func (n *splitNode) HeapSize() int {
 func (n *splitNode) Predict() core.Prediction { return n.stats.State() }
 
 func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int) {
-	if childIndex := n.condition.Branch(inst); childIndex > -1 {
-		if child, ok := n.children[childIndex]; ok {
-			return child.Filter(inst, n, childIndex)
+	if branch := n.condition.Branch(inst); branch > -1 {
+		if child, ok := n.children[branch]; ok {
+			return child.Filter(inst, n, branch)
 		}
-		return nil, n, childIndex
+		return nil, n, branch
 	}
 	return n, parent, parentIndex
 }
@@ -218,7 +227,7 @@ func (n *splitNode) ReadInfo(depth int, info *TreeInfo) {
 	}
 }
 
-func (n *splitNode) AppendToGraph(w *bufio.Writer, nodeName string) error {
+func (n *splitNode) WriteGraph(w *bufio.Writer, nodeName string) error {
 	if _, err := fmt.Fprintf(w, "  %s [label=%q shape=box];\n", nodeName, n.condition.Predictor().Name); err != nil {
 		return err
 	}
@@ -229,7 +238,26 @@ func (n *splitNode) AppendToGraph(w *bufio.Writer, nodeName string) error {
 		if _, err := fmt.Fprintf(w, "  %s -> %s [label=%q];\n", nodeName, subName, n.condition.Describe(i)); err != nil {
 			return err
 		}
-		if err := child.AppendToGraph(w, subName); err != nil {
+		if err := child.WriteGraph(w, subName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (n *splitNode) WriteText(w *bufio.Writer, indent string) error {
+	if _, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n", n.Predict().Top().Value.Value(), n.stats.TotalWeight()); err != nil {
+		return err
+	}
+
+	name := n.condition.Predictor().Name
+	sind := indent + "\t"
+	for i, child := range n.children {
+		if _, err := fmt.Fprintf(w, "%s%s %q", indent, name, n.condition.Describe(i)); err != nil {
+			return err
+		}
+
+		if err := child.WriteText(w, sind); err != nil {
 			return err
 		}
 	}

@@ -11,8 +11,27 @@ var (
 	_ CSplitCriterion = GiniSplitCriterion{}
 	_ CSplitCriterion = InfoGainSplitCriterion{}
 
-	_ RSplitCriterion = VRSplitCriterion{}
+	_ RSplitCriterion = VarReductionSplitCriterion{}
 )
+
+// SplitPenalty calculates the penalty of an attribute split
+type SplitPenalty func([]float64) float64
+
+// SplitPenaltyLog2 applies a log2-based SplitPenalty
+func SplitPenaltyLog2(dist []float64) float64 {
+	p := 0.0
+	for _, f := range dist {
+		if f > 0 {
+			p -= f * math.Log2(f)
+		}
+	}
+	if p <= 0.0 {
+		return 1.0
+	}
+	return p
+}
+
+// --------------------------------------------------------------------
 
 // SplitCriterion calculates merits of attribute splits
 type SplitCriterion interface {
@@ -33,11 +52,11 @@ type CSplitCriterion interface {
 }
 
 // DefaultSplitCriterion returns InfoGainSplitCriterion
-// for classification or VRSplitCriterion for regressions
+// for classification or VarReductionSplitCriterion for regressions
 // (with a MinBranchFrac or 0.1)
 func DefaultSplitCriterion(isRegression bool) SplitCriterion {
 	if isRegression {
-		return VRSplitCriterion{}
+		return VarReductionSplitCriterion{}
 	}
 	return InfoGainSplitCriterion{MinBranchFrac: 0.1}
 }
@@ -125,13 +144,13 @@ func (c InfoGainSplitCriterion) Merit(pre []float64, post [][]float64) float64 {
 	return e1 - e2/total
 }
 
-// VRSplitCriterion performs splits using variance-reduction
-type VRSplitCriterion struct{}
+// VarReductionSplitCriterion performs splits using variance-reduction
+type VarReductionSplitCriterion struct{}
 
-func (VRSplitCriterion) isSplitCriterion() {}
+func (VarReductionSplitCriterion) isSplitCriterion() {}
 
-func (VRSplitCriterion) Range(_ *core.NumSeries) float64 { return 1.0 }
-func (VRSplitCriterion) Merit(pre *core.NumSeries, post []core.NumSeries) float64 {
+func (VarReductionSplitCriterion) Range(_ *core.NumSeries) float64 { return 1.0 }
+func (VarReductionSplitCriterion) Merit(pre *core.NumSeries, post []core.NumSeries) float64 {
 	if pre == nil {
 		return 0.0
 	}

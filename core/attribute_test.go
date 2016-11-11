@@ -72,20 +72,10 @@ var _ = Describe("AttributeValues", func() {
 		Expect(subject.Values()).To(Equal([]string{
 			"c", "a", "b",
 		}))
-	})
-
-	It("should get values at index", func() {
-		s, ok := subject.ValueAt(0)
-		Expect(ok).To(BeTrue())
-		Expect(s).To(Equal("c"))
-
-		s, ok = subject.ValueAt(2)
-		Expect(ok).To(BeTrue())
-		Expect(s).To(Equal("b"))
-
-		s, ok = subject.ValueAt(7)
-		Expect(ok).To(BeFalse())
-		Expect(s).To(Equal(""))
+		Expect(subject.IndexOf("d")).To(Equal(3))
+		Expect(subject.Values()).To(Equal([]string{
+			"c", "a", "b", "d",
+		}))
 	})
 
 	It("should fetch indices", func() {

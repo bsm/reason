@@ -18,8 +18,11 @@ type TracePossibleSplit struct {
 }
 
 func (t *Trace) String() string {
-	splits := make([]string, 0, len(t.PossibleSplits))
-	for _, split := range t.PossibleSplits {
+	splits := make([]string, 0, 3)
+	for i, split := range t.PossibleSplits {
+		if i == 3 {
+			break
+		}
 		splits = append(splits, fmt.Sprintf("%s: %.2f", split.Predictor, split.Merit))
 	}
 	return fmt.Sprintf("Split: %v, MeritGain: %.2f, HBound: %.2f, BestSplits: [%s]", t.Split, t.MeritGain, t.HoeffdingBound, strings.Join(splits, ", "))
