@@ -14,25 +14,6 @@ var (
 	_ RSplitCriterion = VarReductionSplitCriterion{}
 )
 
-// SplitPenalty calculates the penalty of an attribute split
-type SplitPenalty func([]float64) float64
-
-// SplitPenaltyLog2 applies a log2-based SplitPenalty
-func SplitPenaltyLog2(dist []float64) float64 {
-	p := 0.0
-	for _, f := range dist {
-		if f > 0 {
-			p -= f * math.Log2(f)
-		}
-	}
-	if p <= 0.0 {
-		return 1.0
-	}
-	return p
-}
-
-// --------------------------------------------------------------------
-
 // SplitCriterion calculates merits of attribute splits
 type SplitCriterion interface {
 	isSplitCriterion()
@@ -166,4 +147,67 @@ func (VarReductionSplitCriterion) Merit(pre *core.NumSeries, post []core.NumSeri
 		merit -= n.Variance() * ratio
 	}
 	return merit
+}
+
+// --------------------------------------------------------------------
+
+// GainRatioSplitCriterion normalises the merits of other split criterions
+// by reducing their bias toward attributes that have a large number of
+// values over attributes that have a smaller number of values.
+func GainRatioSplitCriterion(c SplitCriterion) SplitCriterion {
+	switch x := c.(type) {
+	case CSplitCriterion:
+		return cGainRatioSplitCriterion{CSplitCriterion: x}
+	case RSplitCriterion:
+		return rGainRatioSplitCriterion{RSplitCriterion: x}
+	}
+	return c
+}
+
+type cGainRatioSplitCriterion struct{ CSplitCriterion }
+
+func (c cGainRatioSplitCriterion) Merit(pre []float64, post [][]float64) float64 {
+	merit := c.CSplitCriterion.Merit(pre, post)
+	total, sums := calcSumsAndTotal(post)
+	return merit / gainRatioPenalty(total, sums)
+}
+
+type rGainRatioSplitCriterion struct{ RSplitCriterion }
+
+func (c rGainRatioSplitCriterion) Merit(pre *core.NumSeries, post []core.NumSeries) float64 {
+	merit := c.RSplitCriterion.Merit(pre, post)
+	total := 0.0
+
+	sums := make([]float64, len(post))
+	for i, vv := range post {
+		sum := vv.TotalWeight()
+		total += sum
+		sums[i] = sum
+	}
+	return merit / gainRatioPenalty(total, sums)
+}
+
+func gainRatioPenalty(total float64, sums []float64) float64 {
+	pen := 0.0
+	for _, sum := range sums {
+		pen -= sum / total * math.Log2(sum/total)
+	}
+	if pen <= 0.0 {
+		return 1.0
+	}
+	return pen
+}
+
+// --------------------------------------------------------------------
+
+func calcSumsAndTotal(vvv [][]float64) (float64, []float64) {
+	total := 0.0
+	sums := make([]float64, len(vvv))
+
+	for i, vv := range vvv {
+		sum := calc.Sum(vv)
+		total += sum
+		sums[i] = sum
+	}
+	return total, sums
 }

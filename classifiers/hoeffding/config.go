@@ -25,10 +25,6 @@ type Config struct {
 	// Default: InformationGainSplitCriterion or VarReductionSplitCriterion
 	SplitCriterion classifiers.SplitCriterion
 
-	// The split penalty to apply to reduce impact of super-attributes
-	// Default: none
-	SplitPenalty classifiers.SplitPenalty
-
 	// The allowable error in a split decision - values closer
 	// to zero will take longer to decide.
 	// Default: 0.0000001

@@ -56,11 +56,8 @@ var _ = Describe("ObservationStats", func() {
 				obs.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
 			}
 
-			split := subject.BestSplit(classifiers.InfoGainSplitCriterion{}, nil, obs, predictor)
+			split := subject.BestSplit(classifiers.InfoGainSplitCriterion{}, obs, predictor)
 			Expect(split.Merit()).To(BeNumerically("~", 0.247, 0.001))
-
-			split = subject.BestSplit(classifiers.InfoGainSplitCriterion{}, classifiers.SplitPenaltyLog2, obs, predictor)
-			Expect(split.Merit()).To(BeNumerically("~", 0.156, 0.001))
 		})
 	})
 
@@ -110,11 +107,8 @@ var _ = Describe("ObservationStats", func() {
 				obs.Observe(target.Value(inst), predictor.Value(inst), inst.GetInstanceWeight())
 			}
 
-			split := subject.BestSplit(classifiers.VarReductionSplitCriterion{}, nil, obs, predictor)
+			split := subject.BestSplit(classifiers.VarReductionSplitCriterion{}, obs, predictor)
 			Expect(split.Merit()).To(BeNumerically("~", 19.572, 0.001))
-
-			split = subject.BestSplit(classifiers.VarReductionSplitCriterion{}, classifiers.SplitPenaltyLog2, obs, predictor)
-			Expect(split.Merit()).To(BeNumerically("~", 12.408, 0.001))
 		})
 
 	})

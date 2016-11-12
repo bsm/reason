@@ -166,7 +166,7 @@ func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
 	predictors := tree.model.Predictors()
 	for i, obs := range n.observers {
 		if obs != nil {
-			split := n.stats.BestSplit(tree.conf.SplitCriterion, tree.conf.SplitPenalty, obs, predictors[i])
+			split := n.stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
 			suggestions = append(suggestions, split)
 		}
 	}

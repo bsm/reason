@@ -97,3 +97,28 @@ var _ = Describe("RSplitCriterion", func() {
 	})
 
 })
+
+var _ = Describe("GainRatioSplitCriterion", func() {
+	pre := []float64{9.0, 6.0}
+	post1 := [][]float64{
+		{3.0, 2.0},
+		{4.0, 0.0},
+		{2.0, 4.0},
+	}
+	post2 := [][]float64{
+		{1.0, 0.0}, {2.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {1.0, 0.0},
+		{2.0, 1.0}, {1.0, 1.0}, {0.0, 2.0}, {0.0, 1.0}, {0.0, 1.0},
+	}
+
+	base := DefaultSplitCriterion(false).(CSplitCriterion)
+	subject := GainRatioSplitCriterion(base).(CSplitCriterion)
+
+	It("should reduce merit of 'super-attributes'", func() {
+		Expect(base.Merit(pre, post1)).To(BeNumerically("~", 0.28, 0.01))
+		Expect(base.Merit(pre, post2)).To(BeNumerically("~", 0.65, 0.01))
+
+		Expect(subject.Merit(pre, post1)).To(BeNumerically("~", 0.18, 0.01))
+		Expect(subject.Merit(pre, post2)).To(BeNumerically("~", 0.21, 0.01))
+	})
+
+})
