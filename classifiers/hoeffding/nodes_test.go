@@ -31,7 +31,7 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should learn", func() {
-			Expect(subject.stats.State()).To(Equal(core.Prediction{
+			Expect(subject.stats.State()).To(ConsistOf(core.Prediction{
 				{Value: 0, Votes: 9},
 				{Value: 1, Votes: 5},
 			}))
@@ -40,7 +40,7 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should estimate heap-size", func() {
-			Expect(subject.HeapSize()).To(Equal(304))
+			Expect(subject.HeapSize()).To(BeNumerically("~", 1920, 20))
 		})
 
 		It("should calc promise split", func() {
@@ -84,7 +84,7 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should estimate heap-size", func() {
-			Expect(subject.HeapSize()).To(Equal(464))
+			Expect(subject.HeapSize()).To(BeNumerically("~", 920, 20))
 		})
 
 		It("should calc promise split", func() {
@@ -108,9 +108,9 @@ var _ = Describe("splitNode", func() {
 	BeforeEach(func() {
 		condition := helpers.NewNominalMultiwaySplitCondition(model.Attribute("outlook"))
 		stats := helpers.NewObservationStats(model.IsRegression())
-		subject = newSplitNode(condition, stats, []helpers.ObservationStats{
-			helpers.NewObservationStats(model.IsRegression()),
-			helpers.NewObservationStats(model.IsRegression()),
+		subject = newSplitNode(condition, stats, map[int]helpers.ObservationStats{
+			1: helpers.NewObservationStats(model.IsRegression()),
+			3: helpers.NewObservationStats(model.IsRegression()),
 		})
 	})
 

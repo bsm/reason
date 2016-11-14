@@ -7,11 +7,11 @@ import (
 )
 
 var _ = Describe("CSplitCriterion", func() {
-	pre := util.NewSparseVectorFromSlice(9.0, 6.0)
-	post := util.SparseMatrix{
-		0: util.NewSparseVectorFromSlice(3.0, 2.0),
-		1: util.NewSparseVectorFromSlice(4.0, 0.0),
-		2: util.NewSparseVectorFromSlice(2.0, 4.0),
+	pre := util.NewDenseVectorFromSlice(9.0, 6.0)
+	post := util.VectorDistribution{
+		0: util.NewDenseVectorFromSlice(3.0, 2.0),
+		1: util.NewDenseVectorFromSlice(4.0, 0.0),
+		2: util.NewDenseVectorFromSlice(2.0, 4.0),
 	}
 
 	It("should create default", func() {
@@ -39,12 +39,12 @@ var _ = Describe("CSplitCriterion", func() {
 		It("should have range", func() {
 			Expect(subject.Range(nil)).To(Equal(1.0))
 			Expect(subject.Range(pre)).To(Equal(1.0))
-			Expect(subject.Range(util.NewSparseVectorFromSlice(1, 2, 3))).To(BeNumerically("~", 1.58, 0.01))
+			Expect(subject.Range(util.NewDenseVectorFromSlice(1, 2, 3))).To(BeNumerically("~", 1.58, 0.01))
 		})
 
 		It("should evaluate split", func() {
 			Expect(subject.Merit(nil, nil)).To(Equal(0.0))
-			Expect(subject.Merit(pre, util.SparseMatrix{0: pre})).To(Equal(0.0))
+			Expect(subject.Merit(pre, util.VectorDistribution{0: pre})).To(Equal(0.0))
 			Expect(subject.Merit(pre, post)).To(BeNumerically("~", 0.280, 0.001))
 		})
 
@@ -99,23 +99,23 @@ var _ = Describe("RSplitCriterion", func() {
 })
 
 var _ = Describe("GainRatioSplitCriterion", func() {
-	pre := util.NewSparseVectorFromSlice(9.0, 6.0)
-	post1 := util.SparseMatrix{
-		0: util.NewSparseVectorFromSlice(3.0, 2.0),
-		1: util.NewSparseVectorFromSlice(4.0, 0.0),
-		2: util.NewSparseVectorFromSlice(2.0, 4.0),
+	pre := util.NewDenseVectorFromSlice(9.0, 6.0)
+	post1 := util.VectorDistribution{
+		0: util.NewDenseVectorFromSlice(3.0, 2.0),
+		1: util.NewDenseVectorFromSlice(4.0, 0.0),
+		2: util.NewDenseVectorFromSlice(2.0, 4.0),
 	}
-	post2 := util.SparseMatrix{
-		0: util.NewSparseVectorFromSlice(1.0, 0.0),
-		1: util.NewSparseVectorFromSlice(2.0, 0.0),
-		2: util.NewSparseVectorFromSlice(1.0, 0.0),
-		3: util.NewSparseVectorFromSlice(1.0, 0.0),
-		4: util.NewSparseVectorFromSlice(1.0, 0.0),
-		5: util.NewSparseVectorFromSlice(2.0, 1.0),
-		6: util.NewSparseVectorFromSlice(1.0, 1.0),
-		7: util.NewSparseVectorFromSlice(0.0, 2.0),
-		8: util.NewSparseVectorFromSlice(0.0, 1.0),
-		9: util.NewSparseVectorFromSlice(0.0, 1.0),
+	post2 := util.VectorDistribution{
+		0: util.NewDenseVectorFromSlice(1.0, 0.0),
+		1: util.NewDenseVectorFromSlice(2.0, 0.0),
+		2: util.NewDenseVectorFromSlice(1.0, 0.0),
+		3: util.NewDenseVectorFromSlice(1.0, 0.0),
+		4: util.NewDenseVectorFromSlice(1.0, 0.0),
+		5: util.NewDenseVectorFromSlice(2.0, 1.0),
+		6: util.NewDenseVectorFromSlice(1.0, 1.0),
+		7: util.NewDenseVectorFromSlice(0.0, 2.0),
+		8: util.NewDenseVectorFromSlice(0.0, 1.0),
+		9: util.NewDenseVectorFromSlice(0.0, 1.0),
 	}
 
 	base := DefaultSplitCriterion(false).(CSplitCriterion)

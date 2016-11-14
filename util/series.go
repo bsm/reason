@@ -144,3 +144,8 @@ func (m NumSeriesDistribution) Append(index int, value, weight float64) {
 	s.Append(value, weight)
 	m[index] = s
 }
+
+// HeapSize estimates the required heap-size
+func (m NumSeriesDistribution) HeapSize() int {
+	return 24 + len(m)*60
+}

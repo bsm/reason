@@ -186,7 +186,7 @@ type splitNode struct {
 	children  map[int]treeNode
 }
 
-func newSplitNode(condition helpers.SplitCondition, preSplit helpers.ObservationStats, postSplit []helpers.ObservationStats) *splitNode {
+func newSplitNode(condition helpers.SplitCondition, preSplit helpers.ObservationStats, postSplit map[int]helpers.ObservationStats) *splitNode {
 	children := make(map[int]treeNode, len(postSplit))
 	for i, stats := range postSplit {
 		children[i] = newLeafNode(stats)

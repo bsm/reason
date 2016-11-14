@@ -28,8 +28,7 @@ var _ = Describe("nominalCObserver", func() {
 	It("should observe", func() {
 		o := subject.(*nominalCObserver)
 		Expect(o.postSplit).To(HaveLen(2))
-		Expect(o.postSplit).To(Equal(2))
-		Expect(o.HeapSize()).To(Equal(56))
+		Expect(o.HeapSize()).To(BeNumerically("~", 440, 20))
 	})
 
 	DescribeTable("should calculate probability",
@@ -51,7 +50,7 @@ var _ = Describe("nominalCObserver", func() {
 		Entry("don't play if rainy", "no", "rainy", 0.500),
 	)
 
-	FIt("should calculate best split", func() {
+	It("should calculate best split", func() {
 		s := subject.BestSplit(
 			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
 			predictor,
@@ -64,15 +63,14 @@ var _ = Describe("nominalCObserver", func() {
 
 		postStats := s.PostStats()
 		Expect(postStats).To(HaveLen(3))
-		Expect(postStats[0].State()).To(Equal(core.Prediction{
+		Expect(postStats[0].State()).To(ConsistOf(core.Prediction{
 			{Value: 0, Votes: 2},
 			{Value: 1, Votes: 3},
 		}))
-		Expect(postStats[1].State()).To(Equal(core.Prediction{
+		Expect(postStats[1].State()).To(ConsistOf(core.Prediction{
 			{Value: 0, Votes: 4},
-			{Value: 1, Votes: 0},
 		}))
-		Expect(postStats[2].State()).To(Equal(core.Prediction{
+		Expect(postStats[2].State()).To(ConsistOf(core.Prediction{
 			{Value: 0, Votes: 3},
 			{Value: 1, Votes: 2},
 		}))
@@ -128,8 +126,7 @@ var _ = Describe("gaussianCObserver", func() {
 		o := subject.(*gaussianCObserver)
 		Expect(o.minMax.SplitPoints(4)).To(Equal([]float64{2.3, 3.3, 4.3, 5.3}))
 		Expect(o.postSplit).To(HaveLen(3))
-		Expect(o.postSplit).To(Equal("TOSO"))
-		Expect(o.HeapSize()).To(Equal(240))
+		Expect(o.HeapSize()).To(BeNumerically("~", 650, 20))
 	})
 
 	It("should not calculate probability", func() {
@@ -163,11 +160,10 @@ var _ = Describe("gaussianCObserver", func() {
 
 		postStats := s.PostStats()
 		Expect(postStats).To(HaveLen(2))
-		Expect(postStats[0].State()).To(Equal(core.Prediction{
+		Expect(postStats[0].State()).To(ConsistOf(core.Prediction{
 			{Value: 0, Votes: 3},
 		}))
-		Expect(postStats[1].State()).To(Equal(core.Prediction{
-			{Value: 0, Votes: 0},
+		Expect(postStats[1].State()).To(ConsistOf(core.Prediction{
 			{Value: 1, Votes: 5},
 			{Value: 2, Votes: 4},
 		}))
@@ -203,7 +199,7 @@ var _ = Describe("nominalRObserver", func() {
 		Expect((&a).StdDev()).To(BeNumerically("~", 7.78, 0.01))
 		Expect((&b).StdDev()).To(BeNumerically("~", 3.49, 0.01))
 		Expect((&c).StdDev()).To(BeNumerically("~", 10.87, 0.01))
-		Expect(o.HeapSize()).To(Equal(112))
+		Expect(o.HeapSize()).To(BeNumerically("~", 240, 20))
 	})
 
 	It("should calculate best split", func() {

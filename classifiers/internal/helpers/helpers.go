@@ -61,6 +61,7 @@ func newMinMaxRanges() *minMaxRanges {
 }
 
 func (m *minMaxRanges) Len() int            { return len(m.min) }
+func (m *minMaxRanges) HeapSize() int       { return 16 + m.min.HeapSize() + m.max.HeapSize() }
 func (m *minMaxRanges) Min(pos int) float64 { return m.min.Get(pos) }
 func (m *minMaxRanges) Max(pos int) float64 { return m.max.Get(pos) }
 func (m *minMaxRanges) Update(pos int, val float64) {

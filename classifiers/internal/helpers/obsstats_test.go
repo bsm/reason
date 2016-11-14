@@ -23,7 +23,7 @@ var _ = Describe("ObservationStats", func() {
 		})
 
 		It("should estimate byte size", func() {
-			Expect(subject.HeapSize()).To(Equal(56))
+			Expect(subject.HeapSize()).To(BeNumerically("~", 180, 20))
 		})
 
 		It("should check sufficiency", func() {

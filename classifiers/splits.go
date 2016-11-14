@@ -24,11 +24,11 @@ type CSplitCriterion interface {
 	SplitCriterion
 
 	// Range returns the range of the split merit
-	Range(pre util.SparseVector) float64
+	Range(pre util.Vector) float64
 
 	// Merit calculates the merit of splitting for a given
 	// distribution before and after the split
-	Merit(pre util.SparseVector, post util.SparseMatrix) float64
+	Merit(pre util.Vector, post util.VectorDistribution) float64
 }
 
 // DefaultSplitCriterion returns InfoGainSplitCriterion
@@ -63,8 +63,8 @@ type GiniSplitCriterion struct{}
 
 func (GiniSplitCriterion) isSplitCriterion() {}
 
-func (GiniSplitCriterion) Range(pre util.SparseVector) float64 { return 1.0 }
-func (GiniSplitCriterion) Merit(pre util.SparseVector, post util.SparseMatrix) float64 {
+func (GiniSplitCriterion) Range(pre util.Vector) float64 { return 1.0 }
+func (GiniSplitCriterion) Merit(pre util.Vector, post util.VectorDistribution) float64 {
 	weights := post.Weights()
 	total := 0.0
 	for _, w := range weights {
@@ -81,12 +81,12 @@ func (GiniSplitCriterion) Merit(pre util.SparseVector, post util.SparseMatrix) f
 	return merit
 }
 
-func giniSplitCalc(vv util.SparseVector, sum float64) float64 {
+func giniSplitCalc(vv util.Vector, sum float64) float64 {
 	res := 1.0
-	for _, v := range vv {
+	vv.ForEachValue(func(v float64) {
 		sub := v / sum
 		res -= sub * sub
-	}
+	})
 	return res
 }
 
@@ -99,14 +99,16 @@ type InfoGainSplitCriterion struct {
 
 func (InfoGainSplitCriterion) isSplitCriterion() {}
 
-func (InfoGainSplitCriterion) Range(pre util.SparseVector) float64 {
-	if size := len(pre); size > 2 {
-		return math.Log2(float64(size))
+func (InfoGainSplitCriterion) Range(pre util.Vector) float64 {
+	if pre != nil {
+		if cnt := pre.Count(); cnt > 2 {
+			return math.Log2(float64(cnt))
+		}
 	}
 	return math.Log2(2.0)
 }
 
-func (c InfoGainSplitCriterion) Merit(pre util.SparseVector, post util.SparseMatrix) float64 {
+func (c InfoGainSplitCriterion) Merit(pre util.Vector, post util.VectorDistribution) float64 {
 	weights := post.Weights()
 	total := 0.0
 	for _, w := range weights {
@@ -178,7 +180,7 @@ func GainRatioSplitCriterion(c SplitCriterion) SplitCriterion {
 
 type cGainRatioSplitCriterion struct{ CSplitCriterion }
 
-func (c cGainRatioSplitCriterion) Merit(pre util.SparseVector, post util.SparseMatrix) float64 {
+func (c cGainRatioSplitCriterion) Merit(pre util.Vector, post util.VectorDistribution) float64 {
 	merit := c.CSplitCriterion.Merit(pre, post)
 	return merit / gainRatioSplitInfo(post)
 }

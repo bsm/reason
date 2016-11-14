@@ -128,9 +128,9 @@ func (c *numericBinarySplitCondition) Branch(inst core.Instance) int {
 }
 func (c *numericBinarySplitCondition) Describe(branch int) string {
 	if branch == 0 {
-		return fmt.Sprintf("> %f", c.splitValue)
-	} else if branch == 1 {
 		return fmt.Sprintf("<= %f", c.splitValue)
+	} else if branch == 1 {
+		return fmt.Sprintf("> %f", c.splitValue)
 	}
 	return ""
 }

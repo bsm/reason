@@ -34,11 +34,11 @@ func NewObservationStats(isRegression bool) ObservationStats {
 	return newObsCStats()
 }
 
-func newCObservationStats(preSplit util.SparseVector) ObservationStats {
+func newCObservationStats(preSplit util.Vector) ObservationStats {
 	return &obsCStats{preSplit: preSplit}
 }
 
-func newCObservationStatsDist(postSplit util.SparseMatrix) map[int]ObservationStats {
+func newCObservationStatsDist(postSplit util.VectorDistribution) map[int]ObservationStats {
 	res := make(map[int]ObservationStats, len(postSplit))
 	for i, vv := range postSplit {
 		res[i] = &obsCStats{preSplit: vv}
@@ -61,14 +61,14 @@ func newRObservationStatsDist(postSplit util.NumSeriesDistribution) map[int]Obse
 // --------------------------------------------------------------------
 
 type obsCStats struct {
-	preSplit util.SparseVector
+	preSplit util.Vector
 }
 
 func newObsCStats() *obsCStats {
 	return &obsCStats{preSplit: util.NewSparseVector()}
 }
 
-func (s *obsCStats) HeapSize() int { return 40 + len(s.preSplit)*8 }
+func (s *obsCStats) HeapSize() int { return 40 + s.preSplit.HeapSize() }
 
 func (s *obsCStats) TotalWeight() float64 { return s.preSplit.Sum() }
 
@@ -80,15 +80,7 @@ func (s *obsCStats) Promise() float64 {
 }
 
 func (s *obsCStats) IsSufficient() bool {
-	m := 0
-	for _, w := range s.preSplit {
-		if w != 0 {
-			if m++; m == 2 {
-				return true
-			}
-		}
-	}
-	return false
+	return s.preSplit.Count() > 1
 }
 
 func (s *obsCStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {
@@ -107,11 +99,13 @@ func (s *obsCStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, pre
 }
 
 func (s *obsCStats) State() core.Prediction {
-	p := make(core.Prediction, len(s.preSplit))
-	for i, w := range s.preSplit {
-		p[i].Value = core.AttributeValue(i)
-		p[i].Votes = w
-	}
+	p := make(core.Prediction, 0, s.preSplit.Count())
+	s.preSplit.ForEach(func(i int, v float64) {
+		p = append(p, core.PredictedValue{
+			Value: core.AttributeValue(i),
+			Votes: v,
+		})
+	})
 	return p
 }
 
