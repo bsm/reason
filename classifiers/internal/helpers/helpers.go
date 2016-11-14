@@ -80,9 +80,9 @@ func (m *minMaxRanges) Update(pos int, val float64) {
 
 func (m *minMaxRanges) SplitPoints(n int) []float64 {
 	rng := newMinMaxRange()
-	for i := range m.min {
+	m.min.ForEach(func(i int, _ float64) {
 		rng.Update(m.Min(i))
 		rng.Update(m.Max(i))
-	}
+	})
 	return rng.SplitPoints(n)
 }
