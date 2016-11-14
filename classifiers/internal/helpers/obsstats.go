@@ -3,7 +3,7 @@ package helpers
 import (
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/internal/util"
+	"github.com/bsm/reason/util"
 )
 
 // ObservationStats stats are used to maintain sufficient
@@ -29,39 +29,43 @@ type ObservationStats interface {
 
 func NewObservationStats(isRegression bool) ObservationStats {
 	if isRegression {
-		return new(obsRStats)
+		return newObsRStats()
 	}
-	return new(obsCStats)
+	return newObsCStats()
 }
 
-func newCObservationStats(preSplit []float64) ObservationStats {
+func newCObservationStats(preSplit util.SparseVector) ObservationStats {
 	return &obsCStats{preSplit: preSplit}
 }
 
-func newCObservationStatsSlice(postSplit [][]float64) []ObservationStats {
-	slice := make([]ObservationStats, len(postSplit))
+func newCObservationStatsDist(postSplit util.SparseMatrix) map[int]ObservationStats {
+	res := make(map[int]ObservationStats, len(postSplit))
 	for i, vv := range postSplit {
-		slice[i] = &obsCStats{preSplit: vv}
+		res[i] = &obsCStats{preSplit: vv}
 	}
-	return slice
+	return res
 }
 
-func newRObservationStats(preSplit *core.NumSeries) ObservationStats {
+func newRObservationStats(preSplit *util.NumSeries) ObservationStats {
 	return &obsRStats{preSplit: *preSplit}
 }
 
-func newRObservationStatsSlice(postSplit []core.NumSeries) []ObservationStats {
-	slice := make([]ObservationStats, len(postSplit))
+func newRObservationStatsDist(postSplit util.NumSeriesDistribution) map[int]ObservationStats {
+	res := make(map[int]ObservationStats, len(postSplit))
 	for i, vv := range postSplit {
-		slice[i] = &obsRStats{preSplit: vv}
+		res[i] = &obsRStats{preSplit: vv}
 	}
-	return slice
+	return res
 }
 
 // --------------------------------------------------------------------
 
 type obsCStats struct {
-	preSplit util.NumVector
+	preSplit util.SparseVector
+}
+
+func newObsCStats() *obsCStats {
+	return &obsCStats{preSplit: util.NewSparseVector()}
 }
 
 func (s *obsCStats) HeapSize() int { return 40 + len(s.preSplit)*8 }
@@ -88,7 +92,7 @@ func (s *obsCStats) IsSufficient() bool {
 }
 
 func (s *obsCStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {
-	s.preSplit = s.preSplit.Incr(tv.Index(), weight)
+	s.preSplit.Incr(tv.Index(), weight)
 }
 
 func (s *obsCStats) NewObserver(isNominal bool) Observer {
@@ -114,7 +118,11 @@ func (s *obsCStats) State() core.Prediction {
 // --------------------------------------------------------------------
 
 type obsRStats struct {
-	preSplit core.NumSeries
+	preSplit util.NumSeries
+}
+
+func newObsRStats() *obsRStats {
+	return &obsRStats{}
 }
 
 func (s *obsRStats) HeapSize() int        { return 40 }

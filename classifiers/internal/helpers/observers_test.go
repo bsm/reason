@@ -4,6 +4,7 @@ import (
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
+	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -27,6 +28,7 @@ var _ = Describe("nominalCObserver", func() {
 	It("should observe", func() {
 		o := subject.(*nominalCObserver)
 		Expect(o.postSplit).To(HaveLen(2))
+		Expect(o.postSplit).To(Equal(2))
 		Expect(o.HeapSize()).To(Equal(56))
 	})
 
@@ -49,11 +51,11 @@ var _ = Describe("nominalCObserver", func() {
 		Entry("don't play if rainy", "no", "rainy", 0.500),
 	)
 
-	It("should calculate best split", func() {
+	FIt("should calculate best split", func() {
 		s := subject.BestSplit(
 			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
 			predictor,
-			[]float64{9.0, 5.0},
+			util.SparseVector{0: 9.0, 1: 5.0},
 		)
 		Expect(s.Merit()).To(BeNumerically("~", 0.247, 0.001))
 		Expect(s.Range()).To(Equal(1.0))
@@ -87,7 +89,7 @@ var _ = Describe("nominalCObserver", func() {
 		Expect(o.BestSplit(
 			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
 			predictor,
-			[]float64{3.0},
+			util.SparseVector{0: 3.0},
 		)).To(BeNil())
 	})
 
@@ -124,8 +126,9 @@ var _ = Describe("gaussianCObserver", func() {
 
 	It("should observe", func() {
 		o := subject.(*gaussianCObserver)
-		Expect(o.minMax.Points(4)).To(Equal([]float64{2.3, 3.3, 4.3, 5.3}))
+		Expect(o.minMax.SplitPoints(4)).To(Equal([]float64{2.3, 3.3, 4.3, 5.3}))
 		Expect(o.postSplit).To(HaveLen(3))
+		Expect(o.postSplit).To(Equal("TOSO"))
 		Expect(o.HeapSize()).To(Equal(240))
 	})
 
@@ -150,7 +153,7 @@ var _ = Describe("gaussianCObserver", func() {
 		s := subject.BestSplit(
 			classifiers.InfoGainSplitCriterion{MinBranchFrac: 0.1},
 			predictor,
-			[]float64{3.0, 5.0, 4.0},
+			util.SparseVector{0: 3.0, 1: 5.0, 2: 4.0},
 		)
 		Expect(s.Merit()).To(BeNumerically("~", 0.811, 0.001))
 		Expect(s.Range()).To(BeNumerically("~", 1.585, 0.001))
@@ -174,7 +177,7 @@ var _ = Describe("gaussianCObserver", func() {
 
 var _ = Describe("nominalRObserver", func() {
 	var subject RObserver
-	var preSplit *core.NumSeries
+	var preSplit *util.NumSeries
 
 	model := testdata.RegressionModel()
 	predictor := model.Predictor("outlook")
@@ -183,7 +186,7 @@ var _ = Describe("nominalRObserver", func() {
 
 	BeforeEach(func() {
 		subject = NewNominalRObserver()
-		preSplit = new(core.NumSeries)
+		preSplit = new(util.NumSeries)
 
 		for _, inst := range instances {
 			tv := target.Value(inst)
@@ -196,9 +199,10 @@ var _ = Describe("nominalRObserver", func() {
 	It("should observe", func() {
 		o := subject.(*nominalRObserver)
 		Expect(o.postSplit).To(HaveLen(3))
-		Expect(o.postSplit[0].StdDev()).To(BeNumerically("~", 7.78, 0.01))
-		Expect(o.postSplit[1].StdDev()).To(BeNumerically("~", 3.49, 0.01))
-		Expect(o.postSplit[2].StdDev()).To(BeNumerically("~", 10.87, 0.01))
+		a, b, c := o.postSplit[0], o.postSplit[1], o.postSplit[2]
+		Expect((&a).StdDev()).To(BeNumerically("~", 7.78, 0.01))
+		Expect((&b).StdDev()).To(BeNumerically("~", 3.49, 0.01))
+		Expect((&c).StdDev()).To(BeNumerically("~", 10.87, 0.01))
 		Expect(o.HeapSize()).To(Equal(112))
 	})
 
@@ -233,7 +237,7 @@ var _ = Describe("nominalRObserver", func() {
 
 var _ = Describe("gaussianRObserver", func() {
 	var subject RObserver
-	var preSplit *core.NumSeries
+	var preSplit *util.NumSeries
 
 	predictor := &core.Attribute{Name: "area", Kind: core.AttributeKindNumeric}
 	target := &core.Attribute{Name: "price", Kind: core.AttributeKindNumeric}
@@ -254,7 +258,7 @@ var _ = Describe("gaussianRObserver", func() {
 
 	BeforeEach(func() {
 		subject = NewNumericRObserver(5)
-		preSplit = new(core.NumSeries)
+		preSplit = new(util.NumSeries)
 
 		for _, inst := range instances {
 			tv := target.Value(inst)

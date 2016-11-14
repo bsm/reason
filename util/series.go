@@ -1,4 +1,4 @@
-package core
+package util
 
 import (
 	"math"
@@ -98,4 +98,49 @@ func (s *NumSeries) Estimate(value float64) (lessThan float64, equalTo float64, 
 		greaterThan = 0
 	}
 	return
+}
+
+// --------------------------------------------------------------------
+
+// NumSeriesDistribution is a distribution of series
+type NumSeriesDistribution map[int]NumSeries
+
+// NewNumSeriesDistribution creates a new series distribution
+func NewNumSeriesDistribution() NumSeriesDistribution {
+	return make(NumSeriesDistribution)
+}
+
+// Weights returns the weight distribution
+func (m NumSeriesDistribution) Weights() map[int]float64 {
+	vv := make(map[int]float64, len(m))
+	for i, s := range m {
+		vv[i] = s.TotalWeight()
+	}
+	return vv
+}
+
+// TotalWeight returns the sums of all weights
+func (m NumSeriesDistribution) TotalWeight() float64 {
+	w := 0.0
+	for _, s := range m {
+		w += s.TotalWeight()
+	}
+	return w
+}
+
+// Get returns the series at index
+func (m NumSeriesDistribution) Get(index int) *NumSeries {
+	if index > -1 {
+		if s, ok := m[index]; ok {
+			return &s
+		}
+	}
+	return nil
+}
+
+// Append appends a value at index
+func (m NumSeriesDistribution) Append(index int, value, weight float64) {
+	s := m[index]
+	s.Append(value, weight)
+	m[index] = s
 }

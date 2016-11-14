@@ -14,7 +14,7 @@ type SplitSuggestion struct {
 	merit     float64
 	mrange    float64
 	preStats  ObservationStats
-	postStats []ObservationStats
+	postStats map[int]ObservationStats
 }
 
 // Condition returns the conditional test
@@ -50,7 +50,7 @@ func (s *SplitSuggestion) PreStats() ObservationStats {
 }
 
 // PostStats returns the post-split observation stats
-func (s *SplitSuggestion) PostStats() []ObservationStats {
+func (s *SplitSuggestion) PostStats() map[int]ObservationStats {
 	if s != nil {
 		return s.postStats
 	}
