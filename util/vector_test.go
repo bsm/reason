@@ -59,12 +59,12 @@ var _ = Describe("SparseVector", func() {
 
 	It("should calculate min", func() {
 		Expect(subject.Min()).To(Equal(2.0))
-		Expect(math.IsNaN(NewSparseVector().Min())).To(BeTrue())
+		Expect(NewSparseVector().Min()).To(Equal(math.MaxFloat64))
 	})
 
 	It("should calculate max", func() {
 		Expect(subject.Max()).To(Equal(9.0))
-		Expect(math.IsNaN(NewSparseVector().Max())).To(BeTrue())
+		Expect(NewSparseVector().Max()).To(Equal(-math.MaxFloat64))
 	})
 
 	It("should calculate mean", func() {
@@ -159,12 +159,12 @@ var _ = Describe("DenseVector", func() {
 
 	It("should calculate min", func() {
 		Expect(subject.Min()).To(Equal(2.0))
-		Expect(math.IsNaN(NewDenseVector().Min())).To(BeTrue())
+		Expect(NewDenseVector().Min()).To(Equal(math.MaxFloat64))
 	})
 
 	It("should calculate max", func() {
 		Expect(subject.Max()).To(Equal(9.0))
-		Expect(math.IsNaN(NewDenseVector().Max())).To(BeTrue())
+		Expect(NewDenseVector().Max()).To(Equal(-math.MaxFloat64))
 	})
 
 	It("should calculate mean", func() {
@@ -227,27 +227,28 @@ var _ = Describe("VectorDistribution", func() {
 		Expect(subject.Get(-1)).To(BeNil())
 	})
 
-	It("should count rows/cols", func() {
-		Expect(subject.NumRows()).To(Equal(3))
-		Expect(subject.NumCols()).To(Equal(2))
+	It("should count", func() {
+		Expect(subject.NumPredicates()).To(Equal(3))
+		Expect(subject.NumTargets()).To(Equal(2))
 	})
 
 	It("should return weights", func() {
-		weights := subject.Weights()
-		Expect(weights).To(Equal(map[int]float64{0: 5, 2: 11, 3: 4}))
+		Expect(subject.Weights()).To(Equal(map[int]float64{0: 5, 2: 11, 3: 4}))
+		Expect(subject.TargetWeights()).To(Equal(map[int]float64{1: 2, 2: 10, 3: 4, 9: 4}))
 	})
 
 	It("should increment", func() {
 		m := VectorDistribution{}
 		m.Incr(2, 3, 4)
 		Expect(m).To(Equal(VectorDistribution{
-			2: SparseVector{3: 4},
+			2: NewDenseVectorFromSlice(0, 0, 0, 4),
 		}))
+
 		m.Incr(1, 2, 3)
 		m.Incr(1, 2, 4)
 		Expect(m).To(Equal(VectorDistribution{
-			1: SparseVector{2: 7},
-			2: SparseVector{3: 4},
+			1: NewDenseVectorFromSlice(0, 0, 7),
+			2: NewDenseVectorFromSlice(0, 0, 0, 4),
 		}))
 	})
 

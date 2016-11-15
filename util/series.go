@@ -102,6 +102,8 @@ func (s *NumSeries) Estimate(value float64) (lessThan float64, equalTo float64, 
 
 // --------------------------------------------------------------------
 
+const numSeriesDistributionBaseSize = 8 * (sizeOfInt + 25)
+
 // NumSeriesDistribution is a distribution of series
 type NumSeriesDistribution map[int]NumSeries
 
@@ -145,7 +147,7 @@ func (m NumSeriesDistribution) Append(index int, value, weight float64) {
 	m[index] = s
 }
 
-// HeapSize estimates the required heap-size
-func (m NumSeriesDistribution) HeapSize() int {
-	return 24 + len(m)*60
+// ByteSize estimates the required heap-size
+func (m NumSeriesDistribution) ByteSize() int {
+	return 24 + len(m)*numSeriesDistributionBaseSize
 }

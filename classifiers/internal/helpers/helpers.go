@@ -50,31 +50,31 @@ func (r *minMaxRange) Update(v float64) {
 // --------------------------------------------------------------------
 
 type minMaxRanges struct {
-	min, max util.SparseVector
+	min, max util.Vector
 }
 
 func newMinMaxRanges() *minMaxRanges {
 	return &minMaxRanges{
-		min: util.NewSparseVector(),
-		max: util.NewSparseVector(),
+		min: util.NewVector(),
+		max: util.NewVector(),
 	}
 }
 
-func (m *minMaxRanges) Len() int            { return len(m.min) }
-func (m *minMaxRanges) HeapSize() int       { return 16 + m.min.HeapSize() + m.max.HeapSize() }
-func (m *minMaxRanges) Min(pos int) float64 { return m.min.Get(pos) }
-func (m *minMaxRanges) Max(pos int) float64 { return m.max.Get(pos) }
-func (m *minMaxRanges) Update(pos int, val float64) {
-	if _, ok := m.min[pos]; ok {
-		if val < m.Min(pos) {
-			m.min.Set(pos, val)
-		}
-		if val > m.Max(pos) {
-			m.max.Set(pos, val)
-		}
+func (m *minMaxRanges) Len() int          { return m.min.Count() }
+func (m *minMaxRanges) ByteSize() int     { return 16 + m.min.ByteSize() + m.max.ByteSize() }
+func (m *minMaxRanges) Min(i int) float64 { return m.min.Get(i) }
+func (m *minMaxRanges) Max(i int) float64 { return m.max.Get(i) }
+func (m *minMaxRanges) Update(i int, val float64) {
+	if min := m.Min(i); min == 0 {
+		m.min = m.min.Set(i, val)
+		m.max = m.max.Set(i, val)
 	} else {
-		m.min.Set(pos, val)
-		m.max.Set(pos, val)
+		if val < min {
+			m.min = m.min.Set(i, val)
+		}
+		if val > m.Max(i) {
+			m.max = m.max.Set(i, val)
+		}
 	}
 }
 

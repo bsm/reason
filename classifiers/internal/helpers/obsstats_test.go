@@ -23,7 +23,7 @@ var _ = Describe("ObservationStats", func() {
 		})
 
 		It("should estimate byte size", func() {
-			Expect(subject.HeapSize()).To(BeNumerically("~", 180, 20))
+			Expect(subject.ByteSize()).To(BeNumerically("~", 80, 20))
 		})
 
 		It("should check sufficiency", func() {
@@ -81,7 +81,7 @@ var _ = Describe("ObservationStats", func() {
 		})
 
 		It("should estimate byte size", func() {
-			Expect(subject.HeapSize()).To(Equal(40))
+			Expect(subject.ByteSize()).To(Equal(40))
 		})
 
 		It("should return total weight", func() {

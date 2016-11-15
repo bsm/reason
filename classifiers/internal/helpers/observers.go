@@ -11,8 +11,8 @@ type Observer interface {
 	// Observe records an instance and updates the attribute stats
 	Observe(target, predictor core.AttributeValue, weight float64)
 
-	// HeapSize estimates the required heap-size
-	HeapSize() int
+	// ByteSize estimates the required heap-size
+	ByteSize() int
 }
 
 // CObserver instances monitor and collect distribution stats for
@@ -36,8 +36,8 @@ type nominalCObserver struct {
 	postSplit util.VectorDistribution
 }
 
-func (o *nominalCObserver) HeapSize() int {
-	return 40 + o.postSplit.HeapSize()
+func (o *nominalCObserver) ByteSize() int {
+	return 40 + o.postSplit.ByteSize()
 }
 
 // Observe implements CObserver
@@ -51,13 +51,13 @@ func (o *nominalCObserver) Probability(tv, pv core.AttributeValue) float64 {
 	if vec == nil {
 		return 0.0
 	}
-	cnt := o.postSplit.NumCols()
+	cnt := o.postSplit.NumTargets()
 	return (vec.Get(pv.Index()) + 1) / (vec.Sum() + float64(cnt))
 }
 
 // BestSplit implements CObserver
 func (o *nominalCObserver) BestSplit(crit classifiers.CSplitCriterion, predictor *core.Attribute, preSplit util.Vector) *SplitSuggestion {
-	ncols := o.postSplit.NumCols()
+	ncols := o.postSplit.NumTargets()
 	if ncols < 2 {
 		return nil
 	}
@@ -99,8 +99,8 @@ type gaussianCObserver struct {
 	postSplit util.NumSeriesDistribution
 }
 
-func (o *gaussianCObserver) HeapSize() int {
-	return 24 + o.minMax.HeapSize() + o.postSplit.HeapSize()
+func (o *gaussianCObserver) ByteSize() int {
+	return 24 + o.minMax.ByteSize() + o.postSplit.ByteSize()
 }
 
 // Observe implements CObserver
@@ -179,8 +179,8 @@ type nominalRObserver struct {
 	postSplit util.NumSeriesDistribution
 }
 
-func (o *nominalRObserver) HeapSize() int {
-	return 40 + o.postSplit.HeapSize()
+func (o *nominalRObserver) ByteSize() int {
+	return 40 + o.postSplit.ByteSize()
 }
 
 // Observe implements Observer
@@ -238,7 +238,7 @@ type gaussianRObserver struct {
 
 type gaussianRTuple struct{ pval, tval, weight float64 }
 
-func (o *gaussianRObserver) HeapSize() int {
+func (o *gaussianRObserver) ByteSize() int {
 	return 80 + len(o.tuples)*24
 }
 

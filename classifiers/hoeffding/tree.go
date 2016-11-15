@@ -50,12 +50,13 @@ func New(model *core.Model, conf *Config) *Tree {
 	}
 }
 
-func (t *Tree) HeapSize() int {
+// ByteSize estimates the memory required to store the tree
+func (t *Tree) ByteSize() int {
 	t.mu.RLock()
-	heapSize := t.root.HeapSize()
+	byteSize := t.root.ByteSize()
 	t.mu.RUnlock()
 
-	return heapSize
+	return byteSize
 }
 
 // Info returns information about the tree
@@ -133,8 +134,8 @@ func (t *Tree) Train(inst core.Instance) {
 		leaf.Learn(inst, t)
 
 		if t.cycles++; t.cycles%int64(t.conf.PrunePeriod) == 0 {
-			if heapSize := t.root.HeapSize(); heapSize >= t.conf.HeapTarget*2 {
-				t.prune(heapSize)
+			if byteSize := t.root.ByteSize(); byteSize >= t.conf.MemTarget*2 {
+				t.prune(byteSize)
 			}
 		}
 
@@ -230,18 +231,18 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 	return nil, trace
 }
 
-func (t *Tree) prune(heapSize int) {
+func (t *Tree) prune(byteSize int) {
 	t.leaves = t.root.FindLeaves(t.leaves[:0])
 	sort.Sort(sort.Reverse(t.leaves))
 
-	target := t.conf.HeapTarget
+	target := t.conf.MemTarget
 	piv := 0
 	for ; piv < len(t.leaves); piv++ {
 		if n := t.leaves[piv]; n.IsActive() {
-			heapSize -= n.HeapSize()
+			byteSize -= n.ByteSize()
 			n.Deactivate()
 
-			if heapSize <= target {
+			if byteSize <= target {
 				break
 			}
 		}

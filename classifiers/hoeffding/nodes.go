@@ -18,7 +18,7 @@ type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
 	WriteGraph(*bufio.Writer, string) error
 	WriteText(*bufio.Writer, string) error
-	HeapSize() int
+	ByteSize() int
 	ReadInfo(int, *TreeInfo)
 	Predict() core.Prediction
 	FindLeaves(leafNodeSlice) leafNodeSlice
@@ -96,13 +96,13 @@ func (n *leafNode) SetWeightOnLastEval(w float64) {
 	}
 }
 
-func (n *leafNode) HeapSize() int {
-	size := n.stats.HeapSize()
+func (n *leafNode) ByteSize() int {
+	size := 40 + n.stats.ByteSize()
 	if n.observers != nil {
 		size += 24
 	}
 	for _, obs := range n.observers {
-		size += obs.HeapSize()
+		size += obs.ByteSize()
 	}
 	return size
 }
@@ -199,11 +199,11 @@ func newSplitNode(condition helpers.SplitCondition, preSplit helpers.Observation
 	}
 }
 
-func (n *splitNode) HeapSize() int {
-	size := n.stats.HeapSize() + 64
+func (n *splitNode) ByteSize() int {
+	size := n.stats.ByteSize() + 64
 	for _, c := range n.children {
 		size += 8
-		size += c.HeapSize()
+		size += c.ByteSize()
 	}
 	return size
 }
