@@ -4,12 +4,12 @@ import (
 	"sync"
 
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/internal/util"
+	"github.com/bsm/reason/internal/calc"
 )
 
 // Classification is a basic classification evaluator
 type Classification struct {
-	kappa util.KappaStat
+	kappa *calc.KappaStat
 	model *core.Model
 
 	weight, correct float64
@@ -19,7 +19,10 @@ type Classification struct {
 
 // NewClassification inits a new evaluator
 func NewClassification(model *core.Model) *Classification {
-	return &Classification{model: model}
+	return &Classification{
+		model: model,
+		kappa: calc.NewKappaStat(),
+	}
 }
 
 // Record records a prediction
@@ -42,7 +45,7 @@ func (e *Classification) Record(inst core.Instance, prediction core.Prediction) 
 	if pi == ai {
 		e.correct += weight
 	}
-	e.kappa = e.kappa.Record(pi, ai, weight)
+	e.kappa.Record(pi, ai, weight)
 	e.mu.Unlock()
 }
 
@@ -69,7 +72,7 @@ func (e *Classification) Correct() float64 {
 // Kappa returns the kappa value as fraction
 func (e *Classification) Kappa() float64 {
 	e.mu.Lock()
-	kappa := e.kappa
+	kappa := e.kappa.Kappa()
 	e.mu.Unlock()
-	return kappa.Kappa()
+	return kappa
 }

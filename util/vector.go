@@ -9,9 +9,9 @@ type Vector interface {
 	// Get returns a value
 	Get(int) float64
 	// Set sets a value
-	Set(int, float64)
+	Set(int, float64) Vector
 	// Incr increments a value
-	Incr(int, float64)
+	Incr(int, float64) Vector
 	// ForEach iterates over each index/value
 	ForEach(VectorIterator)
 	// ForEachValue iterates over each value
@@ -34,14 +34,113 @@ type Vector interface {
 	StdDev() float64
 	// Entropy calculates the entropy of the vector
 	Entropy() float64
-	// HeapSize estimates the required heap-size
-	HeapSize() int
+	// ByteSize estimates the required heap-size
+	ByteSize() int
 }
+
+// NewVector creates a new default vector
+func NewVector() Vector { return NewDenseVector() }
 
 type VectorIterator func(int, float64)
 type VectorValueIterator func(float64)
 
 // --------------------------------------------------------------------
+
+// Sum returns the sum
+func vectorSum(vv Vector) (Σ float64) {
+	vv.ForEachValue(func(v float64) {
+		Σ += v
+	})
+	return
+}
+
+func vectorMin(vv Vector) float64 {
+	min := math.MaxFloat64
+	vv.ForEachValue(func(v float64) {
+		if v < min {
+			min = v
+		}
+	})
+	return min
+}
+
+func vectorMax(vv Vector) float64 {
+	max := -math.MaxFloat64
+	vv.ForEachValue(func(v float64) {
+		if v > max {
+			max = v
+		}
+	})
+	return max
+}
+
+func vectorMean(vv Vector) (µ float64) {
+	n := vv.Count()
+	if n == 0 {
+		return
+	}
+
+	µ = vv.Sum() / float64(n)
+	return
+}
+
+func vectorVariance(vv Vector) (V float64) {
+	n := vv.Count()
+	if n == 0 {
+		return
+	}
+
+	µ := vv.Mean()
+	vv.ForEachValue(func(v float64) {
+		Δ := v - µ
+		V += Δ * Δ
+	})
+
+	V /= float64(n)
+	return
+}
+
+func vectorSampleVariance(vv Vector) (sV float64) {
+	n := vv.Count()
+	if n < 2 {
+		return
+	}
+
+	µ := vv.Mean()
+	vv.ForEachValue(func(v float64) {
+		Δ := v - µ
+		sV += Δ * Δ
+	})
+
+	sV /= float64(n - 1)
+	return
+}
+
+func vectorStdDev(v float64) (σ float64) {
+	if v == 0 {
+		return
+	}
+
+	σ = math.Sqrt(v)
+	return
+}
+
+func vectorEntropy(vv Vector) float64 {
+	ent := 0.0
+	sum := 0.0
+	vv.ForEachValue(func(v float64) {
+		ent -= v * math.Log2(v)
+		sum += v
+	})
+	if sum > 0 {
+		return (ent + sum*math.Log2(sum)) / sum
+	}
+	return 0.0
+}
+
+// --------------------------------------------------------------------
+
+const sparseVectorBaseSize = 8 * sizeOfInt
 
 // SparseVector is a (sparse) series of float64 numbers
 type SparseVector map[int]float64
@@ -49,15 +148,6 @@ type SparseVector map[int]float64
 // NewSparseVector returns a blank vector
 func NewSparseVector() SparseVector {
 	return make(SparseVector)
-}
-
-// NewSparseVectorFromSlice returns a vector using slice values
-func NewSparseVectorFromSlice(vv ...float64) SparseVector {
-	sv := make(SparseVector, len(vv))
-	for i, v := range vv {
-		sv.Set(i, v)
-	}
-	return sv
 }
 
 // Count returns the number of non-zero elements in the vector
@@ -81,10 +171,11 @@ func (vv SparseVector) Get(i int) float64 {
 }
 
 // Set sets a value v at index i
-func (vv SparseVector) Set(i int, v float64) {
+func (vv SparseVector) Set(i int, v float64) Vector {
 	if i > -1 {
 		vv[i] = v
 	}
+	return vv
 }
 
 // ForEach iterates over each index/value
@@ -102,10 +193,11 @@ func (vv SparseVector) ForEachValue(iter VectorValueIterator) {
 }
 
 // Incr increments a value at index i by delta
-func (vv SparseVector) Incr(i int, delta float64) {
+func (vv SparseVector) Incr(i int, delta float64) Vector {
 	if i > -1 {
 		vv[i] += delta
 	}
+	return vv
 }
 
 // Clear removes all values from the vector
@@ -116,109 +208,28 @@ func (vv SparseVector) Clear() {
 }
 
 // Sum returns the sum
-func (vv SparseVector) Sum() (Σ float64) {
-	for _, v := range vv {
-		Σ += v
-	}
-	return
-}
+func (vv SparseVector) Sum() float64 { return vectorSum(vv) }
 
 // Min returns the minimum value
-func (vv SparseVector) Min() float64 {
-	if vv.Count() == 0 {
-		return math.NaN()
-	}
-
-	min := math.MaxFloat64
-	for _, v := range vv {
-		if v < min {
-			min = v
-		}
-	}
-	return min
-}
+func (vv SparseVector) Min() float64 { return vectorMin(vv) }
 
 // Max returns the maximum value
-func (vv SparseVector) Max() float64 {
-	if vv.Count() == 0 {
-		return math.NaN()
-	}
-
-	max := -math.MaxFloat64
-	for _, v := range vv {
-		if v > max {
-			max = v
-		}
-	}
-	return max
-}
+func (vv SparseVector) Max() float64 { return vectorMax(vv) }
 
 // Mean returns the mean value
-func (vv SparseVector) Mean() (µ float64) {
-	n := vv.Count()
-	if n == 0 {
-		return
-	}
-
-	µ = vv.Sum() / float64(n)
-	return
-}
+func (vv SparseVector) Mean() float64 { return vectorMean(vv) }
 
 // Variance calculates the variance
-func (vv SparseVector) Variance() (V float64) {
-	n := vv.Count()
-	if n == 0 {
-		return
-	}
-
-	µ := vv.Mean()
-	for _, v := range vv {
-		Δ := v - µ
-		V += Δ * Δ
-	}
-
-	V /= float64(n)
-	return
-}
+func (vv SparseVector) Variance() float64 { return vectorVariance(vv) }
 
 // StdDev calculates the standard deviation
-func (vv SparseVector) StdDev() (σ float64) {
-	V := vv.Variance()
-	if V == 0 {
-		return
-	}
-
-	σ = math.Sqrt(V)
-	return
-}
+func (vv SparseVector) StdDev() float64 { return vectorStdDev(vv.Variance()) }
 
 // SampleVariance calculates the sample variance
-func (vv SparseVector) SampleVariance() (sV float64) {
-	n := vv.Count()
-	if n < 2 {
-		return
-	}
-
-	µ := vv.Mean()
-	for _, v := range vv {
-		Δ := v - µ
-		sV += Δ * Δ
-	}
-
-	sV /= float64(n - 1)
-	return
-}
+func (vv SparseVector) SampleVariance() float64 { return vectorSampleVariance(vv) }
 
 // SampleStdDev calculates the sample standard deviation
-func (vv SparseVector) SampleStdDev() (sσ float64) {
-	sV := vv.SampleVariance()
-	if sV == 0 {
-		return
-	}
-
-	sσ = math.Sqrt(sV)
-	return
-}
+func (vv SparseVector) SampleStdDev() float64 { return vectorStdDev(vv.SampleVariance()) }
 
 // Normalize normalizes all values to the 0..1 range
 func (vv SparseVector) Normalize() {
@@ -233,24 +244,11 @@ func (vv SparseVector) Normalize() {
 }
 
 // Entropy calculates the entropy of the vector
-func (vv SparseVector) Entropy() float64 {
-	ent := 0.0
-	sum := 0.0
-	for _, v := range vv {
-		if v > 0 {
-			ent -= v * math.Log2(v)
-			sum += v
-		}
-	}
-	if sum > 0 {
-		return (ent + sum*math.Log2(sum)) / sum
-	}
-	return 0.0
-}
+func (vv SparseVector) Entropy() float64 { return vectorEntropy(vv) }
 
-// HeapSize estimates the required heap-size
-func (vv SparseVector) HeapSize() int {
-	return 24 + len(vv)*60
+// ByteSize estimates the required heap-size
+func (vv SparseVector) ByteSize() int {
+	return 24 + len(vv)*sparseVectorBaseSize
 }
 
 // --------------------------------------------------------------------
@@ -299,9 +297,9 @@ func (x *DenseVector) Get(i int) float64 {
 }
 
 // Set sets a value v at index i
-func (x *DenseVector) Set(i int, v float64) {
+func (x *DenseVector) Set(i int, v float64) Vector {
 	if i < 0 {
-		return
+		return x
 	}
 
 	if n := (i + 1); n > len(x.vv) {
@@ -310,19 +308,20 @@ func (x *DenseVector) Set(i int, v float64) {
 		x.vv = vv
 	}
 	x.vv[i] = v
+	return x
 }
 
 // Incr increments a value at index i by delta
-func (x *DenseVector) Incr(i int, delta float64) {
+func (x *DenseVector) Incr(i int, delta float64) Vector {
 	if i < 0 {
-		return
+		return x
 	}
 
 	if i < len(x.vv) {
 		x.vv[i] += delta
-	} else {
-		x.Set(i, delta)
+		return x
 	}
+	return x.Set(i, delta)
 }
 
 // ForEach iterates over each index/value
@@ -349,113 +348,28 @@ func (x *DenseVector) Clear() {
 }
 
 // Sum returns the sum
-func (x *DenseVector) Sum() (Σ float64) {
-	for _, v := range x.vv {
-		Σ += v
-	}
-	return
-}
+func (x *DenseVector) Sum() float64 { return vectorSum(x) }
 
 // Min returns the minimum value
-func (x *DenseVector) Min() float64 {
-	if x.Count() == 0 {
-		return math.NaN()
-	}
-
-	min := math.MaxFloat64
-	for _, v := range x.vv {
-		if v != 0.0 && v < min {
-			min = v
-		}
-	}
-	return min
-}
+func (x *DenseVector) Min() float64 { return vectorMin(x) }
 
 // Max returns the maximum value
-func (x *DenseVector) Max() float64 {
-	if x.Count() == 0 {
-		return math.NaN()
-	}
-
-	max := -math.MaxFloat64
-	for _, v := range x.vv {
-		if v != 0.0 && v > max {
-			max = v
-		}
-	}
-	return max
-}
+func (x *DenseVector) Max() float64 { return vectorMax(x) }
 
 // Mean returns the mean value
-func (x *DenseVector) Mean() (µ float64) {
-	n := x.Count()
-	if n == 0 {
-		return
-	}
-
-	µ = x.Sum() / float64(n)
-	return
-}
+func (x *DenseVector) Mean() float64 { return vectorMean(x) }
 
 // Variance calculates the variance
-func (x *DenseVector) Variance() (V float64) {
-	n := 0
-	µ := x.Mean()
-	for _, v := range x.vv {
-		if v != 0 {
-			Δ := v - µ
-			V += Δ * Δ
-			n++
-		}
-	}
-	if n < 1 {
-		return 0.0
-	}
-
-	V /= float64(n)
-	return
-}
+func (x *DenseVector) Variance() float64 { return vectorVariance(x) }
 
 // StdDev calculates the standard deviation
-func (x *DenseVector) StdDev() (σ float64) {
-	V := x.Variance()
-	if V == 0 {
-		return
-	}
-
-	σ = math.Sqrt(V)
-	return
-}
+func (x *DenseVector) StdDev() float64 { return vectorStdDev(x.Variance()) }
 
 // SampleVariance calculates the sample variance
-func (x *DenseVector) SampleVariance() (sV float64) {
-	n := 0
-	µ := x.Mean()
-	for _, v := range x.vv {
-		if v != 0 {
-			Δ := v - µ
-			sV += Δ * Δ
-			n++
-		}
-	}
-	if n < 2 {
-		return 0.0
-	}
-
-	sV /= float64(n - 1)
-	return
-}
+func (x *DenseVector) SampleVariance() float64 { return vectorSampleVariance(x) }
 
 // SampleStdDev calculates the sample standard deviation
-func (x *DenseVector) SampleStdDev() (sσ float64) {
-	sV := x.SampleVariance()
-	if sV == 0 {
-		return
-	}
-
-	sσ = math.Sqrt(sV)
-	return
-}
+func (x *DenseVector) SampleStdDev() float64 { return vectorStdDev(x.SampleVariance()) }
 
 // Normalize normalizes all values to the 0..1 range
 func (x *DenseVector) Normalize() {
@@ -470,48 +384,35 @@ func (x *DenseVector) Normalize() {
 }
 
 // Entropy calculates the entropy of the vector
-func (x *DenseVector) Entropy() float64 {
-	ent := 0.0
-	sum := 0.0
-	for _, v := range x.vv {
-		if v > 0 {
-			ent -= v * math.Log2(v)
-			sum += v
-		}
-	}
-	if sum > 0 {
-		return (ent + sum*math.Log2(sum)) / sum
-	}
-	return 0.0
-}
+func (x *DenseVector) Entropy() float64 { return vectorEntropy(x) }
 
-// HeapSize estimates the required heap-size
-func (x *DenseVector) HeapSize() int {
-	return 24 + len(x.vv)*8
+// ByteSize estimates the required heap-size
+func (x *DenseVector) ByteSize() int {
+	return 24 + cap(x.vv)*8
 }
 
 // converts the vector to a sparse one
-func (x *DenseVector) convertToSparse() SparseVector {
-	nv := make(SparseVector, x.Count())
-	x.ForEach(func(i int, v float64) { nv.Set(i, v) })
-	return nv
-}
+// func (x *DenseVector) convertToSparse() SparseVector {
+// 	nv := make(SparseVector, x.Count())
+// 	x.ForEach(func(i int, v float64) { nv.Set(i, v) })
+// 	return nv
+// }
 
 // --------------------------------------------------------------------
 
-// VectorDistribution is a slice of sparse vectors
+// VectorDistribution is a distribution of vectors by predicate
 type VectorDistribution map[int]Vector
 
-// NewVectorDistribution creates a new sparse matrix
+// NewVectorDistribution creates a new distribution
 func NewVectorDistribution() VectorDistribution {
 	return make(VectorDistribution)
 }
 
-// NumRows returns the number of rows
-func (m VectorDistribution) NumRows() int { return len(m) }
+// NumPredicates returns the number of predicates
+func (m VectorDistribution) NumPredicates() int { return len(m) }
 
-// NumCols returns the number of cols
-func (m VectorDistribution) NumCols() int {
+// NumTargets returns the number of targets
+func (m VectorDistribution) NumTargets() int {
 	var n int
 	for _, row := range m {
 		if l := row.Count(); l > n {
@@ -521,11 +422,22 @@ func (m VectorDistribution) NumCols() int {
 	return n
 }
 
-// Weights returns the weight distribution
+// Weights returns the weight distribution by predicate
 func (m VectorDistribution) Weights() map[int]float64 {
 	vv := make(map[int]float64, len(m))
 	for i, row := range m {
 		vv[i] = row.Sum()
+	}
+	return vv
+}
+
+// TargetWeights returns the weight distribution by target
+func (m VectorDistribution) TargetWeights() map[int]float64 {
+	vv := make(map[int]float64, m.NumTargets())
+	for _, row := range m {
+		row.ForEach(func(i int, v float64) {
+			vv[i] += v
+		})
 	}
 	return vv
 }
@@ -540,21 +452,18 @@ func (m VectorDistribution) Get(pos int) Vector {
 
 // Incr increments value at row/col index
 func (m VectorDistribution) Incr(row, col int, delta float64) {
-	m.initRow(row)
-	m[row].Incr(col, delta)
+	vv, ok := m[row]
+	if !ok {
+		vv = NewVector()
+	}
+	m[row] = vv.Incr(col, delta)
 }
 
-// HeapSize estimates the required heap-size
-func (m VectorDistribution) HeapSize() int {
-	size := 24 + len(m)*16
+// ByteSize estimates the required heap-size
+func (m VectorDistribution) ByteSize() int {
+	size := 24
 	for _, vv := range m {
-		size += vv.HeapSize()
+		size += 16 + sizeOfInt + vv.ByteSize()
 	}
 	return size
-}
-
-func (m VectorDistribution) initRow(pos int) {
-	if _, ok := m[pos]; !ok {
-		m[pos] = NewSparseVector()
-	}
 }

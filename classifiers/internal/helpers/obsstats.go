@@ -17,8 +17,8 @@ type ObservationStats interface {
 	NewObserver(isNominal bool) Observer
 	// TotalWeight returns the total weight observed
 	TotalWeight() float64
-	// HeapSize returns a required heap-size estimate
-	HeapSize() int
+	// ByteSize returns a required heap-size estimate
+	ByteSize() int
 	// Promise returns the promise for making predictions
 	Promise() float64
 	// BestSplit returns a SplitSuggestion
@@ -65,10 +65,10 @@ type obsCStats struct {
 }
 
 func newObsCStats() *obsCStats {
-	return &obsCStats{preSplit: util.NewSparseVector()}
+	return &obsCStats{preSplit: util.NewVector()}
 }
 
-func (s *obsCStats) HeapSize() int { return 40 + s.preSplit.HeapSize() }
+func (s *obsCStats) ByteSize() int { return 40 + s.preSplit.ByteSize() }
 
 func (s *obsCStats) TotalWeight() float64 { return s.preSplit.Sum() }
 
@@ -84,7 +84,7 @@ func (s *obsCStats) IsSufficient() bool {
 }
 
 func (s *obsCStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {
-	s.preSplit.Incr(tv.Index(), weight)
+	s.preSplit = s.preSplit.Incr(tv.Index(), weight)
 }
 
 func (s *obsCStats) NewObserver(isNominal bool) Observer {
@@ -119,7 +119,7 @@ func newObsRStats() *obsRStats {
 	return &obsRStats{}
 }
 
-func (s *obsRStats) HeapSize() int        { return 40 }
+func (s *obsRStats) ByteSize() int        { return 40 }
 func (s *obsRStats) TotalWeight() float64 { return s.preSplit.TotalWeight() }
 func (s *obsRStats) Promise() float64     { return s.preSplit.TotalWeight() }
 func (s *obsRStats) IsSufficient() bool   { return s.preSplit.SampleVariance() != 0 }

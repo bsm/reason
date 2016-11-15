@@ -40,7 +40,7 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should estimate heap-size", func() {
-			Expect(subject.HeapSize()).To(BeNumerically("~", 1920, 20))
+			Expect(subject.ByteSize()).To(BeNumerically("~", 940, 20))
 		})
 
 		It("should calc promise split", func() {
@@ -84,7 +84,7 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should estimate heap-size", func() {
-			Expect(subject.HeapSize()).To(BeNumerically("~", 920, 20))
+			Expect(subject.ByteSize()).To(BeNumerically("~", 3000, 20))
 		})
 
 		It("should calc promise split", func() {
