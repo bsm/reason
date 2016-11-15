@@ -1,4 +1,4 @@
-package core
+package util
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -70,5 +70,39 @@ var _ = Describe("NumSeries", func() {
 		Entry("close to mean", 5.4, 3.19, 1.19, 4.62),
 		Entry("top end", 9.1, 7.37, 0.58, 1.04),
 	)
+
+})
+
+var _ = Describe("NumSeriesDistribution", func() {
+	var subject NumSeriesDistribution
+
+	BeforeEach(func() {
+		subject = NewNumSeriesDistribution()
+		for _, v := range []float64{1.1, 2.2, 3.3, 4.4} {
+			subject.Append(0, v, 1)
+		}
+		for _, v := range []float64{5.5, 6.6, 7.7, 8.8, 9.9} {
+			subject.Append(1, v, 1)
+		}
+	})
+
+	It("should append", func() {
+		subject.Append(7, 12.12, 1)
+		Expect(subject).To(HaveKey(7))
+	})
+
+	It("should get", func() {
+		Expect(subject.Get(0)).To(Equal(&NumSeries{weight: 4, sum: 11, sumSquares: 36.3}))
+		Expect(subject.Get(2)).To(BeNil())
+		Expect(subject.Get(-1)).To(BeNil())
+	})
+
+	It("should return weights", func() {
+		Expect(subject.Weights()).To(Equal(map[int]float64{0: 4, 1: 5}))
+	})
+
+	It("should return total weight", func() {
+		Expect(subject.TotalWeight()).To(Equal(9.0))
+	})
 
 })

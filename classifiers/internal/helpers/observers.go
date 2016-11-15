@@ -3,7 +3,7 @@ package helpers
 import (
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/internal/util"
+	"github.com/bsm/reason/util"
 )
 
 // Observer instances monitor and collect distribution stats
@@ -22,70 +22,60 @@ type CObserver interface {
 	// Probability returns the probability of a given instance
 	Probability(target, predictor core.AttributeValue) float64
 	// BestSplit returns a suggestion for the best split
-	BestSplit(_ classifiers.CSplitCriterion, predictor *core.Attribute, preSplit []float64) *SplitSuggestion
+	BestSplit(_ classifiers.CSplitCriterion, predictor *core.Attribute, preSplit util.Vector) *SplitSuggestion
 }
 
 // NewNominalCObserver monitors a nominal predictor attribute
 func NewNominalCObserver() CObserver {
-	return &nominalCObserver{}
+	return &nominalCObserver{
+		postSplit: util.NewVectorDistribution(),
+	}
 }
 
 type nominalCObserver struct {
-	postSplit util.NumMatrix
+	postSplit util.VectorDistribution
 }
 
 func (o *nominalCObserver) HeapSize() int {
-	return 40 + len(o.postSplit)*8
+	return 40 + o.postSplit.HeapSize()
 }
 
 // Observe implements CObserver
 func (o *nominalCObserver) Observe(tv, pv core.AttributeValue, weight float64) {
-	ti := tv.Index()
-	row := util.NumVector(o.postSplit.GetRow(ti))
-	row = row.Incr(pv.Index(), weight)
-	o.postSplit = o.postSplit.SetRow(ti, row)
+	o.postSplit.Incr(tv.Index(), pv.Index(), weight)
 }
 
 // Probability implements CObserver
 func (o *nominalCObserver) Probability(tv, pv core.AttributeValue) float64 {
-	obs := o.postSplit.GetRow(tv.Index())
-	if obs == nil {
+	vec := o.postSplit.Get(tv.Index())
+	if vec == nil {
 		return 0.0
 	}
-
-	vec := util.NumVector(obs)
-	return (vec.Get(pv.Index()) + 1) / (vec.Sum() + float64(vec.Count()))
+	cnt := o.postSplit.NumCols()
+	return (vec.Get(pv.Index()) + 1) / (vec.Sum() + float64(cnt))
 }
 
 // BestSplit implements CObserver
-func (o *nominalCObserver) BestSplit(crit classifiers.CSplitCriterion, predictor *core.Attribute, preSplit []float64) *SplitSuggestion {
-	if o.postSplit.NumCols() < 2 {
+func (o *nominalCObserver) BestSplit(crit classifiers.CSplitCriterion, predictor *core.Attribute, preSplit util.Vector) *SplitSuggestion {
+	ncols := o.postSplit.NumCols()
+	if ncols < 2 {
 		return nil
 	}
 
-	postSplit := o.calcPostSplit()
+	postSplit := o.calcPostSplit(ncols)
 	return &SplitSuggestion{
 		cond:      NewNominalMultiwaySplitCondition(predictor),
-		merit:     calcCMerit(crit, preSplit, postSplit),
+		merit:     normMerit(crit.Merit(preSplit, postSplit)),
 		mrange:    crit.Range(preSplit),
 		preStats:  newCObservationStats(preSplit),
-		postStats: newCObservationStatsSlice(postSplit),
+		postStats: newCObservationStatsDist(postSplit),
 	}
 }
 
-func (o *nominalCObserver) calcPostSplit() util.NumMatrix {
-	var size int
-	for _, obs := range o.postSplit {
-		if n := util.NumVector(obs).Count(); n > size {
-			size = n
-		}
-	}
-
-	m := make(util.NumMatrix, size)
+func (o *nominalCObserver) calcPostSplit(ncols int) util.VectorDistribution {
+	m := make(util.VectorDistribution, ncols)
 	for ti, obs := range o.postSplit {
-		for pi, val := range obs {
-			m[pi] = util.NumVector(m[pi]).Incr(ti, val)
-		}
+		obs.ForEach(func(pi int, v float64) { m.Incr(pi, ti, v) })
 	}
 	return m
 }
@@ -97,92 +87,75 @@ func NewNumericCObserver(numBins int) CObserver {
 	}
 
 	return &gaussianCObserver{
-		numBins: numBins,
+		numBins:   numBins,
+		minMax:    *newMinMaxRanges(),
+		postSplit: util.NewNumSeriesDistribution(),
 	}
 }
 
 type gaussianCObserver struct {
 	numBins   int
 	minMax    minMaxRanges
-	postSplit []core.NumSeries
+	postSplit util.NumSeriesDistribution
 }
 
 func (o *gaussianCObserver) HeapSize() int {
-	return 96 + o.minMax.Len()*24 + len(o.postSplit)*24
+	return 24 + o.minMax.HeapSize() + o.postSplit.HeapSize()
 }
 
 // Observe implements CObserver
 func (o *gaussianCObserver) Observe(tv, pv core.AttributeValue, weight float64) {
 	ti := tv.Index()
-	if n := ti + 1; n > len(o.postSplit) {
-		postSplit := make([]core.NumSeries, n)
-		copy(postSplit, o.postSplit)
-		o.postSplit = postSplit
-	}
-
 	pval := pv.Value()
+	o.postSplit.Append(ti, pval, weight)
 	o.minMax.Update(ti, pval)
-	o.postSplit[ti].Append(pval, weight)
 }
 
 // Probability implements CObserver
 func (o *gaussianCObserver) Probability(tv, pv core.AttributeValue) float64 {
-	if ti := tv.Index(); ti < len(o.postSplit) {
-		if est := o.postSplit[ti]; !est.IsZero() {
-			return est.ProbDensity(pv.Value())
-		}
+	if est := o.postSplit.Get(tv.Index()); est != nil {
+		return est.ProbDensity(pv.Value())
 	}
 	return 0.0
 }
 
 // BestSplit implements Observes using a variance reduction
 // algorithm
-func (o *gaussianCObserver) BestSplit(crit classifiers.CSplitCriterion, predictor *core.Attribute, preSplit []float64) *SplitSuggestion {
+func (o *gaussianCObserver) BestSplit(crit classifiers.CSplitCriterion, predictor *core.Attribute, preSplit util.Vector) *SplitSuggestion {
 	var best *SplitSuggestion
 
-	for _, splitVal := range o.minMax.Points(o.numBins) {
+	for _, splitVal := range o.minMax.SplitPoints(o.numBins) {
 		postSplit := o.binarySplitOn(splitVal)
-		merit := calcCMerit(crit, preSplit, postSplit)
+		merit := crit.Merit(preSplit, postSplit)
 		if best != nil && merit <= best.merit {
 			continue
 		}
 
 		best = &SplitSuggestion{
 			cond:      &numericBinarySplitCondition{predictor: predictor, splitValue: splitVal},
-			merit:     merit,
+			merit:     normMerit(merit),
 			mrange:    crit.Range(preSplit),
 			preStats:  newCObservationStats(preSplit),
-			postStats: newCObservationStatsSlice(postSplit),
+			postStats: newCObservationStatsDist(postSplit),
 		}
 	}
 	return best
 }
 
-func (o *gaussianCObserver) binarySplitOn(splitVal float64) util.NumMatrix {
-	var lhs, rhs util.NumVector
-
+func (o *gaussianCObserver) binarySplitOn(splitVal float64) util.VectorDistribution {
+	res := util.NewVectorDistribution()
 	for i, est := range o.postSplit {
-		if est.IsZero() {
-			continue
-		} else if splitVal < o.minMax.Min(i) {
-			rhs = rhs.Incr(i, est.TotalWeight())
+		if splitVal < o.minMax.Min(i) {
+			res.Incr(1, i, est.TotalWeight())
 		} else if splitVal >= o.minMax.Max(i) {
-			lhs = lhs.Incr(i, est.TotalWeight())
+			res.Incr(0, i, est.TotalWeight())
 		} else {
 			lt, eq, gt := est.Estimate(splitVal)
-			lhs = lhs.Incr(i, lt+eq)
-			rhs = rhs.Incr(i, gt)
+			res.Incr(0, i, lt+eq)
+			res.Incr(1, i, gt)
 		}
 	}
-	return util.NumMatrix{lhs, rhs}
-}
-
-func calcCMerit(crit classifiers.CSplitCriterion, pre []float64, post util.NumMatrix) float64 {
-	merit := crit.Merit(pre, post)
-	if merit <= 0 {
-		return 0.0
-	}
-	return merit
+	return res
 }
 
 // --------------------------------------------------------------------
@@ -191,47 +164,44 @@ func calcCMerit(crit classifiers.CSplitCriterion, pre []float64, post util.NumMa
 type RObserver interface {
 	Observer
 	// BestSplit returns a suggestion for the best split
-	BestSplit(crit classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *core.NumSeries) *SplitSuggestion
+	BestSplit(crit classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *util.NumSeries) *SplitSuggestion
 }
 
 // NewNominalRObserver monitors a nominal predictor attribute for a
 // numeric regression target.
 func NewNominalRObserver() RObserver {
-	return &nominalRObserver{}
+	return &nominalRObserver{
+		postSplit: util.NewNumSeriesDistribution(),
+	}
 }
 
 type nominalRObserver struct {
-	postSplit []core.NumSeries
+	postSplit util.NumSeriesDistribution
 }
 
 func (o *nominalRObserver) HeapSize() int {
-	return 40 + len(o.postSplit)*24
+	return 40 + o.postSplit.HeapSize()
 }
 
 // Observe implements Observer
 func (o *nominalRObserver) Observe(tv, pv core.AttributeValue, weight float64) {
 	pi := pv.Index()
-	if n := pi + 1; n > len(o.postSplit) {
-		postSplit := make([]core.NumSeries, n)
-		copy(postSplit, o.postSplit)
-		o.postSplit = postSplit
-	}
-	o.postSplit[pi].Append(tv.Value(), weight)
+	o.postSplit.Append(pi, tv.Value(), weight)
 }
 
 // BestSplit implements RegressionObserves using a variance reduction
 // algorithm
-func (o *nominalRObserver) BestSplit(crit classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *core.NumSeries) *SplitSuggestion {
+func (o *nominalRObserver) BestSplit(crit classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *util.NumSeries) *SplitSuggestion {
 	if !o.isSplitable() {
 		return nil
 	}
 
 	return &SplitSuggestion{
 		cond:      NewNominalMultiwaySplitCondition(predictor),
-		merit:     calcRMerit(crit, preSplit, o.postSplit),
+		merit:     normMerit(crit.Merit(preSplit, o.postSplit)),
 		mrange:    crit.Range(preSplit),
 		preStats:  newRObservationStats(preSplit),
-		postStats: newRObservationStatsSlice(o.postSplit),
+		postStats: newRObservationStatsDist(o.postSplit),
 	}
 }
 
@@ -256,13 +226,13 @@ func NewNumericRObserver(numBins int) RObserver {
 
 	return &gaussianRObserver{
 		numBins: numBins,
-		minMax:  *util.NewNumRange(),
+		minMax:  *newMinMaxRange(),
 	}
 }
 
 type gaussianRObserver struct {
 	numBins int
-	minMax  util.NumRange
+	minMax  minMaxRange
 	tuples  []gaussianRTuple
 }
 
@@ -283,80 +253,41 @@ func (o *gaussianRObserver) Observe(tv, pv core.AttributeValue, weight float64) 
 	})
 }
 
-func (o *gaussianRObserver) BestSplit(crit classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *core.NumSeries) *SplitSuggestion {
+func (o *gaussianRObserver) BestSplit(crit classifiers.RSplitCriterion, predictor *core.Attribute, preSplit *util.NumSeries) *SplitSuggestion {
 	var best *SplitSuggestion
 	for _, pivot := range o.minMax.SplitPoints(o.numBins) {
 		postSplit := o.postSplit(pivot)
-		merit := calcRMerit(crit, preSplit, postSplit)
+		merit := crit.Merit(preSplit, postSplit)
 		if best != nil && merit <= best.merit {
 			continue
 		}
 
 		best = &SplitSuggestion{
 			cond:      &numericBinarySplitCondition{predictor: predictor, splitValue: pivot},
-			merit:     merit,
+			merit:     normMerit(merit),
 			mrange:    crit.Range(preSplit),
 			preStats:  newRObservationStats(preSplit),
-			postStats: newRObservationStatsSlice(postSplit),
+			postStats: newRObservationStatsDist(postSplit),
 		}
 	}
 	return best
 }
 
-func (o *gaussianRObserver) postSplit(pivot float64) []core.NumSeries {
-	res := make([]core.NumSeries, 2)
+func (o *gaussianRObserver) postSplit(pivot float64) util.NumSeriesDistribution {
+	res := util.NewNumSeriesDistribution()
 	for _, t := range o.tuples {
 		if t.pval < pivot {
-			res[0].Append(t.tval, t.weight)
+			res.Append(0, t.tval, t.weight)
 		} else {
-			res[1].Append(t.tval, t.weight)
+			res.Append(1, t.tval, t.weight)
 		}
 	}
 	return res
 }
 
-func calcRMerit(crit classifiers.RSplitCriterion, pre *core.NumSeries, post []core.NumSeries) float64 {
-	merit := crit.Merit(pre, post)
-	if merit <= 0 {
-		return 0.0
+func normMerit(merit float64) float64 {
+	if merit > 0 {
+		return merit
 	}
-	return merit
-}
-
-// --------------------------------------------------------------------
-
-type minMaxRanges struct {
-	min util.NumVector
-	max util.NumVector
-	set util.BoolVector
-}
-
-func (m *minMaxRanges) Len() int            { return len(m.set) }
-func (m *minMaxRanges) Min(pos int) float64 { return m.min.Get(pos) }
-func (m *minMaxRanges) Max(pos int) float64 { return m.max.Get(pos) }
-
-func (m *minMaxRanges) Update(pos int, val float64) {
-	if m.set.Get(pos) {
-		if val < m.Min(pos) {
-			m.min = m.min.Set(pos, val)
-		}
-		if val > m.Max(pos) {
-			m.max = m.max.Set(pos, val)
-		}
-	} else {
-		m.min = m.min.Set(pos, val)
-		m.max = m.max.Set(pos, val)
-		m.set = m.set.Set(pos, true)
-	}
-}
-
-func (m *minMaxRanges) Points(n int) []float64 {
-	rng := util.NewNumRange()
-	for i, ok := range m.set {
-		if ok {
-			rng.Update(m.Min(i))
-			rng.Update(m.Max(i))
-		}
-	}
-	return rng.SplitPoints(n)
+	return 0.0
 }
