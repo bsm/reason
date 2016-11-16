@@ -1,5 +1,10 @@
 package core
 
+import (
+	"bytes"
+	"encoding/gob"
+)
+
 // Model represents a model of a domain with specific attributes
 type Model struct {
 	target     *Attribute
@@ -7,18 +12,19 @@ type Model struct {
 	lookup     map[string]int
 }
 
+type modelSnapshot struct {
+	Target     *Attribute
+	Predictors []*Attribute
+}
+
 // NewModel creates a new model with attributes
 func NewModel(target, predictor *Attribute, predictors ...*Attribute) *Model {
-	lookup := make(map[string]int, len(predictors)+1)
-	lookup[predictor.Name] = 0
-	for i, attr := range predictors {
-		lookup[attr.Name] = i + 1
-	}
-	return &Model{
+	m := &Model{
 		target:     target,
 		predictors: append([]*Attribute{predictor}, predictors...),
-		lookup:     lookup,
 	}
+	m.postInit()
+	return m
 }
 
 // NumPredictors returns the number of predictors
@@ -53,3 +59,37 @@ func (m *Model) IsClassification() bool { return m.target.IsNominal() }
 
 // IsRegression returns true if the target is a numeric value
 func (m *Model) IsRegression() bool { return m.target.IsNumeric() }
+
+// GobEncode implements gob.GobEncoder
+func (m *Model) GobEncode() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(modelSnapshot{
+		Target:     m.target,
+		Predictors: m.predictors,
+	}); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder
+func (m *Model) GobDecode(b []byte) error {
+	var snap modelSnapshot
+	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&snap); err != nil {
+		return err
+	}
+
+	*m = Model{
+		target:     snap.Target,
+		predictors: snap.Predictors,
+	}
+	m.postInit()
+	return nil
+}
+
+func (m *Model) postInit() {
+	m.lookup = make(map[string]int, len(m.predictors))
+	for i, attr := range m.predictors {
+		m.lookup[attr.Name] = i
+	}
+}

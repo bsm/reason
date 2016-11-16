@@ -1,6 +1,8 @@
 package util
 
 import (
+	"bytes"
+	"encoding/gob"
 	"math"
 
 	. "github.com/onsi/ginkgo"
@@ -105,6 +107,17 @@ var _ = Describe("SparseVector", func() {
 		Expect(subject.Entropy()).To(BeNumerically("~", 1.38, 0.01))
 	})
 
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out SparseVector
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
+	})
+
 })
 
 var _ = Describe("DenseVector", func() {
@@ -205,6 +218,17 @@ var _ = Describe("DenseVector", func() {
 		Expect(subject.Entropy()).To(BeNumerically("~", 1.38, 0.01))
 	})
 
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out *DenseVector
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
+	})
+
 })
 
 var _ = Describe("VectorDistribution", func() {
@@ -250,6 +274,17 @@ var _ = Describe("VectorDistribution", func() {
 			1: NewDenseVectorFromSlice(0, 0, 7),
 			2: NewDenseVectorFromSlice(0, 0, 0, 4),
 		}))
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out VectorDistribution
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 })

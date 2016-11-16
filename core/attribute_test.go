@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/gob"
 	"math"
 
 	. "github.com/onsi/ginkgo"
@@ -40,6 +42,18 @@ var _ = Describe("Attribute", func() {
 		Expect(numeric.ValueOf(3.2)).To(Equal(AttributeValue(3.2)))
 	})
 
+	It("should gob marshal/unmarshal", func() {
+		nominal.ValueOf("b")
+
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(nominal)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out *Attribute
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(nominal))
+	})
 })
 
 var _ = Describe("AttributeValue", func() {

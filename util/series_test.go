@@ -1,6 +1,9 @@
 package util
 
 import (
+	"bytes"
+	"encoding/gob"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -71,6 +74,17 @@ var _ = Describe("NumSeries", func() {
 		Entry("top end", 9.1, 7.37, 0.58, 1.04),
 	)
 
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out *NumSeries
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
+	})
+
 })
 
 var _ = Describe("NumSeriesDistribution", func() {
@@ -103,6 +117,17 @@ var _ = Describe("NumSeriesDistribution", func() {
 
 	It("should return total weight", func() {
 		Expect(subject.TotalWeight()).To(Equal(9.0))
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out NumSeriesDistribution
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 })

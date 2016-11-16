@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math"
 	"sync"
@@ -210,4 +212,27 @@ func (v *AttributeValues) IndexOf(s string) int {
 	v.vals = v.vals[:0]
 	v.mu.Unlock()
 	return n
+}
+
+// GobEncode implements gob.GobEncoder
+func (v *AttributeValues) GobEncode() ([]byte, error) {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(v.vi); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder
+func (v *AttributeValues) GobDecode(b []byte) error {
+	var vi map[string]int
+	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&vi); err != nil {
+		return err
+	}
+
+	*v = AttributeValues{vi: vi}
+	return nil
 }

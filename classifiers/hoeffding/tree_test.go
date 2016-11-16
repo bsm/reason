@@ -1,6 +1,8 @@
 package hoeffding
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/bsm/reason/core"
@@ -12,6 +14,44 @@ import (
 )
 
 var _ = Describe("Tree", func() {
+
+	It("should dump/load", func() {
+		model := testdata.BigClassificationModel()
+		stream, err := testdata.Open("../../testdata/bigcls.csv", model)
+		Expect(err).NotTo(HaveOccurred())
+		defer stream.Close()
+
+		tree := New(model, nil)
+		n := 0
+		for stream.Next() {
+			tree.Train(stream.Instance())
+			if n++; n >= 500 {
+				break
+			}
+		}
+		Expect(stream.Err()).NotTo(HaveOccurred())
+
+		file, err := ioutil.TempFile("", "bsm-reason-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+
+		err = tree.WriteTo(file)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(file.Close()).NotTo(HaveOccurred())
+
+		file, err = os.Open(file.Name())
+		Expect(err).NotTo(HaveOccurred())
+
+		info, err := file.Stat()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(info.Size()).To(BeNumerically("~", 3600, 20))
+
+		tree2, err := Load(file, nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(tree2.root).To(Equal(tree.root))
+		Expect(tree2.model).To(Equal(tree.model))
+		Expect(tree2.conf).To(Equal(tree.conf))
+	})
 
 	DescribeTable("should perform classification",
 		func(n int, expInfo *TreeInfo, expCorrect, expKappa float64) {
