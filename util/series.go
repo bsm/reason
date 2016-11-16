@@ -1,10 +1,15 @@
 package util
 
 import (
+	"encoding/gob"
 	"math"
 
 	"github.com/bsm/reason/internal/calc"
 )
+
+func init() {
+	gob.Register(NumSeries{})
+}
 
 // NumSeries maintains information about a series of (weighted) numeric data
 type NumSeries struct{ weight, sum, sumSquares float64 }

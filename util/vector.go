@@ -1,6 +1,15 @@
 package util
 
-import "math"
+import (
+	"bytes"
+	"encoding/gob"
+	"math"
+)
+
+func init() {
+	gob.Register(DenseVector{})
+	gob.Register(SparseVector{})
+}
 
 // Vector interface represents number vectors
 type Vector interface {
@@ -389,6 +398,26 @@ func (x *DenseVector) Entropy() float64 { return vectorEntropy(x) }
 // ByteSize estimates the required heap-size
 func (x *DenseVector) ByteSize() int {
 	return 24 + cap(x.vv)*8
+}
+
+// GobEncode implements gob.Encoder
+func (x *DenseVector) GobEncode() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(x.vv); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.Decoder
+func (x *DenseVector) GobDecode(b []byte) error {
+	var vv []float64
+	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(vv); err != nil {
+		return err
+	}
+
+	*x = DenseVector{vv: vv}
+	return nil
 }
 
 // converts the vector to a sparse one

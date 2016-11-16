@@ -1,10 +1,17 @@
 package helpers
 
 import (
+	"encoding/gob"
+
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/util"
 )
+
+func init() {
+	gob.Register(obsCStats{})
+	gob.Register(obsRStats{})
+}
 
 // ObservationStats stats are used to maintain sufficient
 // stats across multiple attributes.
@@ -35,25 +42,25 @@ func NewObservationStats(isRegression bool) ObservationStats {
 }
 
 func newCObservationStats(preSplit util.Vector) ObservationStats {
-	return &obsCStats{preSplit: preSplit}
+	return &obsCStats{PreSplit: preSplit}
 }
 
 func newCObservationStatsDist(postSplit util.VectorDistribution) map[int]ObservationStats {
 	res := make(map[int]ObservationStats, len(postSplit))
 	for i, vv := range postSplit {
-		res[i] = &obsCStats{preSplit: vv}
+		res[i] = &obsCStats{PreSplit: vv}
 	}
 	return res
 }
 
 func newRObservationStats(preSplit *util.NumSeries) ObservationStats {
-	return &obsRStats{preSplit: *preSplit}
+	return &obsRStats{PreSplit: *preSplit}
 }
 
 func newRObservationStatsDist(postSplit util.NumSeriesDistribution) map[int]ObservationStats {
 	res := make(map[int]ObservationStats, len(postSplit))
 	for i, vv := range postSplit {
-		res[i] = &obsRStats{preSplit: vv}
+		res[i] = &obsRStats{PreSplit: vv}
 	}
 	return res
 }
@@ -61,30 +68,30 @@ func newRObservationStatsDist(postSplit util.NumSeriesDistribution) map[int]Obse
 // --------------------------------------------------------------------
 
 type obsCStats struct {
-	preSplit util.Vector
+	PreSplit util.Vector
 }
 
 func newObsCStats() *obsCStats {
-	return &obsCStats{preSplit: util.NewVector()}
+	return &obsCStats{PreSplit: util.NewVector()}
 }
 
-func (s *obsCStats) ByteSize() int { return 40 + s.preSplit.ByteSize() }
+func (s *obsCStats) ByteSize() int { return 40 + s.PreSplit.ByteSize() }
 
-func (s *obsCStats) TotalWeight() float64 { return s.preSplit.Sum() }
+func (s *obsCStats) TotalWeight() float64 { return s.PreSplit.Sum() }
 
 func (s *obsCStats) Promise() float64 {
-	if w := s.preSplit.Sum(); w != 0 {
-		return w - s.preSplit.Max()
+	if w := s.PreSplit.Sum(); w != 0 {
+		return w - s.PreSplit.Max()
 	}
 	return 0.0
 }
 
 func (s *obsCStats) IsSufficient() bool {
-	return s.preSplit.Count() > 1
+	return s.PreSplit.Count() > 1
 }
 
 func (s *obsCStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {
-	s.preSplit = s.preSplit.Incr(tv.Index(), weight)
+	s.PreSplit = s.PreSplit.Incr(tv.Index(), weight)
 }
 
 func (s *obsCStats) NewObserver(isNominal bool) Observer {
@@ -95,12 +102,12 @@ func (s *obsCStats) NewObserver(isNominal bool) Observer {
 }
 
 func (s *obsCStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {
-	return obs.(CObserver).BestSplit(crit.(classifiers.CSplitCriterion), predictor, s.preSplit)
+	return obs.(CObserver).BestSplit(crit.(classifiers.CSplitCriterion), predictor, s.PreSplit)
 }
 
 func (s *obsCStats) State() core.Prediction {
-	p := make(core.Prediction, 0, s.preSplit.Count())
-	s.preSplit.ForEach(func(i int, v float64) {
+	p := make(core.Prediction, 0, s.PreSplit.Count())
+	s.PreSplit.ForEach(func(i int, v float64) {
 		p = append(p, core.PredictedValue{
 			Value: core.AttributeValue(i),
 			Votes: v,
@@ -112,7 +119,7 @@ func (s *obsCStats) State() core.Prediction {
 // --------------------------------------------------------------------
 
 type obsRStats struct {
-	preSplit util.NumSeries
+	PreSplit util.NumSeries
 }
 
 func newObsRStats() *obsRStats {
@@ -120,12 +127,12 @@ func newObsRStats() *obsRStats {
 }
 
 func (s *obsRStats) ByteSize() int        { return 40 }
-func (s *obsRStats) TotalWeight() float64 { return s.preSplit.TotalWeight() }
-func (s *obsRStats) Promise() float64     { return s.preSplit.TotalWeight() }
-func (s *obsRStats) IsSufficient() bool   { return s.preSplit.SampleVariance() != 0 }
+func (s *obsRStats) TotalWeight() float64 { return s.PreSplit.TotalWeight() }
+func (s *obsRStats) Promise() float64     { return s.PreSplit.TotalWeight() }
+func (s *obsRStats) IsSufficient() bool   { return s.PreSplit.SampleVariance() != 0 }
 
 func (s *obsRStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {
-	s.preSplit.Append(tv.Value(), weight)
+	s.PreSplit.Append(tv.Value(), weight)
 }
 
 func (s *obsRStats) NewObserver(isNominal bool) Observer {
@@ -137,10 +144,10 @@ func (s *obsRStats) NewObserver(isNominal bool) Observer {
 
 func (s *obsRStats) State() core.Prediction {
 	return core.Prediction{
-		{Value: core.AttributeValue(s.preSplit.Mean()), Votes: s.preSplit.TotalWeight()},
+		{Value: core.AttributeValue(s.PreSplit.Mean()), Votes: s.PreSplit.TotalWeight()},
 	}
 }
 
 func (s *obsRStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {
-	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), predictor, &s.preSplit)
+	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), predictor, &s.PreSplit)
 }
