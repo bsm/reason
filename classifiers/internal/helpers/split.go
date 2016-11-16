@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/gob"
 	"fmt"
 	"sort"
 
@@ -77,6 +78,11 @@ var (
 	_ SplitCondition = (*numericBinarySplitCondition)(nil)
 )
 
+func init() {
+	gob.Register((*nominalMultiwaySplitCondition)(nil))
+	gob.Register((*numericBinarySplitCondition)(nil))
+}
+
 type SplitCondition interface {
 	// Branch returns the branch index for an instance
 	Branch(inst core.Instance) int
@@ -88,49 +94,57 @@ type SplitCondition interface {
 
 // NewNominalMultiwaySplitCondition inits a new split-condition
 func NewNominalMultiwaySplitCondition(predictor *core.Attribute) SplitCondition {
-	return &nominalMultiwaySplitCondition{predictor: predictor}
+	return &nominalMultiwaySplitCondition{Attribute: predictor}
 }
 
 type nominalMultiwaySplitCondition struct {
-	predictor *core.Attribute
+	*core.Attribute
 }
 
-func (c *nominalMultiwaySplitCondition) Predictor() *core.Attribute { return c.predictor }
+func (c *nominalMultiwaySplitCondition) Predictor() *core.Attribute { return c.Attribute }
 func (c *nominalMultiwaySplitCondition) Branch(inst core.Instance) int {
-	return c.predictor.Value(inst).Index()
+	return c.Attribute.Value(inst).Index()
 }
 func (c *nominalMultiwaySplitCondition) Describe(branch int) string {
 	if branch < 0 {
 		return ""
 	}
-	if vals := c.predictor.Values.Values(); branch < len(vals) {
+	if vals := c.Attribute.Values.Values(); branch < len(vals) {
 		return vals[branch]
 	}
 	return ""
 }
 
-type numericBinarySplitCondition struct {
-	predictor  *core.Attribute
-	splitValue float64
+// NewNumericBinarySplitCondition inits a new split-condition
+func NewNumericBinarySplitCondition(predictor *core.Attribute, splitValue float64) SplitCondition {
+	return &numericBinarySplitCondition{
+		Attribute:  predictor,
+		SplitValue: splitValue,
+	}
 }
 
-func (c *numericBinarySplitCondition) Predictor() *core.Attribute { return c.predictor }
+type numericBinarySplitCondition struct {
+	*core.Attribute
+	SplitValue float64
+}
+
+func (c *numericBinarySplitCondition) Predictor() *core.Attribute { return c.Attribute }
 func (c *numericBinarySplitCondition) Branch(inst core.Instance) int {
-	v := c.predictor.Value(inst)
+	v := c.Attribute.Value(inst)
 	if v.IsMissing() {
 		return -1
 	}
 
-	if n := v.Value(); n > c.splitValue {
+	if n := v.Value(); n > c.SplitValue {
 		return 1
 	}
 	return 0
 }
 func (c *numericBinarySplitCondition) Describe(branch int) string {
 	if branch == 0 {
-		return fmt.Sprintf("<= %f", c.splitValue)
+		return fmt.Sprintf("<= %f", c.SplitValue)
 	} else if branch == 1 {
-		return fmt.Sprintf("> %f", c.splitValue)
+		return fmt.Sprintf("> %f", c.SplitValue)
 	}
 	return ""
 }

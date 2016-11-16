@@ -7,8 +7,8 @@ import (
 )
 
 func init() {
-	gob.Register(DenseVector{})
-	gob.Register(SparseVector{})
+	gob.Register((*DenseVector)(nil))
+	gob.Register((SparseVector)(nil))
 }
 
 // Vector interface represents number vectors
@@ -400,7 +400,7 @@ func (x *DenseVector) ByteSize() int {
 	return 24 + cap(x.vv)*8
 }
 
-// GobEncode implements gob.Encoder
+// GobEncode implements gob.GobEncoder
 func (x *DenseVector) GobEncode() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	if err := gob.NewEncoder(buf).Encode(x.vv); err != nil {
@@ -409,10 +409,10 @@ func (x *DenseVector) GobEncode() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// GobDecode implements gob.Decoder
+// GobDecode implements gob.GobDecoder
 func (x *DenseVector) GobDecode(b []byte) error {
 	var vv []float64
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(vv); err != nil {
+	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&vv); err != nil {
 		return err
 	}
 

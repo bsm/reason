@@ -2,6 +2,8 @@ package hoeffding
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/gob"
 	"io"
 	"math"
 	"sort"
@@ -21,11 +23,9 @@ type TreeInfo struct {
 
 // Tree is an implementation of a HoeffdingTree
 type Tree struct {
-	conf *Config
-	root treeNode
-
-	model      *core.Model
-	regression bool
+	conf  *Config
+	root  treeNode
+	model *core.Model
 
 	traces chan *Trace
 	leaves leafNodeSlice
@@ -34,20 +34,46 @@ type Tree struct {
 	mu sync.RWMutex
 }
 
+type treeSnapshot struct {
+	Model *core.Model
+	Root  treeNode
+}
+
+// New starts a new hoeffding tree from a model
 func New(model *core.Model, conf *Config) *Tree {
-	regression := model.IsRegression()
+	root := newLeafNode(helpers.NewObservationStats(model.IsRegression()))
+	return initTree(model, root, conf)
+}
+
+// Load loads a tree from a readable source with the given config
+func Load(r io.Reader, conf *Config) (*Tree, error) {
+	var t *Tree
+	if err := gob.NewDecoder(r).Decode(&t); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func initTree(model *core.Model, root treeNode, conf *Config) *Tree {
+	tree := &Tree{
+		model:  model,
+		root:   root,
+		traces: make(chan *Trace, 3),
+	}
+	tree.SetConfig(conf)
+	return tree
+}
+
+// SetConfig updates config on the fly
+func (t *Tree) SetConfig(conf *Config) {
 	if conf == nil {
 		conf = new(Config)
 	}
-	conf.norm(regression)
+	conf.norm(t.model.IsRegression())
 
-	return &Tree{
-		conf:       conf,
-		model:      model,
-		regression: regression,
-		root:       newLeafNode(helpers.NewObservationStats(regression)),
-		traces:     make(chan *Trace, 3),
-	}
+	t.mu.Lock()
+	t.conf = conf
+	t.mu.Unlock()
 }
 
 // ByteSize estimates the memory required to store the tree
@@ -126,8 +152,8 @@ func (t *Tree) Train(inst core.Instance) {
 
 	node, parent, parentIndex := t.root.Filter(inst, nil, -1)
 	if node == nil {
-		node = newLeafNode(helpers.NewObservationStats(t.regression))
-		parent.children[parentIndex] = node
+		node = newLeafNode(helpers.NewObservationStats(t.model.IsRegression()))
+		parent.Children[parentIndex] = node
 	}
 
 	if leaf, ok := node.(*leafNode); ok {
@@ -139,8 +165,8 @@ func (t *Tree) Train(inst core.Instance) {
 			}
 		}
 
-		weight := leaf.stats.TotalWeight()
-		if int(weight-leaf.WeightOnLastEval()) < t.conf.GracePeriod {
+		weight := leaf.Stats.TotalWeight()
+		if int(weight-leaf.WeightOnLastEval) < t.conf.GracePeriod {
 			return
 		}
 
@@ -155,7 +181,9 @@ func (t *Tree) Train(inst core.Instance) {
 				trace.Split = true
 			}
 		}
-		leaf.SetWeightOnLastEval(weight)
+		if weight > leaf.WeightOnLastEval {
+			leaf.WeightOnLastEval = weight
+		}
 	}
 }
 
@@ -173,8 +201,36 @@ func (t *Tree) Predict(inst core.Instance) core.Prediction {
 	return res
 }
 
+// WriteTo writes the tree to a writer
+func (t *Tree) WriteTo(w io.Writer) error {
+	return gob.NewEncoder(w).Encode(t)
+}
+
+// GobEncode implements gob.GobEncoder
+func (t *Tree) GobEncode() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(treeSnapshot{
+		Model: t.model,
+		Root:  t.root,
+	}); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder
+func (t *Tree) GobDecode(b []byte) error {
+	var snap treeSnapshot
+	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&snap); err != nil {
+		return err
+	}
+
+	*t = *initTree(snap.Model, snap.Root, nil)
+	return nil
+}
+
 func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*splitNode, *Trace) {
-	if !leaf.stats.IsSufficient() || !leaf.IsActive() {
+	if !leaf.Stats.IsSufficient() || leaf.IsInactive {
 		return nil, trace
 	}
 
@@ -238,7 +294,7 @@ func (t *Tree) prune(byteSize int) {
 	target := t.conf.MemTarget
 	piv := 0
 	for ; piv < len(t.leaves); piv++ {
-		if n := t.leaves[piv]; n.IsActive() {
+		if n := t.leaves[piv]; !n.IsInactive {
 			byteSize -= n.ByteSize()
 			n.Deactivate()
 

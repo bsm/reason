@@ -6,23 +6,27 @@ import (
 	"github.com/bsm/reason/util"
 )
 
-type minMaxRange struct{ Min, Max float64 }
+type Observation struct{ PVal, TVal, Weight float64 }
 
-// newMinMaxRange creates a range with min set to +infinity and max set to -infinity
-func newMinMaxRange() *minMaxRange {
-	r := new(minMaxRange)
+// --------------------------------------------------------------------
+
+type MinMaxRange struct{ Min, Max float64 }
+
+// NewMinMaxRange creates a range with min set to +infinity and max set to -infinity
+func NewMinMaxRange() *MinMaxRange {
+	r := new(MinMaxRange)
 	r.Reset()
 	return r
 }
 
 // Reset sets min to +infinity and max to -infinity
-func (r *minMaxRange) Reset() {
+func (r *MinMaxRange) Reset() {
 	r.Min = math.Inf(1)
 	r.Max = math.Inf(-1)
 }
 
 // SplitPoints splits range into n parts and returns the split points
-func (r *minMaxRange) SplitPoints(n int) []float64 {
+func (r *MinMaxRange) SplitPoints(n int) []float64 {
 	delta := r.Max - r.Min
 	if delta <= 0 {
 		return nil
@@ -38,7 +42,7 @@ func (r *minMaxRange) SplitPoints(n int) []float64 {
 }
 
 // Update updates range by includin the value
-func (r *minMaxRange) Update(v float64) {
+func (r *MinMaxRange) Update(v float64) {
 	if v < r.Min {
 		r.Min = v
 	}
@@ -49,40 +53,40 @@ func (r *minMaxRange) Update(v float64) {
 
 // --------------------------------------------------------------------
 
-type minMaxRanges struct {
-	min, max util.Vector
+type MinMaxRanges struct {
+	Min, Max util.Vector
 }
 
-func newMinMaxRanges() *minMaxRanges {
-	return &minMaxRanges{
-		min: util.NewVector(),
-		max: util.NewVector(),
+func NewMinMaxRanges() *MinMaxRanges {
+	return &MinMaxRanges{
+		Min: util.NewVector(),
+		Max: util.NewVector(),
 	}
 }
 
-func (m *minMaxRanges) Len() int          { return m.min.Count() }
-func (m *minMaxRanges) ByteSize() int     { return 16 + m.min.ByteSize() + m.max.ByteSize() }
-func (m *minMaxRanges) Min(i int) float64 { return m.min.Get(i) }
-func (m *minMaxRanges) Max(i int) float64 { return m.max.Get(i) }
-func (m *minMaxRanges) Update(i int, val float64) {
-	if min := m.Min(i); min == 0 {
-		m.min = m.min.Set(i, val)
-		m.max = m.max.Set(i, val)
+func (m *MinMaxRanges) Len() int             { return m.Min.Count() }
+func (m *MinMaxRanges) ByteSize() int        { return 16 + m.Min.ByteSize() + m.Max.ByteSize() }
+func (m *MinMaxRanges) GetMin(i int) float64 { return m.Min.Get(i) }
+func (m *MinMaxRanges) GetMax(i int) float64 { return m.Max.Get(i) }
+func (m *MinMaxRanges) Update(i int, val float64) {
+	if min := m.GetMin(i); min == 0 {
+		m.Min = m.Min.Set(i, val)
+		m.Max = m.Max.Set(i, val)
 	} else {
 		if val < min {
-			m.min = m.min.Set(i, val)
+			m.Min = m.Min.Set(i, val)
 		}
-		if val > m.Max(i) {
-			m.max = m.max.Set(i, val)
+		if val > m.GetMax(i) {
+			m.Max = m.Max.Set(i, val)
 		}
 	}
 }
 
-func (m *minMaxRanges) SplitPoints(n int) []float64 {
-	rng := newMinMaxRange()
-	m.min.ForEach(func(i int, _ float64) {
-		rng.Update(m.Min(i))
-		rng.Update(m.Max(i))
+func (m *MinMaxRanges) SplitPoints(n int) []float64 {
+	rng := NewMinMaxRange()
+	m.Min.ForEach(func(i int, _ float64) {
+		rng.Update(m.GetMin(i))
+		rng.Update(m.GetMax(i))
 	})
 	return rng.SplitPoints(n)
 }

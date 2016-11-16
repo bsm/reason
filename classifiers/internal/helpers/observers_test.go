@@ -1,6 +1,9 @@
 package helpers
 
 import (
+	"bytes"
+	"encoding/gob"
+
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
@@ -27,8 +30,19 @@ var _ = Describe("nominalCObserver", func() {
 
 	It("should observe", func() {
 		o := subject.(*nominalCObserver)
-		Expect(o.postSplit).To(HaveLen(2))
+		Expect(o.PostSplit).To(HaveLen(2))
 		Expect(o.ByteSize()).To(BeNumerically("~", 190, 20))
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(&subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out CObserver
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 	DescribeTable("should calculate probability",
@@ -124,9 +138,9 @@ var _ = Describe("gaussianCObserver", func() {
 
 	It("should observe", func() {
 		o := subject.(*gaussianCObserver)
-		Expect(o.minMax.SplitPoints(4)).To(Equal([]float64{2.3, 3.3, 4.3, 5.3}))
-		Expect(o.postSplit).To(HaveLen(3))
-		Expect(o.ByteSize()).To(BeNumerically("~", 950, 20))
+		Expect(o.Range.SplitPoints(4)).To(Equal([]float64{2.3, 3.3, 4.3, 5.3}))
+		Expect(o.PostSplit).To(HaveLen(3))
+		Expect(o.ByteSize()).To(BeNumerically("~", 1140, 20))
 	})
 
 	It("should not calculate probability", func() {
@@ -156,7 +170,7 @@ var _ = Describe("gaussianCObserver", func() {
 		Expect(s.Range()).To(BeNumerically("~", 1.585, 0.001))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("len"))
-		Expect(s.Condition().(*numericBinarySplitCondition).splitValue).To(Equal(2.30))
+		Expect(s.Condition().(*numericBinarySplitCondition).SplitValue).To(Equal(2.30))
 
 		postStats := s.PostStats()
 		Expect(postStats).To(HaveLen(2))
@@ -167,6 +181,17 @@ var _ = Describe("gaussianCObserver", func() {
 			{Value: 1, Votes: 5},
 			{Value: 2, Votes: 4},
 		}))
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(&subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out CObserver
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 })
@@ -194,12 +219,12 @@ var _ = Describe("nominalRObserver", func() {
 
 	It("should observe", func() {
 		o := subject.(*nominalRObserver)
-		Expect(o.postSplit).To(HaveLen(3))
-		a, b, c := o.postSplit[0], o.postSplit[1], o.postSplit[2]
-		Expect((&a).StdDev()).To(BeNumerically("~", 7.78, 0.01))
-		Expect((&b).StdDev()).To(BeNumerically("~", 3.49, 0.01))
-		Expect((&c).StdDev()).To(BeNumerically("~", 10.87, 0.01))
-		Expect(o.ByteSize()).To(BeNumerically("~", 860, 20))
+		Expect(o.PostSplit).To(HaveLen(3))
+		a, b, c := o.PostSplit[0], o.PostSplit[1], o.PostSplit[2]
+		Expect(a.StdDev()).To(BeNumerically("~", 7.78, 0.01))
+		Expect(b.StdDev()).To(BeNumerically("~", 3.49, 0.01))
+		Expect(c.StdDev()).To(BeNumerically("~", 10.87, 0.01))
+		Expect(o.ByteSize()).To(BeNumerically("~", 1050, 20))
 	})
 
 	It("should calculate best split", func() {
@@ -227,6 +252,17 @@ var _ = Describe("nominalRObserver", func() {
 			predictor,
 			preSplit,
 		)).To(BeNil())
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(&subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out RObserver
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 })
@@ -266,8 +302,8 @@ var _ = Describe("gaussianRObserver", func() {
 
 	It("should observe", func() {
 		o := subject.(*gaussianRObserver)
-		Expect(o.minMax.SplitPoints(5)).To(Equal([]float64{1.1, 1.4, 1.7, 2, 2.3}))
-		Expect(o.tuples).To(HaveLen(12))
+		Expect(o.Range.SplitPoints(5)).To(Equal([]float64{1.1, 1.4, 1.7, 2, 2.3}))
+		Expect(o.Observations).To(HaveLen(12))
 		Expect(o.ByteSize()).To(Equal(368))
 	})
 
@@ -281,7 +317,18 @@ var _ = Describe("gaussianRObserver", func() {
 		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
 		Expect(s.Condition().Predictor().Name).To(Equal("area"))
-		Expect(s.Condition().(*numericBinarySplitCondition).splitValue).To(Equal(1.7))
+		Expect(s.Condition().(*numericBinarySplitCondition).SplitValue).To(Equal(1.7))
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(&subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out RObserver
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 })

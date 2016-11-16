@@ -2,6 +2,7 @@ package hoeffding
 
 import (
 	"bufio"
+	"encoding/gob"
 	"fmt"
 	"math"
 
@@ -13,6 +14,11 @@ var (
 	_ treeNode = (*leafNode)(nil)
 	_ treeNode = (*splitNode)(nil)
 )
+
+func init() {
+	gob.Register((*leafNode)(nil))
+	gob.Register((*splitNode)(nil))
+}
 
 type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
@@ -36,33 +42,31 @@ func (p leafNodeSlice) Less(i, j int) bool {
 }
 
 type leafNode struct {
-	stats     helpers.ObservationStats
-	observers []helpers.Observer
+	Stats     helpers.ObservationStats
+	Observers []helpers.Observer
 
-	weightOnLastEval float64
+	IsInactive       bool
+	WeightOnLastEval float64
 }
 
 func newLeafNode(stats helpers.ObservationStats) *leafNode {
 	return &leafNode{
-		stats:            stats,
-		weightOnLastEval: stats.TotalWeight(),
-		observers:        []helpers.Observer{},
+		Stats:            stats,
+		WeightOnLastEval: stats.TotalWeight(),
 	}
 }
 
-func (n *leafNode) IsActive() bool { return n.observers != nil }
+func (n *leafNode) Promise() float64 { return n.Stats.Promise() }
 
-func (n *leafNode) Promise() float64 { return n.stats.Promise() }
-
-func (n *leafNode) Predict() core.Prediction { return n.stats.State() }
+func (n *leafNode) Predict() core.Prediction { return n.Stats.State() }
 
 func (n *leafNode) ReadInfo(depth int, info *TreeInfo) {
 	info.NumNodes++
 
-	if n.IsActive() {
-		info.NumActiveLeaves++
-	} else {
+	if n.IsInactive {
 		info.NumInactiveLeaves++
+	} else {
+		info.NumActiveLeaves++
 	}
 	if depth > info.MaxDepth {
 		info.MaxDepth = depth
@@ -74,46 +78,37 @@ func (n *leafNode) Filter(_ core.Instance, parent *splitNode, parentIndex int) (
 }
 
 func (n *leafNode) WriteGraph(w *bufio.Writer, nodeName string) error {
-	_, err := fmt.Fprintf(w, "  %s [label=\"%.0f\", fontsize=10, shape=circle];\n", nodeName, n.stats.TotalWeight())
+	_, err := fmt.Fprintf(w, "  %s [label=\"%.0f\", fontsize=10, shape=circle];\n", nodeName, n.Stats.TotalWeight())
 	return err
 }
 
 func (n *leafNode) WriteText(w *bufio.Writer, _ string) error {
 	_, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n",
 		n.Predict().Top().Value.Value(),
-		n.stats.TotalWeight(),
+		n.Stats.TotalWeight(),
 	)
 	return err
 }
 
-func (n *leafNode) WeightOnLastEval() float64 {
-	return n.weightOnLastEval
-}
-
-func (n *leafNode) SetWeightOnLastEval(w float64) {
-	if w > n.weightOnLastEval {
-		n.weightOnLastEval = w
-	}
-}
-
 func (n *leafNode) ByteSize() int {
-	size := 40 + n.stats.ByteSize()
-	if n.observers != nil {
+	size := 40 + n.Stats.ByteSize()
+	if n.Observers != nil {
 		size += 24
 	}
-	for _, obs := range n.observers {
+	for _, obs := range n.Observers {
 		size += obs.ByteSize()
 	}
 	return size
 }
 
 func (n *leafNode) Deactivate() {
-	n.observers = nil
+	n.IsInactive = true
+	n.Observers = nil
 }
 
 func (n *leafNode) Activate() {
-	if !n.IsActive() {
-		n.observers = []helpers.Observer{}
+	if n.IsInactive {
+		n.IsInactive = false
 	}
 }
 
@@ -126,18 +121,18 @@ func (n *leafNode) Learn(inst core.Instance, tree *Tree) {
 
 	// Get instance weight and update pre-split distribution stats
 	weight := inst.GetInstanceWeight()
-	n.stats.UpdatePreSplit(tv, weight)
+	n.Stats.UpdatePreSplit(tv, weight)
 
 	// Skip the remaining steps if this node is inactive
-	if !n.IsActive() {
+	if n.IsInactive {
 		return
 	}
 
 	// Update each predictor's observer with a target-value, predictor-value
 	// and weight tuple
 	predictors := tree.model.Predictors()
-	if len(n.observers) == 0 {
-		n.observers = make([]helpers.Observer, len(predictors))
+	if len(n.Observers) == 0 {
+		n.Observers = make([]helpers.Observer, len(predictors))
 	}
 	for i, predictor := range predictors {
 		pv := predictor.Value(inst)
@@ -145,28 +140,28 @@ func (n *leafNode) Learn(inst core.Instance, tree *Tree) {
 			continue
 		}
 
-		obs := n.observers[i]
+		obs := n.Observers[i]
 		if obs == nil {
-			obs = n.stats.NewObserver(predictor.IsNominal())
-			n.observers[i] = obs
+			obs = n.Stats.NewObserver(predictor.IsNominal())
+			n.Observers[i] = obs
 		}
 		obs.Observe(tv, pv, weight)
 	}
 }
 
 func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
-	if !n.IsActive() {
+	if n.IsInactive {
 		return nil
 	}
 
 	// Init split-suggestions, including a null suggestion
-	suggestions := make(helpers.SplitSuggestions, 1, len(n.observers)+1)
+	suggestions := make(helpers.SplitSuggestions, 1, len(n.Observers)+1)
 
 	// Calculate a split suggestion for each of the observed predictors
 	predictors := tree.model.Predictors()
-	for i, obs := range n.observers {
+	for i, obs := range n.Observers {
 		if obs != nil {
-			split := n.stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
+			split := n.Stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
 			suggestions = append(suggestions, split)
 		}
 	}
@@ -180,10 +175,9 @@ func (n *leafNode) FindLeaves(acc leafNodeSlice) leafNodeSlice { return append(a
 // --------------------------------------------------------------------
 
 type splitNode struct {
-	stats helpers.ObservationStats
-
-	condition helpers.SplitCondition
-	children  map[int]treeNode
+	Stats     helpers.ObservationStats
+	Condition helpers.SplitCondition
+	Children  map[int]treeNode
 }
 
 func newSplitNode(condition helpers.SplitCondition, preSplit helpers.ObservationStats, postSplit map[int]helpers.ObservationStats) *splitNode {
@@ -193,26 +187,26 @@ func newSplitNode(condition helpers.SplitCondition, preSplit helpers.Observation
 	}
 
 	return &splitNode{
-		stats:     preSplit,
-		condition: condition,
-		children:  children,
+		Stats:     preSplit,
+		Condition: condition,
+		Children:  children,
 	}
 }
 
 func (n *splitNode) ByteSize() int {
-	size := n.stats.ByteSize() + 64
-	for _, c := range n.children {
+	size := n.Stats.ByteSize() + 64
+	for _, c := range n.Children {
 		size += 8
 		size += c.ByteSize()
 	}
 	return size
 }
 
-func (n *splitNode) Predict() core.Prediction { return n.stats.State() }
+func (n *splitNode) Predict() core.Prediction { return n.Stats.State() }
 
 func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int) {
-	if branch := n.condition.Branch(inst); branch > -1 {
-		if child, ok := n.children[branch]; ok {
+	if branch := n.Condition.Branch(inst); branch > -1 {
+		if child, ok := n.Children[branch]; ok {
 			return child.Filter(inst, n, branch)
 		}
 		return nil, n, branch
@@ -222,20 +216,20 @@ func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex in
 
 func (n *splitNode) ReadInfo(depth int, info *TreeInfo) {
 	info.NumNodes++
-	for _, child := range n.children {
+	for _, child := range n.Children {
 		child.ReadInfo(depth+1, info)
 	}
 }
 
 func (n *splitNode) WriteGraph(w *bufio.Writer, nodeName string) error {
-	if _, err := fmt.Fprintf(w, "  %s [label=%q shape=box];\n", nodeName, n.condition.Predictor().Name); err != nil {
+	if _, err := fmt.Fprintf(w, "  %s [label=%q shape=box];\n", nodeName, n.Condition.Predictor().Name); err != nil {
 		return err
 	}
 
-	for i, child := range n.children {
+	for i, child := range n.Children {
 		subName := fmt.Sprintf("%s_%d", nodeName, i)
 
-		if _, err := fmt.Fprintf(w, "  %s -> %s [label=%q];\n", nodeName, subName, n.condition.Describe(i)); err != nil {
+		if _, err := fmt.Fprintf(w, "  %s -> %s [label=%q];\n", nodeName, subName, n.Condition.Describe(i)); err != nil {
 			return err
 		}
 		if err := child.WriteGraph(w, subName); err != nil {
@@ -246,14 +240,14 @@ func (n *splitNode) WriteGraph(w *bufio.Writer, nodeName string) error {
 }
 
 func (n *splitNode) WriteText(w *bufio.Writer, indent string) error {
-	if _, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n", n.Predict().Top().Value.Value(), n.stats.TotalWeight()); err != nil {
+	if _, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n", n.Predict().Top().Value.Value(), n.Stats.TotalWeight()); err != nil {
 		return err
 	}
 
-	name := n.condition.Predictor().Name
+	name := n.Condition.Predictor().Name
 	sind := indent + "\t"
-	for i, child := range n.children {
-		if _, err := fmt.Fprintf(w, "%s%s %q", indent, name, n.condition.Describe(i)); err != nil {
+	for i, child := range n.Children {
+		if _, err := fmt.Fprintf(w, "%s%s %q", indent, name, n.Condition.Describe(i)); err != nil {
 			return err
 		}
 
@@ -264,10 +258,10 @@ func (n *splitNode) WriteText(w *bufio.Writer, indent string) error {
 	return nil
 }
 
-func (n *splitNode) SetChild(branch int, child treeNode) { n.children[branch] = child }
+func (n *splitNode) SetChild(branch int, child treeNode) { n.Children[branch] = child }
 
 func (n *splitNode) FindLeaves(acc leafNodeSlice) leafNodeSlice {
-	for _, c := range n.children {
+	for _, c := range n.Children {
 		acc = c.FindLeaves(acc)
 	}
 	return acc

@@ -1,18 +1,17 @@
 package util
 
 import (
+	"bytes"
 	"encoding/gob"
 	"math"
 
 	"github.com/bsm/reason/internal/calc"
 )
 
-func init() {
-	gob.Register(NumSeries{})
-}
-
 // NumSeries maintains information about a series of (weighted) numeric data
 type NumSeries struct{ weight, sum, sumSquares float64 }
+
+type numSeriesSnapshot struct{ Weight, Sum, SumSquares float64 }
 
 // Append adds a new value to the series, with a weight
 func (s *NumSeries) Append(value, weight float64) {
@@ -105,12 +104,44 @@ func (s *NumSeries) Estimate(value float64) (lessThan float64, equalTo float64, 
 	return
 }
 
+// GobEncode implements gob.GobEncoder
+func (s *NumSeries) GobEncode() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(s.snapshot()); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder
+func (s *NumSeries) GobDecode(b []byte) error {
+	var snap numSeriesSnapshot
+	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&snap); err != nil {
+		return err
+	}
+
+	*s = NumSeries{
+		weight:     snap.Weight,
+		sum:        snap.Sum,
+		sumSquares: snap.SumSquares,
+	}
+	return nil
+}
+
+func (s *NumSeries) snapshot() numSeriesSnapshot {
+	return numSeriesSnapshot{
+		Weight:     s.weight,
+		Sum:        s.sum,
+		SumSquares: s.sumSquares,
+	}
+}
+
 // --------------------------------------------------------------------
 
-const numSeriesDistributionBaseSize = 8 * (sizeOfInt + 25)
+const numSeriesDistributionBaseSize = 8 * (sizeOfInt + 33)
 
 // NumSeriesDistribution is a distribution of series
-type NumSeriesDistribution map[int]NumSeries
+type NumSeriesDistribution map[int]*NumSeries
 
 // NewNumSeriesDistribution creates a new series distribution
 func NewNumSeriesDistribution() NumSeriesDistribution {
@@ -139,7 +170,7 @@ func (m NumSeriesDistribution) TotalWeight() float64 {
 func (m NumSeriesDistribution) Get(index int) *NumSeries {
 	if index > -1 {
 		if s, ok := m[index]; ok {
-			return &s
+			return s
 		}
 	}
 	return nil
@@ -147,9 +178,12 @@ func (m NumSeriesDistribution) Get(index int) *NumSeries {
 
 // Append appends a value at index
 func (m NumSeriesDistribution) Append(index int, value, weight float64) {
-	s := m[index]
+	s, ok := m[index]
+	if !ok {
+		s = new(NumSeries)
+		m[index] = s
+	}
 	s.Append(value, weight)
-	m[index] = s
 }
 
 // ByteSize estimates the required heap-size

@@ -1,6 +1,9 @@
 package helpers
 
 import (
+	"bytes"
+	"encoding/gob"
+
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 
@@ -23,6 +26,17 @@ var _ = Describe("SplitCondition", func() {
 			Expect(subject.Branch(core.MapInstance{"outlook": nil})).To(Equal(-1))
 		})
 
+		It("should gob marshal/unmarshal", func() {
+			buf := new(bytes.Buffer)
+			err := gob.NewEncoder(buf).Encode(&subject)
+			Expect(err).NotTo(HaveOccurred())
+
+			var out SplitCondition
+			err = gob.NewDecoder(buf).Decode(&out)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(subject))
+		})
+
 	})
 
 	Describe("numericBinarySplitCondition", func() {
@@ -30,10 +44,7 @@ var _ = Describe("SplitCondition", func() {
 		model := testdata.RegressionModel()
 
 		BeforeEach(func() {
-			subject = &numericBinarySplitCondition{
-				predictor:  model.Attribute("hours"),
-				splitValue: 25,
-			}
+			subject = NewNumericBinarySplitCondition(model.Attribute("hours"), 25)
 		})
 
 		It("should calculate branch", func() {
@@ -41,6 +52,17 @@ var _ = Describe("SplitCondition", func() {
 			Expect(subject.Branch(core.MapInstance{"hours": 25})).To(Equal(0))
 			Expect(subject.Branch(core.MapInstance{"hours": 26})).To(Equal(1))
 			Expect(subject.Branch(core.MapInstance{"hours": nil})).To(Equal(-1))
+		})
+
+		It("should gob marshal/unmarshal", func() {
+			buf := new(bytes.Buffer)
+			err := gob.NewEncoder(buf).Encode(&subject)
+			Expect(err).NotTo(HaveOccurred())
+
+			var out SplitCondition
+			err = gob.NewDecoder(buf).Decode(&out)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(subject))
 		})
 
 	})

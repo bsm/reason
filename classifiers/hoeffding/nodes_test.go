@@ -1,6 +1,9 @@
 package hoeffding
 
 import (
+	"bytes"
+	"encoding/gob"
+
 	"github.com/bsm/reason/classifiers/internal/helpers"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
@@ -24,19 +27,19 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should init", func() {
-			Expect(subject.weightOnLastEval).To(Equal(0.0))
+			Expect(subject.WeightOnLastEval).To(Equal(0.0))
 
-			leaf := newLeafNode(subject.stats)
-			Expect(leaf.weightOnLastEval).To(Equal(14.0))
+			leaf := newLeafNode(subject.Stats)
+			Expect(leaf.WeightOnLastEval).To(Equal(14.0))
 		})
 
 		It("should learn", func() {
-			Expect(subject.stats.State()).To(ConsistOf(core.Prediction{
+			Expect(subject.Stats.State()).To(ConsistOf(core.Prediction{
 				{Value: 0, Votes: 9},
 				{Value: 1, Votes: 5},
 			}))
-			Expect(subject.weightOnLastEval).To(Equal(0.0))
-			Expect(subject.observers).To(HaveLen(4))
+			Expect(subject.WeightOnLastEval).To(Equal(0.0))
+			Expect(subject.Observers).To(HaveLen(4))
 		})
 
 		It("should estimate heap-size", func() {
@@ -53,6 +56,18 @@ var _ = Describe("leafNode", func() {
 			Expect(splits[0].Merit()).To(BeNumerically("~", 0.247, 0.001))
 			Expect(splits[0].Condition().Predictor().Name).To(Equal("outlook"))
 		})
+
+		It("should gob marshal/unmarshal", func() {
+			buf := new(bytes.Buffer)
+			err := gob.NewEncoder(buf).Encode(subject)
+			Expect(err).NotTo(HaveOccurred())
+
+			var out *leafNode
+			err = gob.NewDecoder(buf).Decode(&out)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(subject))
+		})
+
 	})
 
 	Describe("regression", func() {
@@ -68,23 +83,23 @@ var _ = Describe("leafNode", func() {
 		})
 
 		It("should init", func() {
-			Expect(subject.weightOnLastEval).To(Equal(0.0))
+			Expect(subject.WeightOnLastEval).To(Equal(0.0))
 
-			leaf := newLeafNode(subject.stats)
-			Expect(leaf.weightOnLastEval).To(Equal(14.0))
+			leaf := newLeafNode(subject.Stats)
+			Expect(leaf.WeightOnLastEval).To(Equal(14.0))
 		})
 
 		It("should learn", func() {
-			state := subject.stats.State()
+			state := subject.Stats.State()
 			Expect(state).To(HaveLen(1))
 			Expect(state[0].Votes).To(Equal(14.0))
 			Expect(state[0].Value.Value()).To(BeNumerically("~", 39.8, 0.1))
-			Expect(subject.weightOnLastEval).To(Equal(0.0))
-			Expect(subject.observers).To(HaveLen(4))
+			Expect(subject.WeightOnLastEval).To(Equal(0.0))
+			Expect(subject.Observers).To(HaveLen(4))
 		})
 
 		It("should estimate heap-size", func() {
-			Expect(subject.ByteSize()).To(BeNumerically("~", 3000, 20))
+			Expect(subject.ByteSize()).To(BeNumerically("~", 3640, 20))
 		})
 
 		It("should calc promise split", func() {
@@ -115,11 +130,22 @@ var _ = Describe("splitNode", func() {
 	})
 
 	It("should initialize", func() {
-		Expect(subject.children).To(HaveLen(2))
+		Expect(subject.Children).To(HaveLen(2))
 	})
 
 	It("should find leaves", func() {
 		Expect(subject.FindLeaves(nil)).To(HaveLen(2))
+	})
+
+	It("should gob marshal/unmarshal", func() {
+		buf := new(bytes.Buffer)
+		err := gob.NewEncoder(buf).Encode(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		var out *splitNode
+		err = gob.NewDecoder(buf).Decode(&out)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal(subject))
 	})
 
 })

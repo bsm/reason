@@ -63,13 +63,13 @@ var _ = Describe("ObservationStats", func() {
 			Expect(split.Merit()).To(BeNumerically("~", 0.247, 0.001))
 		})
 
-		It("should marshal/unmarshal", func() {
+		It("should gob marshal/unmarshal", func() {
 			buf := new(bytes.Buffer)
-			err := gob.NewEncoder(buf).Encode(subject)
+			err := gob.NewEncoder(buf).Encode(&subject)
 			Expect(err).NotTo(HaveOccurred())
 
 			var out ObservationStats
-			err = gob.NewDecoder(buf).Decode(out)
+			err = gob.NewDecoder(buf).Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})
@@ -124,6 +124,17 @@ var _ = Describe("ObservationStats", func() {
 
 			split := subject.BestSplit(classifiers.VarReductionSplitCriterion{}, obs, predictor)
 			Expect(split.Merit()).To(BeNumerically("~", 19.572, 0.001))
+		})
+
+		It("should gob marshal/unmarshal", func() {
+			buf := new(bytes.Buffer)
+			err := gob.NewEncoder(buf).Encode(&subject)
+			Expect(err).NotTo(HaveOccurred())
+
+			var out ObservationStats
+			err = gob.NewDecoder(buf).Decode(&out)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(subject))
 		})
 
 	})

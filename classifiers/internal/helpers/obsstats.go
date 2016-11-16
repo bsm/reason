@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	gob.Register(obsCStats{})
-	gob.Register(obsRStats{})
+	gob.Register((*obsCStats)(nil))
+	gob.Register((*obsRStats)(nil))
 }
 
 // ObservationStats stats are used to maintain sufficient
@@ -54,7 +54,7 @@ func newCObservationStatsDist(postSplit util.VectorDistribution) map[int]Observa
 }
 
 func newRObservationStats(preSplit *util.NumSeries) ObservationStats {
-	return &obsRStats{PreSplit: *preSplit}
+	return &obsRStats{PreSplit: preSplit}
 }
 
 func newRObservationStatsDist(postSplit util.NumSeriesDistribution) map[int]ObservationStats {
@@ -119,11 +119,11 @@ func (s *obsCStats) State() core.Prediction {
 // --------------------------------------------------------------------
 
 type obsRStats struct {
-	PreSplit util.NumSeries
+	PreSplit *util.NumSeries
 }
 
 func newObsRStats() *obsRStats {
-	return &obsRStats{}
+	return &obsRStats{PreSplit: new(util.NumSeries)}
 }
 
 func (s *obsRStats) ByteSize() int        { return 40 }
@@ -149,5 +149,5 @@ func (s *obsRStats) State() core.Prediction {
 }
 
 func (s *obsRStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {
-	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), predictor, &s.PreSplit)
+	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), predictor, s.PreSplit)
 }
