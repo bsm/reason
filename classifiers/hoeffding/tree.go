@@ -76,15 +76,6 @@ func (t *Tree) SetConfig(conf *Config) {
 	t.mu.Unlock()
 }
 
-// ByteSize estimates the memory required to store the tree
-func (t *Tree) ByteSize() int {
-	t.mu.RLock()
-	byteSize := t.root.ByteSize()
-	t.mu.RUnlock()
-
-	return byteSize
-}
-
 // Info returns information about the tree
 func (t *Tree) Info() *TreeInfo {
 	info := new(TreeInfo)
@@ -159,9 +150,9 @@ func (t *Tree) Train(inst core.Instance) {
 	if leaf, ok := node.(*leafNode); ok {
 		leaf.Learn(inst, t)
 
-		if t.cycles++; t.cycles%int64(t.conf.PrunePeriod) == 0 {
-			if byteSize := t.root.ByteSize(); byteSize >= t.conf.MemTarget*2 {
-				t.prune(byteSize)
+		if t.conf.PrunePeriod > 0 {
+			if t.cycles++; t.cycles%int64(t.conf.PrunePeriod) == 0 {
+				t.prune()
 			}
 		}
 
@@ -287,24 +278,43 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 	return nil, trace
 }
 
-func (t *Tree) prune(byteSize int) {
+func (t *Tree) prune() {
+	byteSize := t.root.ByteSize()
+	if byteSize <= t.conf.PruneMemTarget {
+		return
+	}
+
 	t.leaves = t.root.FindLeaves(t.leaves[:0])
-	sort.Sort(sort.Reverse(t.leaves))
+	sort.Sort(t.leaves)
 
-	target := t.conf.MemTarget
-	piv := 0
-	for ; piv < len(t.leaves); piv++ {
-		if n := t.leaves[piv]; !n.IsInactive {
-			byteSize -= n.ByteSize()
-			n.Deactivate()
+	piv := len(t.leaves)
+	for i, leaf := range t.leaves {
+		if leaf.IsInactive {
+			continue
+		}
 
-			if byteSize <= target {
-				break
-			}
+		byteSize -= leaf.ByteSize()
+		leaf.Deactivate()
+
+		if byteSize <= t.conf.PruneMemTarget {
+			piv = i
+			break
 		}
 	}
 
-	for ; piv < len(t.leaves); piv++ {
-		t.leaves[piv].Activate()
+	for _, leaf := range t.leaves[piv:] {
+		if leaf.IsInactive {
+			leaf.Activate()
+			byteSize += leaf.ByteSize()
+		}
+	}
+
+	for _, leaf := range t.leaves[piv:] {
+		byteSize -= leaf.ByteSize()
+		leaf.Deactivate()
+
+		if byteSize <= t.conf.PruneMemTarget {
+			break
+		}
 	}
 }
