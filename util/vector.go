@@ -1,14 +1,13 @@
 package util
 
 import (
-	"bytes"
-	"encoding/gob"
 	"math"
+
+	"github.com/bsm/reason/internal/coder"
 )
 
 func init() {
-	gob.Register((*DenseVector)(nil))
-	gob.Register((SparseVector)(nil))
+	coder.Register((*DenseVector)(nil))
 }
 
 // Vector interface represents number vectors
@@ -400,25 +399,8 @@ func (x *DenseVector) ByteSize() int {
 	return 24 + cap(x.vv)*8
 }
 
-// GobEncode implements gob.GobEncoder
-func (x *DenseVector) GobEncode() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(x.vv); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// GobDecode implements gob.GobDecoder
-func (x *DenseVector) GobDecode(b []byte) error {
-	var vv []float64
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&vv); err != nil {
-		return err
-	}
-
-	*x = DenseVector{vv: vv}
-	return nil
-}
+func (x *DenseVector) EncodeTo(enc *coder.Encoder) error   { return enc.Encode(x.vv) }
+func (x *DenseVector) DecodeFrom(dec *coder.Decoder) error { return dec.Decode(&x.vv) }
 
 // converts the vector to a sparse one
 // func (x *DenseVector) convertToSparse() SparseVector {
