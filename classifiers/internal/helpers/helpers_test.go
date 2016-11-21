@@ -2,9 +2,9 @@ package helpers
 
 import (
 	"bytes"
-	"encoding/gob"
 	"testing"
 
+	"github.com/bsm/reason/internal/msgpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -25,14 +25,16 @@ var _ = Describe("MinMaxRange", func() {
 		Expect(r).To(Equal(&MinMaxRange{Min: 2, Max: 6}))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		subject := &MinMaxRange{Min: 1, Max: 5}
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out *MinMaxRange
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
@@ -61,13 +63,15 @@ var _ = Describe("MinMaxRanges", func() {
 		Expect(subject.SplitPoints(30)).To(HaveLen(30))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out *MinMaxRanges
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})

@@ -2,9 +2,9 @@ package helpers
 
 import (
 	"bytes"
-	"encoding/gob"
 
 	"github.com/bsm/reason/classifiers"
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -63,13 +63,15 @@ var _ = Describe("ObservationStats", func() {
 			Expect(split.Merit()).To(BeNumerically("~", 0.247, 0.001))
 		})
 
-		It("should gob marshal/unmarshal", func() {
+		It("should encode/decode", func() {
 			buf := new(bytes.Buffer)
-			err := gob.NewEncoder(buf).Encode(&subject)
+			enc := msgpack.NewEncoder(buf)
+			err := enc.Encode(subject)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out ObservationStats
-			err = gob.NewDecoder(buf).Decode(&out)
+			err = msgpack.NewDecoder(buf).Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})
@@ -126,13 +128,15 @@ var _ = Describe("ObservationStats", func() {
 			Expect(split.Merit()).To(BeNumerically("~", 19.572, 0.001))
 		})
 
-		It("should gob marshal/unmarshal", func() {
+		It("should encode/decode", func() {
 			buf := new(bytes.Buffer)
-			err := gob.NewEncoder(buf).Encode(&subject)
+			enc := msgpack.NewEncoder(buf)
+			err := enc.Encode(subject)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out ObservationStats
-			err = gob.NewDecoder(buf).Decode(&out)
+			err = msgpack.NewDecoder(buf).Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})

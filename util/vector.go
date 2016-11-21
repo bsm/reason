@@ -1,14 +1,14 @@
 package util
 
 import (
-	"bytes"
-	"encoding/gob"
 	"math"
+
+	"github.com/bsm/reason/internal/msgpack"
 )
 
 func init() {
-	gob.Register((*DenseVector)(nil))
-	gob.Register((SparseVector)(nil))
+	msgpack.Register(7733, (*DenseVector)(nil))
+	msgpack.Register(7734, (SparseVector)(nil))
 }
 
 // Vector interface represents number vectors
@@ -400,25 +400,13 @@ func (x *DenseVector) ByteSize() int {
 	return 24 + cap(x.vv)*8
 }
 
-// GobEncode implements gob.GobEncoder
-func (x *DenseVector) GobEncode() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(x.vv); err != nil {
-		return nil, err
+func (x *DenseVector) EncodeTo(enc *msgpack.Encoder) error {
+	if x.vv == nil {
+		x.vv = make([]float64, 0)
 	}
-	return buf.Bytes(), nil
+	return enc.Encode(x.vv)
 }
-
-// GobDecode implements gob.GobDecoder
-func (x *DenseVector) GobDecode(b []byte) error {
-	var vv []float64
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&vv); err != nil {
-		return err
-	}
-
-	*x = DenseVector{vv: vv}
-	return nil
-}
+func (x *DenseVector) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&x.vv) }
 
 // converts the vector to a sparse one
 // func (x *DenseVector) convertToSparse() SparseVector {

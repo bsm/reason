@@ -2,12 +2,12 @@ package hoeffding
 
 import (
 	"bufio"
-	"encoding/gob"
 	"fmt"
 	"math"
 
 	"github.com/bsm/reason/classifiers/internal/helpers"
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 )
 
 var (
@@ -16,8 +16,8 @@ var (
 )
 
 func init() {
-	gob.Register((*leafNode)(nil))
-	gob.Register((*splitNode)(nil))
+	msgpack.Register(7748, (*leafNode)(nil))
+	msgpack.Register(7749, (*splitNode)(nil))
 }
 
 type treeNode interface {
@@ -172,6 +172,14 @@ func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
 
 func (n *leafNode) FindLeaves(acc leafNodeSlice) leafNodeSlice { return append(acc, n) }
 
+func (n *leafNode) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(n.Stats, n.Observers, n.WeightOnLastEval, n.IsInactive)
+}
+
+func (n *leafNode) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&n.Stats, &n.Observers, &n.WeightOnLastEval, &n.IsInactive)
+}
+
 // --------------------------------------------------------------------
 
 type splitNode struct {
@@ -265,4 +273,12 @@ func (n *splitNode) FindLeaves(acc leafNodeSlice) leafNodeSlice {
 		acc = c.FindLeaves(acc)
 	}
 	return acc
+}
+
+func (n *splitNode) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(n.Stats, n.Condition, n.Children)
+}
+
+func (n *splitNode) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&n.Stats, &n.Condition, &n.Children)
 }

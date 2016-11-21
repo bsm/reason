@@ -2,9 +2,9 @@ package util
 
 import (
 	"bytes"
-	"encoding/gob"
 	"math"
 
+	"github.com/bsm/reason/internal/msgpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -107,13 +107,15 @@ var _ = Describe("SparseVector", func() {
 		Expect(subject.Entropy()).To(BeNumerically("~", 1.38, 0.01))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out SparseVector
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
@@ -218,13 +220,15 @@ var _ = Describe("DenseVector", func() {
 		Expect(subject.Entropy()).To(BeNumerically("~", 1.38, 0.01))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
-		var out *DenseVector
-		err = gob.NewDecoder(buf).Decode(&out)
+		out := new(DenseVector)
+		err = msgpack.NewDecoder(buf).Decode(out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
@@ -276,13 +280,15 @@ var _ = Describe("VectorDistribution", func() {
 		}))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
-		var out VectorDistribution
-		err = gob.NewDecoder(buf).Decode(&out)
+		out := make(VectorDistribution)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})

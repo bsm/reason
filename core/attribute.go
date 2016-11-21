@@ -1,12 +1,17 @@
 package core
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"math"
 	"sync"
+
+	"github.com/bsm/reason/internal/msgpack"
 )
+
+func init() {
+	msgpack.Register(7729, (*Attribute)(nil))
+	msgpack.Register(7730, (*AttributeValues)(nil))
+}
 
 const (
 	// This type of attribute represents a floating-point number.
@@ -126,6 +131,32 @@ func (a *Attribute) ValueOf(v InstanceValue) AttributeValue {
 	return MissingValue()
 }
 
+func (a *Attribute) EncodeTo(enc *msgpack.Encoder) error {
+	if err := enc.Encode(a.Name); err != nil {
+		return err
+	}
+	if err := enc.Encode(a.Kind); err != nil {
+		return err
+	}
+	if err := enc.Encode(a.Values); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Attribute) DecodeFrom(dec *msgpack.Decoder) error {
+	if err := dec.Decode(&a.Name); err != nil {
+		return err
+	}
+	if err := dec.Decode(&a.Kind); err != nil {
+		return err
+	}
+	if err := dec.Decode(&a.Values); err != nil {
+		return err
+	}
+	return nil
+}
+
 // --------------------------------------------------------------------
 
 // AttributeValues hold a slice of possible values
@@ -214,25 +245,16 @@ func (v *AttributeValues) IndexOf(s string) int {
 	return n
 }
 
-// GobEncode implements gob.GobEncoder
-func (v *AttributeValues) GobEncode() ([]byte, error) {
+func (v *AttributeValues) EncodeTo(enc *msgpack.Encoder) error {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
 
-	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(v.vi); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return enc.Encode(v.vi)
 }
 
-// GobDecode implements gob.GobDecoder
-func (v *AttributeValues) GobDecode(b []byte) error {
-	var vi map[string]int
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&vi); err != nil {
-		return err
-	}
+func (v *AttributeValues) DecodeFrom(dec *msgpack.Decoder) error {
+	v.mu.Lock()
+	defer v.mu.Unlock()
 
-	*v = AttributeValues{vi: vi}
-	return nil
+	return dec.Decode(&v.vi)
 }

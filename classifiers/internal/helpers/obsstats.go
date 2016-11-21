@@ -1,16 +1,15 @@
 package helpers
 
 import (
-	"encoding/gob"
-
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/util"
 )
 
 func init() {
-	gob.Register((*obsCStats)(nil))
-	gob.Register((*obsRStats)(nil))
+	msgpack.Register(7741, (*obsCStats)(nil))
+	msgpack.Register(7742, (*obsRStats)(nil))
 }
 
 // ObservationStats stats are used to maintain sufficient
@@ -116,6 +115,14 @@ func (s *obsCStats) State() core.Prediction {
 	return p
 }
 
+func (s *obsCStats) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(s.PreSplit)
+}
+
+func (s *obsCStats) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&s.PreSplit)
+}
+
 // --------------------------------------------------------------------
 
 type obsRStats struct {
@@ -150,4 +157,12 @@ func (s *obsRStats) State() core.Prediction {
 
 func (s *obsRStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {
 	return obs.(RObserver).BestSplit(crit.(classifiers.RSplitCriterion), predictor, s.PreSplit)
+}
+
+func (s *obsRStats) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(s.PreSplit)
+}
+
+func (s *obsRStats) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&s.PreSplit)
 }

@@ -2,10 +2,10 @@ package helpers
 
 import (
 	"bytes"
-	"encoding/gob"
 
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/testdata"
 	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
@@ -34,13 +34,15 @@ var _ = Describe("nominalCObserver", func() {
 		Expect(o.ByteSize()).To(BeNumerically("~", 190, 20))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(&subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out CObserver
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
@@ -183,17 +185,18 @@ var _ = Describe("gaussianCObserver", func() {
 		}))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(&subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out CObserver
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
-
 })
 
 var _ = Describe("nominalRObserver", func() {
@@ -254,17 +257,18 @@ var _ = Describe("nominalRObserver", func() {
 		)).To(BeNil())
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(&subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out RObserver
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
-
 })
 
 var _ = Describe("gaussianRObserver", func() {
@@ -320,15 +324,16 @@ var _ = Describe("gaussianRObserver", func() {
 		Expect(s.Condition().(*numericBinarySplitCondition).SplitValue).To(Equal(1.7))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(&subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out RObserver
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
-
 })

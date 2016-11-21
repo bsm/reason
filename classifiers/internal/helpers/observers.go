@@ -1,18 +1,17 @@
 package helpers
 
 import (
-	"encoding/gob"
-
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/util"
 )
 
 func init() {
-	gob.Register((*nominalCObserver)(nil))
-	gob.Register((*gaussianCObserver)(nil))
-	gob.Register((*nominalRObserver)(nil))
-	gob.Register((*gaussianRObserver)(nil))
+	msgpack.Register(7737, (*nominalCObserver)(nil))
+	msgpack.Register(7738, (*gaussianCObserver)(nil))
+	msgpack.Register(7739, (*nominalRObserver)(nil))
+	msgpack.Register(7740, (*gaussianRObserver)(nil))
 }
 
 // Observer instances monitor and collect distribution stats
@@ -88,6 +87,9 @@ func (o *nominalCObserver) calcPostSplit(ncols int) util.VectorDistribution {
 	}
 	return m
 }
+
+func (o *nominalCObserver) EncodeTo(enc *msgpack.Encoder) error   { return enc.Encode(o.PostSplit) }
+func (o *nominalCObserver) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&o.PostSplit) }
 
 // NewNumericCObserver uses gaussian estimators to monitor a numeric predictor attribute
 func NewNumericCObserver(numBins int) CObserver {
@@ -167,6 +169,14 @@ func (o *gaussianCObserver) binarySplitOn(splitVal float64) util.VectorDistribut
 	return res
 }
 
+func (o *gaussianCObserver) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(o.NumBins, o.Range, o.PostSplit)
+}
+
+func (o *gaussianCObserver) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&o.NumBins, &o.Range, &o.PostSplit)
+}
+
 // --------------------------------------------------------------------
 
 // RObserver instances monitor stats for predictor attributes in regressions.
@@ -225,6 +235,9 @@ func (o *nominalRObserver) isSplitable() bool {
 	}
 	return false
 }
+
+func (o *nominalRObserver) EncodeTo(enc *msgpack.Encoder) error   { return enc.Encode(o.PostSplit) }
+func (o *nominalRObserver) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&o.PostSplit) }
 
 // NewNumericRObserver uses gaussian estimators to monitor a numeric predictor
 // attribute for a numeric regression target
@@ -290,6 +303,14 @@ func (o *gaussianRObserver) postSplit(pivot float64) util.NumSeriesDistribution 
 		}
 	}
 	return res
+}
+
+func (o *gaussianRObserver) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(o.NumBins, o.Range, o.Observations)
+}
+
+func (o *gaussianRObserver) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&o.NumBins, &o.Range, &o.Observations)
 }
 
 func normMerit(merit float64) float64 {

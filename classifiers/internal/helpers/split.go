@@ -1,11 +1,11 @@
 package helpers
 
 import (
-	"encoding/gob"
 	"fmt"
 	"sort"
 
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 )
 
 // SplitSuggestion is used for computing attribute split
@@ -79,8 +79,8 @@ var (
 )
 
 func init() {
-	gob.Register((*nominalMultiwaySplitCondition)(nil))
-	gob.Register((*numericBinarySplitCondition)(nil))
+	msgpack.Register(7743, (*nominalMultiwaySplitCondition)(nil))
+	msgpack.Register(7744, (*numericBinarySplitCondition)(nil))
 }
 
 type SplitCondition interface {
@@ -115,6 +115,14 @@ func (c *nominalMultiwaySplitCondition) Describe(branch int) string {
 	return ""
 }
 
+func (c *nominalMultiwaySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(c.Attribute)
+}
+
+func (c *nominalMultiwaySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&c.Attribute)
+}
+
 // NewNumericBinarySplitCondition inits a new split-condition
 func NewNumericBinarySplitCondition(predictor *core.Attribute, splitValue float64) SplitCondition {
 	return &numericBinarySplitCondition{
@@ -147,4 +155,12 @@ func (c *numericBinarySplitCondition) Describe(branch int) string {
 		return fmt.Sprintf("> %f", c.SplitValue)
 	}
 	return ""
+}
+
+func (c *numericBinarySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(c.Attribute, c.SplitValue)
+}
+
+func (c *numericBinarySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&c.Attribute, &c.SplitValue)
 }
