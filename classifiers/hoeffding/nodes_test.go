@@ -2,10 +2,10 @@ package hoeffding
 
 import (
 	"bytes"
-	"encoding/gob"
 
 	"github.com/bsm/reason/classifiers/internal/helpers"
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -57,17 +57,18 @@ var _ = Describe("leafNode", func() {
 			Expect(splits[0].Condition().Predictor().Name).To(Equal("outlook"))
 		})
 
-		It("should gob marshal/unmarshal", func() {
+		It("should encode/decode", func() {
 			buf := new(bytes.Buffer)
-			err := gob.NewEncoder(buf).Encode(subject)
+			enc := msgpack.NewEncoder(buf)
+			err := enc.Encode(subject)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out *leafNode
-			err = gob.NewDecoder(buf).Decode(&out)
+			err = msgpack.NewDecoder(buf).Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})
-
 	})
 
 	Describe("regression", func() {
@@ -137,13 +138,15 @@ var _ = Describe("splitNode", func() {
 		Expect(subject.FindLeaves(nil)).To(HaveLen(2))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out *splitNode
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})

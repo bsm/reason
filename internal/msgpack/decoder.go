@@ -17,9 +17,14 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{r: bufio.NewReader(r)}
 }
 
-// Decode decodes a value into an interface
-func (d *Decoder) Decode(v interface{}) error {
-	return d.DecodeValue(reflect.ValueOf(v))
+// Decode decodes values
+func (d *Decoder) Decode(vv ...interface{}) error {
+	for _, v := range vv {
+		if err := d.DecodeValue(reflect.ValueOf(v)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Decode decodes a value
@@ -32,7 +37,12 @@ func (d *Decoder) DecodeValue(rv reflect.Value) error {
 	if err != nil {
 		return err
 	}
+	return d.decodeValue(rv, customType)
+}
 
+// --------------------------------------------------------------------
+
+func (d *Decoder) decodeValue(rv reflect.Value, customType reflect.Type) error {
 	elem := rv.Elem()
 
 	switch elem.Kind() {
@@ -79,24 +89,20 @@ func (d *Decoder) DecodeValue(rv reflect.Value) error {
 		}
 		return nil
 	case reflect.Slice, reflect.Array:
-		if elem.Type() == sliceOfBytes {
-			if b, err := d.readBytes(); err != nil {
-				return err
-			} else {
-				elem.SetBytes(b)
-			}
-			return nil
-		} else {
+		if elem.Type() != sliceOfBytes {
 			return d.decodeSlice(elem)
 		}
+		if b, err := d.readBytes(); err != nil {
+			return err
+		} else {
+			elem.SetBytes(b)
+		}
+		return nil
 	case reflect.Map:
 		return d.decodeMap(elem)
 	case reflect.Struct:
 		if vv, ok := rv.Interface().(Decodable); ok {
-			if err := vv.DecodeFrom(d); err != nil {
-				return err
-			}
-			return nil
+			return vv.DecodeFrom(d)
 		}
 	case reflect.Ptr:
 		if isNil, err := d.isNil(); isNil || err != nil {
@@ -111,20 +117,30 @@ func (d *Decoder) DecodeValue(rv reflect.Value) error {
 			elem.Set(x)
 			return nil
 		}
+	case reflect.Interface:
+		if customType != nil {
+			if !customType.AssignableTo(elem.Type()) {
+				return fmt.Errorf("msgpack: %q is does not implement %q", customType, elem.Type())
+			}
+
+			cp := reflect.New(customType)
+			if err := d.decodeValue(cp, customType); err != nil {
+				return err
+			}
+			elem.Set(cp.Elem())
+			return nil
+		}
 	}
 
-	_ = customType
 	return errTypeNotSupported(elem.Type())
 }
-
-// --------------------------------------------------------------------
 
 func (d *Decoder) readFloat64() (float64, error) {
 	p, err := d.r.ReadByte()
 	if err != nil {
 		return 0, err
 	} else if p != mfloat64 {
-		return 0, errBadPrefix(p)
+		return 0, errBadPrefix(p, "float64")
 	}
 	b, err := d.read(8)
 	if err != nil {
@@ -138,7 +154,7 @@ func (d *Decoder) readFloat32() (float32, error) {
 	if err != nil {
 		return 0, err
 	} else if p != mfloat32 {
-		return 0, errBadPrefix(p)
+		return 0, errBadPrefix(p, "float32")
 	}
 	b, err := d.read(4)
 	if err != nil {
@@ -188,7 +204,7 @@ func (d *Decoder) readInt64() (int64, error) {
 			int64(b[4])<<24 | int64(b[5])<<16 |
 			int64(b[6])<<8 | int64(b[7]), nil
 	}
-	return 0, errBadPrefix(p)
+	return 0, errBadPrefix(p, "uint")
 }
 
 func (d *Decoder) readUint64() (uint64, error) {
@@ -227,7 +243,7 @@ func (d *Decoder) readUint64() (uint64, error) {
 		}
 		return bigEndian.Uint64(b), nil
 	}
-	return 0, errBadPrefix(p)
+	return 0, errBadPrefix(p, "int")
 }
 
 func (d *Decoder) readString() (string, error) {
@@ -260,7 +276,7 @@ func (d *Decoder) readString() (string, error) {
 			}
 			n = int(bigEndian.Uint32(b))
 		default:
-			return "", errBadPrefix(p)
+			return "", errBadPrefix(p, "string")
 		}
 	}
 
@@ -300,7 +316,7 @@ func (d *Decoder) readBytes() ([]byte, error) {
 		}
 		n = int(bigEndian.Uint32(b))
 	default:
-		return nil, errBadPrefix(p)
+		return nil, errBadPrefix(p, "[]byte")
 	}
 
 	b, err := d.read(n)
@@ -382,7 +398,7 @@ func (d *Decoder) readSliceSize() (int, error) {
 		}
 		return int(bigEndian.Uint32(b)), nil
 	}
-	return 0, errBadPrefix(p)
+	return 0, errBadPrefix(p, "slice header")
 }
 
 func (d *Decoder) readMapSize() (int, error) {
@@ -412,7 +428,7 @@ func (d *Decoder) readMapSize() (int, error) {
 		}
 		return int(bigEndian.Uint32(b)), nil
 	}
-	return 0, errBadPrefix(p)
+	return 0, errBadPrefix(p, "map header")
 }
 
 func (d *Decoder) readBool() (bool, error) {
@@ -427,7 +443,7 @@ func (d *Decoder) readBool() (bool, error) {
 	case mfalse:
 		return false, nil
 	}
-	return false, errBadPrefix(p)
+	return false, errBadPrefix(p, "bool")
 }
 
 func (d *Decoder) read(n int) ([]byte, error) {
@@ -453,22 +469,25 @@ func (d *Decoder) isNil() (bool, error) {
 }
 
 func (d *Decoder) readCustomType() (reflect.Type, error) {
-	b, err := d.r.Peek(3)
-	if err != nil || b[0] != mext8 || int8(b[2]) != customExtType {
+	b, err := d.r.Peek(4)
+	if err == io.EOF {
 		return nil, nil // ignore errors
-	}
-	if _, err := d.r.Discard(3); err != nil {
+	} else if err != nil {
 		return nil, err
 	}
 
-	name, err := d.read(int(b[1]))
-	if err != nil {
+	if b[0] != mfixext2 || int8(b[1]) != customExtType {
+		return nil, nil
+	}
+
+	if _, err := d.r.Discard(4); err != nil {
 		return nil, err
 	}
 
-	rt, ok := concreteTypeByName(string(name))
+	code := bigEndian.Uint16(b[2:])
+	rt, ok := concreteTypeByCode(code)
 	if !ok {
-		return nil, errTypeNotRegistered(string(name))
+		return nil, errCodeNotRegistered(code)
 	}
 	return rt, nil
 }

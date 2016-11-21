@@ -22,9 +22,14 @@ func (e *Encoder) Close() error {
 	return e.w.Flush()
 }
 
-// Encode writes a value
-func (e *Encoder) Encode(v interface{}) error {
-	return e.EncodeValue(reflect.ValueOf(v))
+// Encode writes values
+func (e *Encoder) Encode(vv ...interface{}) error {
+	for _, v := range vv {
+		if err := e.EncodeValue(reflect.ValueOf(v)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // EncodeValue writes a value
@@ -33,9 +38,9 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 		return e.EncodeValue(v.Elem())
 	}
 
-	typeName, isCustomType := concreteNameByType(v.Type())
+	code, isCustomType := concreteCodeByType(v.Type())
 	if isCustomType {
-		if err := e.writeTypeName(typeName); err != nil {
+		if err := e.writeTypeCode(code); err != nil {
 			return err
 		}
 	}
@@ -62,7 +67,7 @@ func (e *Encoder) EncodeValue(v reflect.Value) error {
 	switch vv := v.Interface().(type) {
 	case Encodable:
 		if !isCustomType {
-			return errTypeNotRegistered(v.Type().String())
+			return errTypeNotRegistered(v.Type())
 		}
 		if v.Kind() == reflect.Ptr && v.IsNil() {
 			return e.writeNil()
@@ -192,15 +197,14 @@ func (e *Encoder) writeBool(b bool) error {
 	return e.push(mfalse)
 }
 
-func (e *Encoder) writeTypeName(name string) error {
-	if err := e.prefix8(mext8, uint8(len(name))); err != nil {
+func (e *Encoder) writeTypeCode(code uint16) error {
+	if err := e.w.WriteByte(byte(mfixext2)); err != nil {
 		return err
 	}
 	if err := e.w.WriteByte(byte(customExtType)); err != nil {
 		return err
 	}
-	_, err := e.w.WriteString(name)
-	return err
+	return e.uint16(code)
 }
 
 func (e *Encoder) writeSlice(v reflect.Value) (err error) {

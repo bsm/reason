@@ -2,7 +2,8 @@ package core
 
 import (
 	"bytes"
-	"encoding/gob"
+
+	"github.com/bsm/reason/internal/msgpack"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -37,13 +38,15 @@ var _ = Describe("Model", func() {
 		Expect(subject.Predictor("humidity").Name).To(Equal("humidity"))
 	})
 
-	It("should gob marshal/unmarshal", func() {
+	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		err := gob.NewEncoder(buf).Encode(subject)
+		enc := msgpack.NewEncoder(buf)
+		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out *Model
-		err = gob.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})

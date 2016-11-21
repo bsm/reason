@@ -9,9 +9,9 @@ import (
 )
 
 func init() {
-	Register((*mockSliceType)(nil))
-	Register((mockSetType)(nil))
-	Register(mockNone{})
+	Register(111, (*mockSliceType)(nil))
+	Register(112, (mockSetType)(nil))
+	Register(113, mockNone{})
 }
 
 type mockInterface interface {

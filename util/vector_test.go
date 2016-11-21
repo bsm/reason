@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"math"
 
-	"github.com/bsm/reason/internal/coder"
+	"github.com/bsm/reason/internal/msgpack"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -109,13 +109,13 @@ var _ = Describe("SparseVector", func() {
 
 	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		enc := coder.NewEncoder(buf)
+		enc := msgpack.NewEncoder(buf)
 		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out SparseVector
-		err = coder.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
@@ -222,13 +222,13 @@ var _ = Describe("DenseVector", func() {
 
 	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		enc := coder.NewEncoder(buf)
+		enc := msgpack.NewEncoder(buf)
 		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		out := new(DenseVector)
-		err = coder.NewDecoder(buf).Decode(out)
+		err = msgpack.NewDecoder(buf).Decode(out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})
@@ -282,13 +282,13 @@ var _ = Describe("VectorDistribution", func() {
 
 	It("should encode/decode", func() {
 		buf := new(bytes.Buffer)
-		enc := coder.NewEncoder(buf)
+		enc := msgpack.NewEncoder(buf)
 		err := enc.Encode(subject)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		out := make(VectorDistribution)
-		err = coder.NewDecoder(buf).Decode(&out)
+		err = msgpack.NewDecoder(buf).Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})

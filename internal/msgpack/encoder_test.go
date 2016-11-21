@@ -44,8 +44,8 @@ var _ = Describe("Encode", func() {
 
 		exp := []byte{
 			mnil,
-			mext8, 19, 8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'e', 't', 'T', 'y', 'p', 'e', mnil,
-			mext8, 22, 8, '*', 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'l', 'i', 'c', 'e', 'T', 'y', 'p', 'e', mnil,
+			mfixext2, 8, 0x0, 112, mnil,
+			mfixext2, 8, 0x0, 111, mnil,
 		}
 		Expect(buf.Bytes()).To(Equal(exp), "expected: %#v\ngot:      %#v", exp, buf.Bytes())
 	})
@@ -65,21 +65,13 @@ var _ = Describe("Encode", func() {
 		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		exp := []byte{
-			mext8, 22, 8, '*', 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'l', 'i', 'c', 'e', 'T', 'y', 'p', 'e',
-			mfixarray + 2, 4, 5,
-
-			mext8, 19, 8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'e', 't', 'T', 'y', 'p', 'e',
-			mfixmap + 1, 6, mext8, 16, 8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'N', 'o', 'n', 'e',
-
-			mfixmap + 1, 5,
-			mext8, 22, 8, '*', 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'l', 'i', 'c', 'e', 'T', 'y', 'p', 'e',
-			mfixarray + 1, 9,
+			mfixext2, 8, 0x0, 111, mfixarray + 2, 4, 5,
+			mfixext2, 8, 0x0, 112, mfixmap + 1, 6, mfixext2, 8, 0x0, 113,
+			mfixmap + 1, 5, mfixext2, 8, 0x0, 111, mfixarray + 1, 9,
 
 			mfixarray + 2,
-			mext8, 19, 8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'e', 't', 'T', 'y', 'p', 'e',
-			mfixmap + 1, 8, mext8, 16, 8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'N', 'o', 'n', 'e',
-			mext8, 22, 8, '*', 'm', 's', 'g', 'p', 'a', 'c', 'k', '.', 'm', 'o', 'c', 'k', 'S', 'l', 'i', 'c', 'e', 'T', 'y', 'p', 'e',
-			mfixarray + 1, 9,
+			mfixext2, 8, 0x0, 112, mfixmap + 1, 8, mfixext2, 8, 0x0, 113,
+			mfixext2, 8, 0x0, 0x6f, mfixarray + 1, 9,
 		}
 		Expect(buf.Bytes()).To(Equal(exp), "expected: %#v\ngot:      %#v", exp, buf.Bytes())
 	})

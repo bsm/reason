@@ -44,7 +44,7 @@ var _ = Describe("Tree", func() {
 
 		info, err := file.Stat()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(info.Size()).To(BeNumerically("~", 3600, 20))
+		Expect(info.Size()).To(BeNumerically("~", 1440, 20))
 
 		tree2, err := Load(file, nil)
 		Expect(err).NotTo(HaveOccurred())

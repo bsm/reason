@@ -1,20 +1,16 @@
 package core
 
-import (
-	"bytes"
-	"encoding/gob"
-)
+import "github.com/bsm/reason/internal/msgpack"
+
+func init() {
+	msgpack.Register(7731, (*Model)(nil))
+}
 
 // Model represents a model of a domain with specific attributes
 type Model struct {
 	target     *Attribute
 	predictors []*Attribute
 	lookup     map[string]int
-}
-
-type modelSnapshot struct {
-	Target     *Attribute
-	Predictors []*Attribute
 }
 
 // NewModel creates a new model with attributes
@@ -60,28 +56,13 @@ func (m *Model) IsClassification() bool { return m.target.IsNominal() }
 // IsRegression returns true if the target is a numeric value
 func (m *Model) IsRegression() bool { return m.target.IsNumeric() }
 
-// GobEncode implements gob.GobEncoder
-func (m *Model) GobEncode() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(modelSnapshot{
-		Target:     m.target,
-		Predictors: m.predictors,
-	}); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+func (m *Model) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(m.target, m.predictors)
 }
 
-// GobDecode implements gob.GobDecoder
-func (m *Model) GobDecode(b []byte) error {
-	var snap modelSnapshot
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&snap); err != nil {
+func (m *Model) DecodeFrom(dec *msgpack.Decoder) error {
+	if err := dec.Decode(&m.target, &m.predictors); err != nil {
 		return err
-	}
-
-	*m = Model{
-		target:     snap.Target,
-		predictors: snap.Predictors,
 	}
 	m.postInit()
 	return nil

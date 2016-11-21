@@ -2,9 +2,9 @@ package helpers
 
 import (
 	"bytes"
-	"encoding/gob"
 
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/testdata"
 
 	. "github.com/onsi/ginkgo"
@@ -26,13 +26,15 @@ var _ = Describe("SplitCondition", func() {
 			Expect(subject.Branch(core.MapInstance{"outlook": nil})).To(Equal(-1))
 		})
 
-		It("should gob marshal/unmarshal", func() {
+		It("should encode/decode", func() {
 			buf := new(bytes.Buffer)
-			err := gob.NewEncoder(buf).Encode(&subject)
+			enc := msgpack.NewEncoder(buf)
+			err := enc.Encode(subject)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out SplitCondition
-			err = gob.NewDecoder(buf).Decode(&out)
+			err = msgpack.NewDecoder(buf).Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})
@@ -54,17 +56,18 @@ var _ = Describe("SplitCondition", func() {
 			Expect(subject.Branch(core.MapInstance{"hours": nil})).To(Equal(-1))
 		})
 
-		It("should gob marshal/unmarshal", func() {
+		It("should encode/decode", func() {
 			buf := new(bytes.Buffer)
-			err := gob.NewEncoder(buf).Encode(&subject)
+			enc := msgpack.NewEncoder(buf)
+			err := enc.Encode(subject)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out SplitCondition
-			err = gob.NewDecoder(buf).Decode(&out)
+			err = msgpack.NewDecoder(buf).Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})
-
 	})
 
 })

@@ -3,11 +3,12 @@ package util
 import (
 	"math"
 
-	"github.com/bsm/reason/internal/coder"
+	"github.com/bsm/reason/internal/msgpack"
 )
 
 func init() {
-	coder.Register((*DenseVector)(nil))
+	msgpack.Register(7733, (*DenseVector)(nil))
+	msgpack.Register(7734, (SparseVector)(nil))
 }
 
 // Vector interface represents number vectors
@@ -399,8 +400,13 @@ func (x *DenseVector) ByteSize() int {
 	return 24 + cap(x.vv)*8
 }
 
-func (x *DenseVector) EncodeTo(enc *coder.Encoder) error   { return enc.Encode(x.vv) }
-func (x *DenseVector) DecodeFrom(dec *coder.Decoder) error { return dec.Decode(&x.vv) }
+func (x *DenseVector) EncodeTo(enc *msgpack.Encoder) error {
+	if x.vv == nil {
+		x.vv = make([]float64, 0)
+	}
+	return enc.Encode(x.vv)
+}
+func (x *DenseVector) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&x.vv) }
 
 // converts the vector to a sparse one
 // func (x *DenseVector) convertToSparse() SparseVector {

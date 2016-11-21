@@ -144,12 +144,16 @@ func wfixarray(u uint8) byte {
 	return (u & last4) | mfixarray
 }
 
-func errBadPrefix(p byte) error {
-	return fmt.Errorf("msgpack: unexpected type prefix 0x%x", p)
+func errBadPrefix(p byte, t string) error {
+	return fmt.Errorf("msgpack: unexpected type prefix 0x%x when reading %s", p, t)
 }
 
-func errTypeNotRegistered(s string) error {
-	return fmt.Errorf("msgpack: type %q not registered", s)
+func errTypeNotRegistered(t reflect.Type) error {
+	return fmt.Errorf("msgpack: type %q not registered", t)
+}
+
+func errCodeNotRegistered(code uint16) error {
+	return fmt.Errorf("msgpack: code %d not registered", code)
 }
 
 func errTypeNotSupported(t reflect.Type) error {

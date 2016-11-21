@@ -3,10 +3,25 @@ package helpers
 import (
 	"math"
 
+	"github.com/bsm/reason/internal/msgpack"
 	"github.com/bsm/reason/util"
 )
 
+func init() {
+	msgpack.Register(7735, (*MinMaxRange)(nil))
+	msgpack.Register(7736, (*MinMaxRanges)(nil))
+	msgpack.Register(7746, Observation{})
+}
+
 type Observation struct{ PVal, TVal, Weight float64 }
+
+func (o Observation) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(o.PVal, o.TVal, o.Weight)
+}
+
+func (o *Observation) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&o.PVal, &o.TVal, &o.Weight)
+}
 
 // --------------------------------------------------------------------
 
@@ -51,6 +66,9 @@ func (r *MinMaxRange) Update(v float64) {
 	}
 }
 
+func (r *MinMaxRange) EncodeTo(enc *msgpack.Encoder) error   { return enc.Encode(r.Min, r.Max) }
+func (r *MinMaxRange) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&r.Min, &r.Max) }
+
 // --------------------------------------------------------------------
 
 type MinMaxRanges struct {
@@ -90,3 +108,6 @@ func (m *MinMaxRanges) SplitPoints(n int) []float64 {
 	})
 	return rng.SplitPoints(n)
 }
+
+func (m *MinMaxRanges) EncodeTo(enc *msgpack.Encoder) error   { return enc.Encode(m.Min, m.Max) }
+func (m *MinMaxRanges) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&m.Min, &m.Max) }

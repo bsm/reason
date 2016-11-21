@@ -74,7 +74,7 @@ var _ = Describe("Decoder", func() {
 		Expect(msl).To(BeNil())
 	})
 
-	FIt("should decode custom types", func() {
+	It("should decode custom types", func() {
 		buf := new(bytes.Buffer)
 		enc := NewEncoder(buf)
 		Expect(enc.Encode(mockNone{})).NotTo(HaveOccurred())
@@ -99,7 +99,7 @@ var _ = Describe("Decoder", func() {
 		Expect(dec.Decode(&slt)).NotTo(HaveOccurred())
 		Expect(slt).To(Equal(&mockSliceType{data: []int{4, 5}}))
 
-		var set *mockSliceType
+		var set mockSetType
 		Expect(dec.Decode(&set)).NotTo(HaveOccurred())
 		Expect(set).To(Equal(mockSetType{6: mockNone{}}))
 
@@ -110,7 +110,7 @@ var _ = Describe("Decoder", func() {
 		}))
 
 		var sli []mockInterface
-		Expect(dec.Decode(&mps)).NotTo(HaveOccurred())
+		Expect(dec.Decode(&sli)).NotTo(HaveOccurred())
 		Expect(sli).To(Equal([]mockInterface{
 			mockSetType{8: mockNone{}},
 			&mockSliceType{data: []int{9}},

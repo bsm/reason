@@ -1,17 +1,18 @@
 package util
 
 import (
-	"bytes"
-	"encoding/gob"
 	"math"
 
 	"github.com/bsm/reason/internal/calc"
+	"github.com/bsm/reason/internal/msgpack"
 )
+
+func init() {
+	msgpack.Register(7732, (*NumSeries)(nil))
+}
 
 // NumSeries maintains information about a series of (weighted) numeric data
 type NumSeries struct{ weight, sum, sumSquares float64 }
-
-type numSeriesSnapshot struct{ Weight, Sum, SumSquares float64 }
 
 // Append adds a new value to the series, with a weight
 func (s *NumSeries) Append(value, weight float64) {
@@ -104,36 +105,12 @@ func (s *NumSeries) Estimate(value float64) (lessThan float64, equalTo float64, 
 	return
 }
 
-// GobEncode implements gob.GobEncoder
-func (s *NumSeries) GobEncode() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(s.snapshot()); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+func (s *NumSeries) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(s.weight, s.sum, s.sumSquares)
 }
 
-// GobDecode implements gob.GobDecoder
-func (s *NumSeries) GobDecode(b []byte) error {
-	var snap numSeriesSnapshot
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&snap); err != nil {
-		return err
-	}
-
-	*s = NumSeries{
-		weight:     snap.Weight,
-		sum:        snap.Sum,
-		sumSquares: snap.SumSquares,
-	}
-	return nil
-}
-
-func (s *NumSeries) snapshot() numSeriesSnapshot {
-	return numSeriesSnapshot{
-		Weight:     s.weight,
-		Sum:        s.sum,
-		SumSquares: s.sumSquares,
-	}
+func (s *NumSeries) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&s.weight, &s.sum, &s.sumSquares)
 }
 
 // --------------------------------------------------------------------

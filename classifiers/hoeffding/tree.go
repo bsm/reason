@@ -2,8 +2,6 @@ package hoeffding
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
 	"io"
 	"math"
 	"sort"
@@ -11,7 +9,12 @@ import (
 
 	"github.com/bsm/reason/classifiers/internal/helpers"
 	"github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/msgpack"
 )
+
+func init() {
+	msgpack.Register(7750, (*Tree)(nil))
+}
 
 // TreeInfo contains tree information/stats
 type TreeInfo struct {
@@ -34,34 +37,31 @@ type Tree struct {
 	mu sync.RWMutex
 }
 
-type treeSnapshot struct {
-	Model *core.Model
-	Root  treeNode
-}
-
 // New starts a new hoeffding tree from a model
 func New(model *core.Model, conf *Config) *Tree {
-	root := newLeafNode(helpers.NewObservationStats(model.IsRegression()))
-	return initTree(model, root, conf)
+	t := &Tree{
+		model: model,
+		root:  newLeafNode(helpers.NewObservationStats(model.IsRegression())),
+	}
+	t.init(conf)
+	return t
 }
 
 // Load loads a tree from a readable source with the given config
 func Load(r io.Reader, conf *Config) (*Tree, error) {
 	var t *Tree
-	if err := gob.NewDecoder(r).Decode(&t); err != nil {
+	if err := msgpack.NewDecoder(r).Decode(&t); err != nil {
 		return nil, err
 	}
+	t.init(conf)
 	return t, nil
 }
 
-func initTree(model *core.Model, root treeNode, conf *Config) *Tree {
-	tree := &Tree{
-		model:  model,
-		root:   root,
-		traces: make(chan *Trace, 3),
+func (t *Tree) init(conf *Config) {
+	if t.traces == nil {
+		t.traces = make(chan *Trace, 3)
 	}
-	tree.SetConfig(conf)
-	return tree
+	t.SetConfig(conf)
 }
 
 // SetConfig updates config on the fly
@@ -194,30 +194,18 @@ func (t *Tree) Predict(inst core.Instance) core.Prediction {
 
 // WriteTo writes the tree to a writer
 func (t *Tree) WriteTo(w io.Writer) error {
-	return gob.NewEncoder(w).Encode(t)
+	enc := msgpack.NewEncoder(w)
+	defer enc.Close()
+
+	return enc.Encode(t)
 }
 
-// GobEncode implements gob.GobEncoder
-func (t *Tree) GobEncode() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(treeSnapshot{
-		Model: t.model,
-		Root:  t.root,
-	}); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+func (t *Tree) EncodeTo(enc *msgpack.Encoder) error {
+	return enc.Encode(t.model, t.root)
 }
 
-// GobDecode implements gob.GobDecoder
-func (t *Tree) GobDecode(b []byte) error {
-	var snap treeSnapshot
-	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&snap); err != nil {
-		return err
-	}
-
-	*t = *initTree(snap.Model, snap.Root, nil)
-	return nil
+func (t *Tree) DecodeFrom(dec *msgpack.Decoder) error {
+	return dec.Decode(&t.model, &t.root)
 }
 
 func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*splitNode, *Trace) {
