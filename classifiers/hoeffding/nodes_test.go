@@ -2,6 +2,7 @@ package hoeffding
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/bsm/reason/classifiers/internal/helpers"
 	"github.com/bsm/reason/core"
@@ -54,7 +55,7 @@ var _ = Describe("leafNode", func() {
 			splits := subject.BestSplits(tree)
 			Expect(splits).To(HaveLen(5))
 			Expect(splits[0].Merit()).To(BeNumerically("~", 0.247, 0.001))
-			Expect(splits[0].Condition().Predictor().Name).To(Equal("outlook"))
+			Expect(splits[0].Condition().Predictor()).To(Equal("outlook"))
 		})
 
 		It("should encode/decode", func() {
@@ -65,7 +66,9 @@ var _ = Describe("leafNode", func() {
 			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out *leafNode
-			err = msgpack.NewDecoder(buf).Decode(&out)
+			dec := msgpack.NewDecoder(buf)
+			dec.Ctx = context.WithValue(dec.Ctx, core.ModelContextKey, model)
+			err = dec.Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})
@@ -111,7 +114,7 @@ var _ = Describe("leafNode", func() {
 			splits := subject.BestSplits(tree)
 			Expect(splits).To(HaveLen(5))
 			Expect(splits[0].Merit()).To(BeNumerically("~", 19.57, 0.01))
-			Expect(splits[0].Condition().Predictor().Name).To(Equal("outlook"))
+			Expect(splits[0].Condition().Predictor()).To(Equal("outlook"))
 		})
 	})
 
@@ -146,7 +149,9 @@ var _ = Describe("splitNode", func() {
 		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out *splitNode
-		err = msgpack.NewDecoder(buf).Decode(&out)
+		dec := msgpack.NewDecoder(buf)
+		dec.Ctx = context.WithValue(dec.Ctx, core.ModelContextKey, model)
+		err = dec.Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
 	})

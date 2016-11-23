@@ -240,7 +240,7 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 		for _, split := range splits {
 			if cond := split.Condition(); cond != nil {
 				trace.PossibleSplits = append(trace.PossibleSplits, TracePossibleSplit{
-					Predictor: cond.Predictor().Name,
+					Predictor: cond.Predictor(),
 					Merit:     split.Merit(),
 				})
 			}

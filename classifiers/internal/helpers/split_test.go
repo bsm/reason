@@ -35,7 +35,9 @@ var _ = Describe("SplitCondition", func() {
 			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out SplitCondition
-			err = msgpack.NewDecoder(buf).Decode(&out)
+			dec := msgpack.NewDecoder(buf)
+			dec.Ctx = context.WithValue(dec.Ctx, core.ModelContextKey, model)
+			err = dec.Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})

@@ -230,7 +230,7 @@ func (n *splitNode) ReadInfo(depth int, info *TreeInfo) {
 }
 
 func (n *splitNode) WriteGraph(w *bufio.Writer, nodeName string) error {
-	if _, err := fmt.Fprintf(w, "  %s [label=%q shape=box];\n", nodeName, n.Condition.Predictor().Name); err != nil {
+	if _, err := fmt.Fprintf(w, "  %s [label=%q shape=box];\n", nodeName, n.Condition.Predictor()); err != nil {
 		return err
 	}
 
@@ -252,7 +252,7 @@ func (n *splitNode) WriteText(w *bufio.Writer, indent string) error {
 		return err
 	}
 
-	name := n.Condition.Predictor().Name
+	name := n.Condition.Predictor()
 	sind := indent + "\t"
 	for i, child := range n.Children {
 		if _, err := fmt.Fprintf(w, "%s%s %q", indent, name, n.Condition.Describe(i)); err != nil {

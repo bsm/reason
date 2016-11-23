@@ -15,22 +15,28 @@ import (
 
 var _ = Describe("Tree", func() {
 
-	It("should dump/load", func() {
-		model := testdata.BigClassificationModel()
-		stream, err := testdata.Open("../../testdata/bigcls.csv", model)
+	var trainTree = func(src string, model *core.Model) *Tree {
+		stream, err := testdata.Open(src, model)
 		Expect(err).NotTo(HaveOccurred())
 		defer stream.Close()
 
-		tree := New(model, nil)
+		tree := New(model, &Config{
+			GracePeriod:     10,
+			SplitConfidence: 1.0,
+		})
 		n := 0
 		for stream.Next() {
 			tree.Train(stream.Instance())
-			if n++; n >= 500 {
+			if n++; n >= 1000 {
 				break
 			}
 		}
 		Expect(stream.Err()).NotTo(HaveOccurred())
+		return tree
+	}
 
+	var testDumpLoad = func(src string, model *core.Model) {
+		tree := trainTree(src, model)
 		file, err := ioutil.TempFile("", "bsm-reason-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer file.Close()
@@ -42,15 +48,21 @@ var _ = Describe("Tree", func() {
 		file, err = os.Open(file.Name())
 		Expect(err).NotTo(HaveOccurred())
 
-		info, err := file.Stat()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(info.Size()).To(BeNumerically("~", 1440, 20))
-
 		tree2, err := Load(file, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(tree2.root).To(Equal(tree.root))
 		Expect(tree2.model).To(Equal(tree.model))
-		Expect(tree2.conf).To(Equal(tree.conf))
+		Expect(tree2.conf).NotTo(Equal(tree.conf))
+	}
+
+	It("should dump/load classifications", func() {
+		model := testdata.BigClassificationModel()
+		testDumpLoad("../../testdata/bigcls.csv", model)
+	})
+
+	It("should dump/load regressions", func() {
+		model := testdata.BigRegressionModel()
+		testDumpLoad("../../testdata/bigreg.csv", model)
 	})
 
 	DescribeTable("should perform classification",

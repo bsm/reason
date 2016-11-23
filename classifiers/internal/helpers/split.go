@@ -87,7 +87,7 @@ type SplitCondition interface {
 	// Branch returns the branch index for an instance
 	Branch(inst core.Instance) int
 	// Predictor returns the predictor attribute
-	Predictor() *core.Attribute
+	Predictor() string
 	// Describe returns a branch description
 	Describe(branch int) string
 }
@@ -101,7 +101,7 @@ type nominalMultiwaySplitCondition struct {
 	*core.Attribute
 }
 
-func (c *nominalMultiwaySplitCondition) Predictor() *core.Attribute { return c.Attribute }
+func (c *nominalMultiwaySplitCondition) Predictor() string { return c.Attribute.Name }
 func (c *nominalMultiwaySplitCondition) Branch(inst core.Instance) int {
 	return c.Attribute.Value(inst).Index()
 }
@@ -116,11 +116,18 @@ func (c *nominalMultiwaySplitCondition) Describe(branch int) string {
 }
 
 func (c *nominalMultiwaySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
-	return enc.Encode(c.Attribute)
+	return enc.Encode(c.Predictor())
 }
 
 func (c *nominalMultiwaySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {
-	return dec.Decode(&c.Attribute)
+	model := dec.Ctx.Value(core.ModelContextKey).(*core.Model)
+
+	var name string
+	if err := dec.Decode(&name); err != nil {
+		return err
+	}
+	c.Attribute = model.Predictor(name)
+	return nil
 }
 
 // NewNumericBinarySplitCondition inits a new split-condition
@@ -136,7 +143,7 @@ type numericBinarySplitCondition struct {
 	SplitValue float64
 }
 
-func (c *numericBinarySplitCondition) Predictor() *core.Attribute { return c.Attribute }
+func (c *numericBinarySplitCondition) Predictor() string { return c.Attribute.Name }
 func (c *numericBinarySplitCondition) Branch(inst core.Instance) int {
 	v := c.Attribute.Value(inst)
 	if v.IsMissing() {
@@ -158,7 +165,7 @@ func (c *numericBinarySplitCondition) Describe(branch int) string {
 }
 
 func (c *numericBinarySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
-	return enc.Encode(c.Attribute.Name, c.SplitValue)
+	return enc.Encode(c.Predictor(), c.SplitValue)
 }
 
 func (c *numericBinarySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {

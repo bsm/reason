@@ -75,7 +75,7 @@ var _ = Describe("nominalCObserver", func() {
 		Expect(s.Merit()).To(BeNumerically("~", 0.247, 0.001))
 		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&nominalMultiwaySplitCondition{}))
-		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
+		Expect(s.Condition().Predictor()).To(Equal("outlook"))
 
 		postStats := s.PostStats()
 		Expect(postStats).To(HaveLen(3))
@@ -171,7 +171,7 @@ var _ = Describe("gaussianCObserver", func() {
 		Expect(s.Merit()).To(BeNumerically("~", 0.811, 0.001))
 		Expect(s.Range()).To(BeNumerically("~", 1.585, 0.001))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
-		Expect(s.Condition().Predictor().Name).To(Equal("len"))
+		Expect(s.Condition().Predictor()).To(Equal("len"))
 		Expect(s.Condition().(*numericBinarySplitCondition).SplitValue).To(Equal(2.30))
 
 		postStats := s.PostStats()
@@ -239,7 +239,7 @@ var _ = Describe("nominalRObserver", func() {
 		Expect(s.Merit()).To(BeNumerically("~", 19.572, 0.001))
 		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&nominalMultiwaySplitCondition{}))
-		Expect(s.Condition().Predictor().Name).To(Equal("outlook"))
+		Expect(s.Condition().Predictor()).To(Equal("outlook"))
 	})
 
 	It("should require at least two observed values for best split", func() {
@@ -320,7 +320,7 @@ var _ = Describe("gaussianRObserver", func() {
 		Expect(s.Merit()).To(BeNumerically("~", 1.911, 0.001))
 		Expect(s.Range()).To(Equal(1.0))
 		Expect(s.Condition()).To(BeAssignableToTypeOf(&numericBinarySplitCondition{}))
-		Expect(s.Condition().Predictor().Name).To(Equal("area"))
+		Expect(s.Condition().Predictor()).To(Equal("area"))
 		Expect(s.Condition().(*numericBinarySplitCondition).SplitValue).To(Equal(1.7))
 	})
 
