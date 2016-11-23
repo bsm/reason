@@ -2,6 +2,7 @@ package msgpack
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"math"
@@ -9,12 +10,16 @@ import (
 )
 
 type Decoder struct {
-	r *bufio.Reader
+	r   *bufio.Reader
+	Ctx context.Context
 }
 
 // NewDecoder opens a new encoder
 func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{r: bufio.NewReader(r)}
+	return &Decoder{
+		r:   bufio.NewReader(r),
+		Ctx: context.Background(),
+	}
 }
 
 // Decode decodes values

@@ -1,6 +1,12 @@
 package core
 
-import "github.com/bsm/reason/internal/msgpack"
+import (
+	"context"
+
+	"github.com/bsm/reason/internal/msgpack"
+)
+
+const ModelContextKey = "github.com/bsm/reason/core.Model"
 
 func init() {
 	msgpack.Register(7731, (*Model)(nil))
@@ -64,6 +70,8 @@ func (m *Model) DecodeFrom(dec *msgpack.Decoder) error {
 	if err := dec.Decode(&m.target, &m.predictors); err != nil {
 		return err
 	}
+	dec.Ctx = context.WithValue(dec.Ctx, ModelContextKey, m)
+
 	m.postInit()
 	return nil
 }

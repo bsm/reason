@@ -2,6 +2,7 @@ package msgpack
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"math"
 	"reflect"
@@ -9,12 +10,16 @@ import (
 
 // Encoder encodes structs
 type Encoder struct {
-	w *bufio.Writer
+	w   *bufio.Writer
+	Ctx context.Context
 }
 
 // NewEncoder opens a new encoder
 func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: bufio.NewWriter(w)}
+	return &Encoder{
+		w:   bufio.NewWriter(w),
+		Ctx: context.Background(),
+	}
 }
 
 // Close closes the encoder and flushes the buffer

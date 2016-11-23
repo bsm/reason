@@ -158,9 +158,17 @@ func (c *numericBinarySplitCondition) Describe(branch int) string {
 }
 
 func (c *numericBinarySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
-	return enc.Encode(c.Attribute, c.SplitValue)
+	return enc.Encode(c.Attribute.Name, c.SplitValue)
 }
 
 func (c *numericBinarySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {
-	return dec.Decode(&c.Attribute, &c.SplitValue)
+	model := dec.Ctx.Value(core.ModelContextKey).(*core.Model)
+
+	var name string
+	if err := dec.Decode(&name); err != nil {
+		return err
+	}
+
+	c.Attribute = model.Predictor(name)
+	return dec.Decode(&c.SplitValue)
 }

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/internal/msgpack"
@@ -43,10 +44,13 @@ var _ = Describe("SplitCondition", func() {
 
 	Describe("numericBinarySplitCondition", func() {
 		var subject SplitCondition
-		model := testdata.RegressionModel()
+		model := core.NewModel(
+			&core.Attribute{Name: "target"},
+			&core.Attribute{Name: "hours"},
+		)
 
 		BeforeEach(func() {
-			subject = NewNumericBinarySplitCondition(model.Attribute("hours"), 25)
+			subject = NewNumericBinarySplitCondition(model.Predictor("hours"), 25)
 		})
 
 		It("should calculate branch", func() {
@@ -64,7 +68,9 @@ var _ = Describe("SplitCondition", func() {
 			Expect(enc.Close()).NotTo(HaveOccurred())
 
 			var out SplitCondition
-			err = msgpack.NewDecoder(buf).Decode(&out)
+			dec := msgpack.NewDecoder(buf)
+			dec.Ctx = context.WithValue(dec.Ctx, core.ModelContextKey, model)
+			err = dec.Decode(&out)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(subject))
 		})

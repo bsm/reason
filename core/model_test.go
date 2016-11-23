@@ -46,8 +46,10 @@ var _ = Describe("Model", func() {
 		Expect(enc.Close()).NotTo(HaveOccurred())
 
 		var out *Model
-		err = msgpack.NewDecoder(buf).Decode(&out)
+		dec := msgpack.NewDecoder(buf)
+		err = dec.Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
+		Expect(dec.Ctx.Value(ModelContextKey)).To(Equal(out))
 	})
 })

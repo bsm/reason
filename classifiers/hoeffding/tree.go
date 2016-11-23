@@ -76,6 +76,11 @@ func (t *Tree) SetConfig(conf *Config) {
 	t.mu.Unlock()
 }
 
+// Model returns the model
+func (t *Tree) Model() *core.Model {
+	return t.model
+}
+
 // Info returns information about the tree
 func (t *Tree) Info() *TreeInfo {
 	info := new(TreeInfo)
