@@ -312,6 +312,12 @@ func (x *DenseVector) Set(i int, v float64) Vector {
 	}
 
 	if n := (i + 1); n > len(x.vv) {
+		if n > 200 {
+			if cnt := x.Count(); cnt > 10 && cnt*10 < n {
+				return x.convertToSparse()
+			}
+		}
+
 		vv := make([]float64, n)
 		copy(vv, x.vv)
 		x.vv = vv
@@ -382,11 +388,11 @@ func (x *DenseVector) SampleStdDev() float64 { return vectorStdDev(x.SampleVaria
 
 // Normalize normalizes all values to the 0..1 range
 func (x *DenseVector) Normalize() {
-	if x.Count() == 0 {
+	sum := x.Sum()
+	if sum == 0 {
 		return
 	}
 
-	sum := x.Sum()
 	for i, v := range x.vv {
 		x.vv[i] = v / sum
 	}
@@ -408,12 +414,11 @@ func (x *DenseVector) EncodeTo(enc *msgpack.Encoder) error {
 }
 func (x *DenseVector) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&x.vv) }
 
-// converts the vector to a sparse one
-// func (x *DenseVector) convertToSparse() SparseVector {
-// 	nv := make(SparseVector, x.Count())
-// 	x.ForEach(func(i int, v float64) { nv.Set(i, v) })
-// 	return nv
-// }
+func (x *DenseVector) convertToSparse() SparseVector {
+	nv := make(SparseVector, x.Count())
+	x.ForEach(func(i int, v float64) { nv.Set(i, v) })
+	return nv
+}
 
 // --------------------------------------------------------------------
 
