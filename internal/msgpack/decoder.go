@@ -11,15 +11,26 @@ import (
 
 type Decoder struct {
 	r   *bufio.Reader
-	Ctx context.Context
+	ctx context.Context
 }
 
 // NewDecoder opens a new encoder
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		r:   bufio.NewReader(r),
-		Ctx: context.Background(),
+		ctx: context.Background(),
 	}
+}
+
+func (d *Decoder) Context() context.Context { return d.ctx }
+func (d *Decoder) SetContext(ctx context.Context) {
+	if ctx != nil {
+		d.ctx = ctx
+	}
+}
+func (d *Decoder) WithContext(cb func(context.Context) context.Context) *Decoder {
+	d.SetContext(cb(d.ctx))
+	return d
 }
 
 // Decode decodes values

@@ -120,8 +120,7 @@ func (c *nominalMultiwaySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
 }
 
 func (c *nominalMultiwaySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {
-	model := dec.Ctx.Value(core.ModelContextKey).(*core.Model)
-
+	model := dec.Context().Value(core.ModelContextKey).(*core.Model)
 	var name string
 	if err := dec.Decode(&name); err != nil {
 		return err
@@ -169,8 +168,7 @@ func (c *numericBinarySplitCondition) EncodeTo(enc *msgpack.Encoder) error {
 }
 
 func (c *numericBinarySplitCondition) DecodeFrom(dec *msgpack.Decoder) error {
-	model := dec.Ctx.Value(core.ModelContextKey).(*core.Model)
-
+	model := dec.Context().Value(core.ModelContextKey).(*core.Model)
 	var name string
 	if err := dec.Decode(&name); err != nil {
 		return err

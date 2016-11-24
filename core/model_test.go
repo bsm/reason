@@ -50,6 +50,6 @@ var _ = Describe("Model", func() {
 		err = dec.Decode(&out)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(Equal(subject))
-		Expect(dec.Ctx.Value(ModelContextKey)).To(Equal(out))
+		Expect(dec.Context().Value(ModelContextKey)).To(Equal(out))
 	})
 })

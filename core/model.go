@@ -70,8 +70,7 @@ func (m *Model) DecodeFrom(dec *msgpack.Decoder) error {
 	if err := dec.Decode(&m.target, &m.predictors); err != nil {
 		return err
 	}
-	dec.Ctx = context.WithValue(dec.Ctx, ModelContextKey, m)
-
+	dec.SetContext(context.WithValue(dec.Context(), ModelContextKey, m))
 	m.postInit()
 	return nil
 }
