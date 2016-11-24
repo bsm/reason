@@ -25,8 +25,6 @@ type ObservationStats interface {
 	TotalWeight() float64
 	// ByteSize returns a required heap-size estimate
 	ByteSize() int
-	// Promise returns the promise for making predictions
-	Promise() float64
 	// BestSplit returns a SplitSuggestion
 	BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion
 	// State returns the current state as a prediction
@@ -78,13 +76,6 @@ func (s *obsCStats) ByteSize() int { return 40 + s.PreSplit.ByteSize() }
 
 func (s *obsCStats) TotalWeight() float64 { return s.PreSplit.Sum() }
 
-func (s *obsCStats) Promise() float64 {
-	if w := s.PreSplit.Sum(); w != 0 {
-		return w - s.PreSplit.Max()
-	}
-	return 0.0
-}
-
 func (s *obsCStats) IsSufficient() bool {
 	return s.PreSplit.Count() > 1
 }
@@ -135,7 +126,6 @@ func newObsRStats() *obsRStats {
 
 func (s *obsRStats) ByteSize() int        { return 40 }
 func (s *obsRStats) TotalWeight() float64 { return s.PreSplit.TotalWeight() }
-func (s *obsRStats) Promise() float64     { return s.PreSplit.TotalWeight() }
 func (s *obsRStats) IsSufficient() bool   { return s.PreSplit.SampleVariance() != 0 }
 
 func (s *obsRStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {

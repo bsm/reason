@@ -47,10 +47,6 @@ var _ = Describe("leafNode", func() {
 			Expect(subject.ByteSize()).To(BeNumerically("~", 940, 20))
 		})
 
-		It("should calc promise split", func() {
-			Expect(subject.Promise()).To(Equal(5.0))
-		})
-
 		It("should calc best split", func() {
 			splits := subject.BestSplits(tree)
 			Expect(splits).To(HaveLen(5))
@@ -105,10 +101,6 @@ var _ = Describe("leafNode", func() {
 
 		It("should estimate heap-size", func() {
 			Expect(subject.ByteSize()).To(BeNumerically("~", 3640, 20))
-		})
-
-		It("should calc promise split", func() {
-			Expect(subject.Promise()).To(Equal(14.0))
 		})
 
 		It("should calc best split", func() {

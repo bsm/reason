@@ -37,7 +37,7 @@ type leafNodeSlice []*leafNode
 func (p leafNodeSlice) Len() int      { return len(p) }
 func (p leafNodeSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 func (p leafNodeSlice) Less(i, j int) bool {
-	a, b := p[i].Promise(), p[j].Promise()
+	a, b := p[i].Stats.TotalWeight(), p[j].Stats.TotalWeight()
 	return a < b || math.IsNaN(a) && !math.IsNaN(b)
 }
 
@@ -55,8 +55,6 @@ func newLeafNode(stats helpers.ObservationStats) *leafNode {
 		WeightOnLastEval: stats.TotalWeight(),
 	}
 }
-
-func (n *leafNode) Promise() float64 { return n.Stats.Promise() }
 
 func (n *leafNode) Predict() core.Prediction { return n.Stats.State() }
 
