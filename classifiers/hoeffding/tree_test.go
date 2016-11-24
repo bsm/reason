@@ -65,6 +65,22 @@ var _ = Describe("Tree", func() {
 		testDumpLoad("../../testdata/bigreg.csv", model)
 	})
 
+	It("should prune", func() {
+		model := testdata.BigClassificationModel()
+		tree := trainTree("../../testdata/bigcls.csv", model)
+		Expect(tree.Info()).To(Equal(&TreeInfo{
+			NumNodes: 163, NumActiveLeaves: 115, NumInactiveLeaves: 0, MaxDepth: 6,
+		}))
+		tree.Prune(3.0)
+		Expect(tree.Info()).To(Equal(&TreeInfo{
+			NumNodes: 163, NumActiveLeaves: 99, NumInactiveLeaves: 16, MaxDepth: 6,
+		}))
+		tree.Prune(7.0)
+		Expect(tree.Info()).To(Equal(&TreeInfo{
+			NumNodes: 163, NumActiveLeaves: 50, NumInactiveLeaves: 65, MaxDepth: 6,
+		}))
+	})
+
 	DescribeTable("should perform classification",
 		func(n int, expInfo *TreeInfo, expCorrect, expKappa float64) {
 			if testing.Short() && n > 1000 {

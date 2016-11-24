@@ -205,6 +205,23 @@ func (t *Tree) WriteTo(w io.Writer) error {
 	return enc.Encode(t)
 }
 
+// Prune removes nodes that have a weight of less than threshold
+// (where weight is usually the number of past occurrences)
+func (t *Tree) Prune(threshold float64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.leaves = t.root.FindLeaves(t.leaves[:0])
+	for _, leaf := range t.leaves {
+		if leaf.IsInactive {
+			continue
+		}
+		if leaf.Stats.TotalWeight() < threshold {
+			leaf.Deactivate()
+		}
+	}
+}
+
 func (t *Tree) EncodeTo(enc *msgpack.Encoder) error {
 	return enc.Encode(t.model, t.root)
 }
