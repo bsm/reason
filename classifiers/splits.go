@@ -36,7 +36,7 @@ type CSplitCriterion interface {
 // (with a MinBranchFrac or 0.1)
 func DefaultSplitCriterion(isRegression bool) SplitCriterion {
 	if isRegression {
-		return VarReductionSplitCriterion{}
+		return VarReductionSplitCriterion{MinWeight: 5.0}
 	}
 	return InfoGainSplitCriterion{MinBranchFrac: 0.1}
 }
@@ -140,27 +140,39 @@ func (c InfoGainSplitCriterion) Merit(pre util.Vector, post util.VectorDistribut
 }
 
 // VarReductionSplitCriterion performs splits using variance-reduction
-type VarReductionSplitCriterion struct{}
+type VarReductionSplitCriterion struct {
+	// The minimum weight a post-split option requires
+	// in order to be considered. Default: 5.0
+	MinWeight float64
+}
 
 func (VarReductionSplitCriterion) isSplitCriterion() {}
 
 func (VarReductionSplitCriterion) Range(_ *util.NumSeries) float64 { return 1.0 }
-func (VarReductionSplitCriterion) Merit(pre *util.NumSeries, post util.NumSeriesDistribution) float64 {
+func (c VarReductionSplitCriterion) Merit(pre *util.NumSeries, post util.NumSeriesDistribution) float64 {
 	if pre == nil {
 		return 0.0
 	}
 
-	total := post.TotalWeight()
-	if total == 0 {
+	count := 0
+	total := 0.0
+	for _, n := range post {
+		if w := n.TotalWeight(); w >= c.MinWeight {
+			total += w
+			count++
+		}
+	}
+	if count < 2 || total == 0 {
 		return 0.0
 	}
 
-	merit := pre.Variance()
+	postV := 0.0
 	for _, n := range post {
-		ratio := n.TotalWeight() / total
-		merit -= n.Variance() * ratio
+		if w := n.TotalWeight(); w >= c.MinWeight {
+			postV += w / total * n.Variance()
+		}
 	}
-	return merit
+	return pre.Variance() - postV
 }
 
 // --------------------------------------------------------------------

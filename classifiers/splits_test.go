@@ -83,7 +83,7 @@ var _ = Describe("RSplitCriterion", func() {
 	})
 
 	Describe("VarReductionSplitCriterion", func() {
-		var subject = VarReductionSplitCriterion{}
+		var subject = VarReductionSplitCriterion{MinWeight: 1.0}
 
 		It("should have range", func() {
 			Expect(subject.Range(nil)).To(Equal(1.0))
@@ -92,7 +92,10 @@ var _ = Describe("RSplitCriterion", func() {
 
 		It("should evaluate split", func() {
 			Expect(subject.Merit(nil, nil)).To(Equal(0.0))
-			Expect(subject.Merit(pre, post)).To(BeNumerically("~", 6.84, 0.01))
+			Expect(subject.Merit(pre, post)).To(BeNumerically("~", 6.83, 0.01))
+
+			c := VarReductionSplitCriterion{MinWeight: 4.0}
+			Expect(c.Merit(pre, post)).To(Equal(0.0))
 		})
 	})
 
