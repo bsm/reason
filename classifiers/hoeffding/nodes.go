@@ -151,21 +151,18 @@ func (n *leafNode) Learn(inst core.Instance, tree *Tree) {
 	// Update each predictor's observer with a target-value, predictor-value
 	// and weight tuple
 	predictors := tree.model.Predictors()
-	if len(n.Observers) == 0 {
+	if n.Observers == nil {
 		n.Observers = make([]helpers.Observer, len(predictors))
+		for i, predictor := range predictors {
+			n.Observers[i] = n.Stats.NewObserver(predictor.IsNominal())
+		}
 	}
 	for i, predictor := range predictors {
 		pv := predictor.Value(inst)
 		if pv.IsMissing() {
 			continue
 		}
-
-		obs := n.Observers[i]
-		if obs == nil {
-			obs = n.Stats.NewObserver(predictor.IsNominal())
-			n.Observers[i] = obs
-		}
-		obs.Observe(tv, pv, weight)
+		n.Observers[i].Observe(tv, pv, weight)
 	}
 }
 
@@ -180,10 +177,8 @@ func (n *leafNode) BestSplits(tree *Tree) helpers.SplitSuggestions {
 	// Calculate a split suggestion for each of the observed predictors
 	predictors := tree.model.Predictors()
 	for i, obs := range n.Observers {
-		if obs != nil {
-			split := n.Stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
-			suggestions = append(suggestions, split)
-		}
+		split := n.Stats.BestSplit(tree.conf.SplitCriterion, obs, predictors[i])
+		suggestions = append(suggestions, split)
 	}
 
 	// Rank the suggestions by merit

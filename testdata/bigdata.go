@@ -79,7 +79,9 @@ func (s *BigDataStream) Next() bool {
 	// read predictors
 	for i, attr := range s.model.Predictors() {
 		str := fields[i]
-		if attr.IsNominal() {
+		if str == "?" {
+			continue
+		} else if attr.IsNominal() {
 			s.inst[attr.Name] = str
 		} else if s.inst[attr.Name], err = strconv.ParseFloat(str, 64); err != nil {
 			s.err = err
