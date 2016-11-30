@@ -22,7 +22,7 @@ var (
 
 type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
-	Prune(isObsolete PruneEval, parent *splitNode, parentIndex int)
+	Prune(isObsolete PruneEval, parent *splitNode)
 	WriteGraph(*bufio.Writer, string) error
 	WriteText(*bufio.Writer, string) error
 	ByteSize() int
@@ -94,9 +94,9 @@ func (n *leafNode) Filter(_ core.Instance, parent *splitNode, parentIndex int) (
 	return n, parent, parentIndex
 }
 
-func (n *leafNode) Prune(isObsolete PruneEval, parent *splitNode, parentIndex int) {
-	if parent != nil && isObsolete(n, parent) {
-		delete(parent.Children, parentIndex)
+func (n *leafNode) Prune(isObsolete PruneEval, parent *splitNode) {
+	if !n.IsInactive && parent != nil && isObsolete(n, parent) {
+		n.Deactivate()
 	}
 }
 
@@ -247,14 +247,9 @@ func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex in
 	return n, parent, parentIndex
 }
 
-func (n *splitNode) Prune(isObsolete PruneEval, parent *splitNode, parentIndex int) {
-	if parent != nil && isObsolete(n, parent) {
-		delete(parent.Children, parentIndex)
-		return
-	}
-
-	for i, child := range n.Children {
-		child.Prune(isObsolete, n, i)
+func (n *splitNode) Prune(isObsolete PruneEval, parent *splitNode) {
+	for _, child := range n.Children {
+		child.Prune(isObsolete, n)
 	}
 }
 

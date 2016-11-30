@@ -194,7 +194,7 @@ func (t *Tree) Prune(isObsolete PruneEval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.root.Prune(isObsolete, nil, -1)
+	t.root.Prune(isObsolete, nil)
 }
 
 func (t *Tree) EncodeTo(enc *msgpack.Encoder) error {

@@ -75,13 +75,13 @@ var _ = Describe("Tree", func() {
 			return n.TotalWeight() < 3.0
 		})
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 147, NumActiveLeaves: 99, NumInactiveLeaves: 0, MaxDepth: 6,
+			NumNodes: 163, NumActiveLeaves: 99, NumInactiveLeaves: 16, MaxDepth: 6,
 		}))
 		tree.Prune(func(child, parent Node) bool {
 			return child.Predict().Index() == parent.Predict().Index()
 		})
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 8, NumActiveLeaves: 4, NumInactiveLeaves: 0, MaxDepth: 4,
+			NumNodes: 163, NumActiveLeaves: 28, NumInactiveLeaves: 87, MaxDepth: 6,
 		}))
 	})
 
