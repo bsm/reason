@@ -36,7 +36,7 @@ type CSplitCriterion interface {
 // (with a MinBranchFrac or 0.1)
 func DefaultSplitCriterion(isRegression bool) SplitCriterion {
 	if isRegression {
-		return VarReductionSplitCriterion{MinWeight: 5.0}
+		return VarReductionSplitCriterion{MinWeight: 4.0}
 	}
 	return InfoGainSplitCriterion{MinBranchFrac: 0.1}
 }
@@ -142,7 +142,7 @@ func (c InfoGainSplitCriterion) Merit(pre util.Vector, post util.VectorDistribut
 // VarReductionSplitCriterion performs splits using variance-reduction
 type VarReductionSplitCriterion struct {
 	// The minimum weight a post-split option requires
-	// in order to be considered. Default: 5.0
+	// in order to be considered. Default: 4.0
 	MinWeight float64
 }
 

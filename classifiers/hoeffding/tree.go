@@ -30,7 +30,6 @@ type Tree struct {
 	root  treeNode
 	model *core.Model
 
-	traces chan *Trace
 	leaves leafNodeSlice
 	cycles int64
 
@@ -43,7 +42,7 @@ func New(model *core.Model, conf *Config) *Tree {
 		model: model,
 		root:  newLeafNode(helpers.NewObservationStats(model.IsRegression())),
 	}
-	t.init(conf)
+	t.SetConfig(conf)
 	return t
 }
 
@@ -53,15 +52,8 @@ func Load(r io.Reader, conf *Config) (*Tree, error) {
 	if err := msgpack.NewDecoder(r).Decode(&t); err != nil {
 		return nil, err
 	}
-	t.init(conf)
-	return t, nil
-}
-
-func (t *Tree) init(conf *Config) {
-	if t.traces == nil {
-		t.traces = make(chan *Trace, 3)
-	}
 	t.SetConfig(conf)
+	return t, nil
 }
 
 // SetConfig updates config on the fly
@@ -90,13 +82,6 @@ func (t *Tree) Info() *TreeInfo {
 	t.mu.RUnlock()
 
 	return info
-}
-
-// Traces allows users to subscribe to debug traces. When enabled,
-// events (can be nil) will be emitted via this channel after each
-// training cycle.
-func (t *Tree) Traces() <-chan *Trace {
-	return t.traces
 }
 
 // WriteGraph write a graph in dot notation to a writer
@@ -137,14 +122,11 @@ func (t *Tree) WriteText(w io.Writer) error {
 }
 
 // Train passes an instance to the tree for training purposes
-func (t *Tree) Train(inst core.Instance) {
+func (t *Tree) Train(inst core.Instance) *Trace {
+	var trace *Trace
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
-	var trace *Trace
-	if t.conf.EnableTracing {
-		defer func() { t.traces <- trace }()
-	}
 
 	node, parent, parentIndex := t.root.Filter(inst, nil, -1)
 	if node == nil {
@@ -163,24 +145,22 @@ func (t *Tree) Train(inst core.Instance) {
 
 		weight := leaf.Stats.TotalWeight()
 		if int(weight-leaf.WeightOnLastEval) < t.conf.GracePeriod {
-			return
+			return trace
 		}
 
-		var split *splitNode
-		if split, trace = t.attemptSplit(leaf, weight, trace); split != nil {
+		if split := t.attemptSplit(leaf, weight, trace); split != nil {
 			if parent == nil {
 				t.root = split
 			} else {
 				parent.SetChild(parentIndex, split)
 			}
-			if trace != nil {
-				trace.Split = true
-			}
 		}
+
 		if weight > leaf.WeightOnLastEval {
 			leaf.WeightOnLastEval = weight
 		}
 	}
+	return trace
 }
 
 // Predict returns the raw votes by target index
@@ -230,13 +210,13 @@ func (t *Tree) DecodeFrom(dec *msgpack.Decoder) error {
 	return dec.Decode(&t.model, &t.root)
 }
 
-func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*splitNode, *Trace) {
+func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) *splitNode {
 	if !leaf.Stats.IsSufficient() || leaf.IsInactive {
-		return nil, trace
+		return nil
 	}
 
 	if t.conf.EnableTracing {
-		trace = new(Trace)
+		*trace = Trace{}
 	}
 
 	// Calculate best splits
@@ -266,7 +246,7 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 
 	// Don't split if there is no merit gain
 	if meritGain <= 0 {
-		return nil, trace
+		return nil
 	}
 
 	// Calculate hoeffding bound, evaluate split
@@ -278,14 +258,19 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*spli
 		trace.HoeffdingBound = hbound
 	}
 
+	// Determine split
 	if meritGain > hbound || hbound < t.conf.TieThreshold {
+		if trace != nil {
+			trace.Split = true
+		}
+
 		return newSplitNode(
 			bestSplit.Condition(),
 			bestSplit.PreStats(),
 			bestSplit.PostStats(),
-		), trace
+		)
 	}
-	return nil, trace
+	return nil
 }
 
 func (t *Tree) prune() {
