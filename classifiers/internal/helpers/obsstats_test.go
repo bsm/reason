@@ -48,7 +48,7 @@ var _ = Describe("ObservationStats", func() {
 		It("should return state", func() {
 			state := subject.State()
 			Expect(state).To(HaveLen(2))
-			Expect(state.Top().Value.Index()).To(Equal(0))
+			Expect(state.Top().Index()).To(Equal(0))
 			Expect(state.Top().Votes).To(Equal(9.0))
 		})
 
@@ -113,7 +113,7 @@ var _ = Describe("ObservationStats", func() {
 		It("should return state", func() {
 			state := subject.State()
 			Expect(state).To(HaveLen(1))
-			Expect(state.Top().Value.Value()).To(BeNumerically("~", 39.7, 0.1))
+			Expect(state.Top().Value()).To(BeNumerically("~", 39.7, 0.1))
 			Expect(state.Top().Votes).To(Equal(14.0))
 		})
 

@@ -99,8 +99,8 @@ func (s *obsCStats) State() core.Prediction {
 	p := make(core.Prediction, 0, s.PreSplit.Count())
 	s.PreSplit.ForEach(func(i int, v float64) {
 		p = append(p, core.PredictedValue{
-			Value: core.AttributeValue(i),
-			Votes: v,
+			AttributeValue: core.AttributeValue(i),
+			Votes:          v,
 		})
 	})
 	return p
@@ -140,9 +140,10 @@ func (s *obsRStats) NewObserver(isNominal bool) Observer {
 }
 
 func (s *obsRStats) State() core.Prediction {
-	return core.Prediction{
-		{Value: core.AttributeValue(s.PreSplit.Mean()), Votes: s.PreSplit.TotalWeight()},
-	}
+	return core.Prediction{{
+		AttributeValue: core.AttributeValue(s.PreSplit.Mean()),
+		Votes:          s.PreSplit.TotalWeight(),
+	}}
 }
 
 func (s *obsRStats) BestSplit(crit classifiers.SplitCriterion, obs Observer, predictor *core.Attribute) *SplitSuggestion {

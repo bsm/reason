@@ -71,13 +71,17 @@ var _ = Describe("Tree", func() {
 		Expect(tree.Info()).To(Equal(&TreeInfo{
 			NumNodes: 163, NumActiveLeaves: 115, NumInactiveLeaves: 0, MaxDepth: 6,
 		}))
-		tree.Prune(3.0)
+		tree.Prune(func(n, _ Node) bool {
+			return n.TotalWeight() < 3.0
+		})
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 163, NumActiveLeaves: 99, NumInactiveLeaves: 16, MaxDepth: 6,
+			NumNodes: 147, NumActiveLeaves: 99, NumInactiveLeaves: 0, MaxDepth: 6,
 		}))
-		tree.Prune(7.0)
+		tree.Prune(func(child, parent Node) bool {
+			return child.Predict().Index() == parent.Predict().Index()
+		})
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 163, NumActiveLeaves: 50, NumInactiveLeaves: 65, MaxDepth: 6,
+			NumNodes: 8, NumActiveLeaves: 4, NumInactiveLeaves: 0, MaxDepth: 4,
 		}))
 	})
 

@@ -28,7 +28,7 @@ func NewRegression(model *core.Model) *Regression {
 
 // Record records a prediction
 func (e *Regression) Record(inst core.Instance, prediction core.Prediction) {
-	pv := prediction.Top().Value
+	pv := prediction.Top()
 	if pv.IsMissing() {
 		return
 	}

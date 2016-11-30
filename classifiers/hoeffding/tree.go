@@ -16,6 +16,10 @@ func init() {
 	msgpack.Register(7750, (*Tree)(nil))
 }
 
+// PruneEval receives a child and parent node pair and decides
+// if the child node is obsolete and should be removed.
+type PruneEval func(child, parent Node) bool
+
 // TreeInfo contains tree information/stats
 type TreeInfo struct {
 	NumNodes          int
@@ -185,21 +189,12 @@ func (t *Tree) WriteTo(w io.Writer) error {
 	return enc.Encode(t)
 }
 
-// Prune removes nodes that have a weight of less than threshold
-// (where weight is usually the number of past occurrences)
-func (t *Tree) Prune(threshold float64) {
+// Prune removes nodes where the passed evaluator retrns true
+func (t *Tree) Prune(isObsolete PruneEval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.leaves = t.root.FindLeaves(t.leaves[:0])
-	for _, leaf := range t.leaves {
-		if leaf.IsInactive {
-			continue
-		}
-		if leaf.Stats.TotalWeight() < threshold {
-			leaf.Deactivate()
-		}
-	}
+	t.root.Prune(isObsolete, nil, -1)
 }
 
 func (t *Tree) EncodeTo(enc *msgpack.Encoder) error {

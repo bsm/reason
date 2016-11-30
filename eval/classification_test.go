@@ -12,8 +12,8 @@ var _ = Describe("Classification", func() {
 	model := testdata.ClassificationModel()
 
 	BeforeEach(func() {
-		yes := core.Prediction{{Value: 0, Votes: 1}}
-		no := core.Prediction{{Value: 1, Votes: 1}}
+		yes := core.Prediction{{AttributeValue: 0, Votes: 1}}
+		no := core.Prediction{{AttributeValue: 1, Votes: 1}}
 
 		subject = NewClassification(model)
 		subject.Record(core.MapInstance{"play": "yes"}, yes)

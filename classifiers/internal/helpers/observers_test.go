@@ -80,15 +80,15 @@ var _ = Describe("nominalCObserver", func() {
 		postStats := s.PostStats()
 		Expect(postStats).To(HaveLen(3))
 		Expect(postStats[0].State()).To(ConsistOf(core.Prediction{
-			{Value: 0, Votes: 2},
-			{Value: 1, Votes: 3},
+			{AttributeValue: 0, Votes: 2},
+			{AttributeValue: 1, Votes: 3},
 		}))
 		Expect(postStats[1].State()).To(ConsistOf(core.Prediction{
-			{Value: 0, Votes: 4},
+			{AttributeValue: 0, Votes: 4},
 		}))
 		Expect(postStats[2].State()).To(ConsistOf(core.Prediction{
-			{Value: 0, Votes: 3},
-			{Value: 1, Votes: 2},
+			{AttributeValue: 0, Votes: 3},
+			{AttributeValue: 1, Votes: 2},
 		}))
 	})
 
@@ -177,11 +177,11 @@ var _ = Describe("gaussianCObserver", func() {
 		postStats := s.PostStats()
 		Expect(postStats).To(HaveLen(2))
 		Expect(postStats[0].State()).To(ConsistOf(core.Prediction{
-			{Value: 0, Votes: 3},
+			{AttributeValue: 0, Votes: 3},
 		}))
 		Expect(postStats[1].State()).To(ConsistOf(core.Prediction{
-			{Value: 1, Votes: 5},
-			{Value: 2, Votes: 4},
+			{AttributeValue: 1, Votes: 5},
+			{AttributeValue: 2, Votes: 4},
 		}))
 	})
 

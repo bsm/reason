@@ -27,7 +27,7 @@ func NewClassification(model *core.Model) *Classification {
 
 // Record records a prediction
 func (e *Classification) Record(inst core.Instance, prediction core.Prediction) {
-	pi := prediction.Top().Value.Index()
+	pi := prediction.Index()
 	if pi < 0 {
 		return
 	}

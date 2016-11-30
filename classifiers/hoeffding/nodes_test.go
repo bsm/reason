@@ -36,8 +36,8 @@ var _ = Describe("leafNode", func() {
 
 		It("should learn", func() {
 			Expect(subject.Stats.State()).To(ConsistOf(core.Prediction{
-				{Value: 0, Votes: 9},
-				{Value: 1, Votes: 5},
+				{AttributeValue: 0, Votes: 9},
+				{AttributeValue: 1, Votes: 5},
 			}))
 			Expect(subject.WeightOnLastEval).To(Equal(0.0))
 			Expect(subject.Observers).To(HaveLen(4))
@@ -94,7 +94,7 @@ var _ = Describe("leafNode", func() {
 			state := subject.Stats.State()
 			Expect(state).To(HaveLen(1))
 			Expect(state[0].Votes).To(Equal(14.0))
-			Expect(state[0].Value.Value()).To(BeNumerically("~", 39.8, 0.1))
+			Expect(state[0].Value()).To(BeNumerically("~", 39.8, 0.1))
 			Expect(subject.WeightOnLastEval).To(Equal(0.0))
 			Expect(subject.Observers).To(HaveLen(4))
 		})

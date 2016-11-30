@@ -46,7 +46,7 @@ func ExampleWeather() {
 	// Predict
 	predicted := tree.Predict(core.MapInstance{"outlook": "sunny", "temperature": 85, "humidity": 85, "windy": "FALSE"})
 
-	fmt.Println(predicted.Top().Value)
+	fmt.Println(predicted.Top().Value())
 	// Output:
 	// 1
 }

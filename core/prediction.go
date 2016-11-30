@@ -4,7 +4,7 @@ import "sort"
 
 // PredictedValue represents a predicted attribute value
 type PredictedValue struct {
-	Value AttributeValue
+	AttributeValue
 	Votes float64
 }
 
@@ -17,10 +17,16 @@ func (p Prediction) Rank() {
 	sort.Sort(sort.Reverse(p))
 }
 
+// Index is a shortcut for Top().Index()
+func (p Prediction) Index() int { return p.Top().Index() }
+
+// Value is a shortcut for Top().Value()
+func (p Prediction) Value() float64 { return p.Top().Value() }
+
 // Top returns the predicted value with the highest votes
 func (p Prediction) Top() PredictedValue {
 	if len(p) == 0 {
-		return PredictedValue{Value: MissingValue()}
+		return PredictedValue{AttributeValue: MissingValue()}
 	}
 
 	if !sort.IsSorted(sort.Reverse(p)) {

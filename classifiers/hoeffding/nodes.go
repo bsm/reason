@@ -10,24 +10,41 @@ import (
 	"github.com/bsm/reason/internal/msgpack"
 )
 
-var (
-	_ treeNode = (*leafNode)(nil)
-	_ treeNode = (*splitNode)(nil)
-)
-
 func init() {
 	msgpack.Register(7748, (*leafNode)(nil))
 	msgpack.Register(7749, (*splitNode)(nil))
 }
 
+var (
+	_ treeNode = (*leafNode)(nil)
+	_ treeNode = (*splitNode)(nil)
+)
+
 type treeNode interface {
 	Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int)
+	Prune(isObsolete PruneEval, parent *splitNode, parentIndex int)
 	WriteGraph(*bufio.Writer, string) error
 	WriteText(*bufio.Writer, string) error
 	ByteSize() int
+	TotalWeight() float64
 	ReadInfo(int, *TreeInfo)
-	Predict() core.Prediction
 	FindLeaves(leafNodeSlice) leafNodeSlice
+	Predict() core.Prediction
+}
+
+var (
+	_ Node = (*leafNode)(nil)
+	_ Node = (*splitNode)(nil)
+)
+
+// Node contains several useful details about the node
+type Node interface {
+	// IsLeaf returns true for leaves
+	IsLeaf() bool
+	// TotalWeight returns the total weight seen on this node so far
+	TotalWeight() float64
+	// Predict returns the current prediction for this node
+	Predict() core.Prediction
 }
 
 // --------------------------------------------------------------------
@@ -37,7 +54,7 @@ type leafNodeSlice []*leafNode
 func (p leafNodeSlice) Len() int      { return len(p) }
 func (p leafNodeSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 func (p leafNodeSlice) Less(i, j int) bool {
-	a, b := p[i].Stats.TotalWeight(), p[j].Stats.TotalWeight()
+	a, b := p[i].TotalWeight(), p[j].TotalWeight()
 	return a < b || math.IsNaN(a) && !math.IsNaN(b)
 }
 
@@ -56,6 +73,8 @@ func newLeafNode(stats helpers.ObservationStats) *leafNode {
 	}
 }
 
+func (n *leafNode) TotalWeight() float64     { return n.Stats.TotalWeight() }
+func (n *leafNode) IsLeaf() bool             { return true }
 func (n *leafNode) Predict() core.Prediction { return n.Stats.State() }
 
 func (n *leafNode) ReadInfo(depth int, info *TreeInfo) {
@@ -75,15 +94,21 @@ func (n *leafNode) Filter(_ core.Instance, parent *splitNode, parentIndex int) (
 	return n, parent, parentIndex
 }
 
+func (n *leafNode) Prune(isObsolete PruneEval, parent *splitNode, parentIndex int) {
+	if parent != nil && isObsolete(n, parent) {
+		delete(parent.Children, parentIndex)
+	}
+}
+
 func (n *leafNode) WriteGraph(w *bufio.Writer, nodeName string) error {
-	_, err := fmt.Fprintf(w, "  %s [label=\"%.0f\", fontsize=10, shape=circle];\n", nodeName, n.Stats.TotalWeight())
+	_, err := fmt.Fprintf(w, "  %s [label=\"%.0f\", fontsize=10, shape=circle];\n", nodeName, n.TotalWeight())
 	return err
 }
 
 func (n *leafNode) WriteText(w *bufio.Writer, _ string) error {
 	_, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n",
-		n.Predict().Top().Value.Value(),
-		n.Stats.TotalWeight(),
+		n.Predict().Value(),
+		n.TotalWeight(),
 	)
 	return err
 }
@@ -208,6 +233,8 @@ func (n *splitNode) ByteSize() int {
 	return size
 }
 
+func (n *splitNode) TotalWeight() float64     { return n.Stats.TotalWeight() }
+func (n *splitNode) IsLeaf() bool             { return false }
 func (n *splitNode) Predict() core.Prediction { return n.Stats.State() }
 
 func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int) {
@@ -218,6 +245,17 @@ func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex in
 		return nil, n, branch
 	}
 	return n, parent, parentIndex
+}
+
+func (n *splitNode) Prune(isObsolete PruneEval, parent *splitNode, parentIndex int) {
+	if parent != nil && isObsolete(n, parent) {
+		delete(parent.Children, parentIndex)
+		return
+	}
+
+	for i, child := range n.Children {
+		child.Prune(isObsolete, n, i)
+	}
 }
 
 func (n *splitNode) ReadInfo(depth int, info *TreeInfo) {
@@ -246,7 +284,7 @@ func (n *splitNode) WriteGraph(w *bufio.Writer, nodeName string) error {
 }
 
 func (n *splitNode) WriteText(w *bufio.Writer, indent string) error {
-	if _, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n", n.Predict().Top().Value.Value(), n.Stats.TotalWeight()); err != nil {
+	if _, err := fmt.Fprintf(w, " -> %.2f (%.0f)\n", n.Predict().Value(), n.TotalWeight()); err != nil {
 		return err
 	}
 
