@@ -262,7 +262,6 @@ var _ = Describe("VectorDistribution", func() {
 
 	It("should return weights", func() {
 		Expect(subject.Weights()).To(Equal(map[int]float64{0: 5, 2: 11, 3: 4}))
-		Expect(subject.TargetWeights()).To(Equal(map[int]float64{1: 2, 2: 10, 3: 4, 9: 4}))
 	})
 
 	It("should increment", func() {

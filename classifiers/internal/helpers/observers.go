@@ -224,17 +224,7 @@ func (o *nominalRObserver) BestSplit(crit classifiers.RSplitCriterion, predictor
 	}
 }
 
-func (o *nominalRObserver) isSplitable() bool {
-	n := 0
-	for _, s := range o.PostSplit {
-		if s.TotalWeight() > 0 {
-			if n++; n > 1 {
-				return true
-			}
-		}
-	}
-	return false
-}
+func (o *nominalRObserver) isSplitable() bool { return len(o.PostSplit) > 1 }
 
 func (o *nominalRObserver) EncodeTo(enc *msgpack.Encoder) error   { return enc.Encode(o.PostSplit) }
 func (o *nominalRObserver) DecodeFrom(dec *msgpack.Decoder) error { return dec.Decode(&o.PostSplit) }

@@ -453,17 +453,6 @@ func (m VectorDistribution) Weights() map[int]float64 {
 	return vv
 }
 
-// TargetWeights returns the weight distribution by target
-func (m VectorDistribution) TargetWeights() map[int]float64 {
-	vv := make(map[int]float64, m.NumTargets())
-	for _, row := range m {
-		row.ForEach(func(i int, v float64) {
-			vv[i] += v
-		})
-	}
-	return vv
-}
-
 // Get increments row at pos or nil
 func (m VectorDistribution) Get(pos int) Vector {
 	if pos > -1 {
