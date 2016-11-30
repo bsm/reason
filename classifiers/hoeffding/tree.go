@@ -16,9 +16,9 @@ func init() {
 	msgpack.Register(7750, (*Tree)(nil))
 }
 
-// PruneEval receives a child and parent node pair and decides
-// if the child node is obsolete and should be removed.
-type PruneEval func(child, parent Node) bool
+// PruneEval receives a leaf and parent node pair and decides
+// if the leaf node is obsolete and should be disabled.
+type PruneEval func(leaf, parent Node) bool
 
 // TreeInfo contains tree information/stats
 type TreeInfo struct {

@@ -39,8 +39,6 @@ var (
 
 // Node contains several useful details about the node
 type Node interface {
-	// IsLeaf returns true for leaves
-	IsLeaf() bool
 	// TotalWeight returns the total weight seen on this node so far
 	TotalWeight() float64
 	// Predict returns the current prediction for this node
@@ -74,7 +72,6 @@ func newLeafNode(stats helpers.ObservationStats) *leafNode {
 }
 
 func (n *leafNode) TotalWeight() float64     { return n.Stats.TotalWeight() }
-func (n *leafNode) IsLeaf() bool             { return true }
 func (n *leafNode) Predict() core.Prediction { return n.Stats.State() }
 
 func (n *leafNode) ReadInfo(depth int, info *TreeInfo) {
@@ -234,7 +231,6 @@ func (n *splitNode) ByteSize() int {
 }
 
 func (n *splitNode) TotalWeight() float64     { return n.Stats.TotalWeight() }
-func (n *splitNode) IsLeaf() bool             { return false }
 func (n *splitNode) Predict() core.Prediction { return n.Stats.State() }
 
 func (n *splitNode) Filter(inst core.Instance, parent *splitNode, parentIndex int) (treeNode, *splitNode, int) {
