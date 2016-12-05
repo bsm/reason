@@ -152,7 +152,8 @@ func (t *Tree) Train(inst core.Instance) *Trace {
 			return trace
 		}
 
-		if split := t.attemptSplit(leaf, weight, trace); split != nil {
+		var split *splitNode
+		if split, trace = t.attemptSplit(leaf, weight, trace); split != nil {
 			if parent == nil {
 				t.root = split
 			} else {
@@ -205,13 +206,13 @@ func (t *Tree) DecodeFrom(dec *msgpack.Decoder) error {
 	return dec.Decode(&t.model, &t.root)
 }
 
-func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) *splitNode {
+func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) (*splitNode, *Trace) {
 	if !leaf.Stats.IsSufficient() || leaf.IsInactive {
-		return nil
+		return nil, nil
 	}
 
 	if t.conf.EnableTracing {
-		*trace = Trace{}
+		trace = new(Trace)
 	}
 
 	// Calculate best splits
@@ -241,7 +242,7 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) *split
 
 	// Don't split if there is no merit gain
 	if meritGain <= 0 {
-		return nil
+		return nil, nil
 	}
 
 	// Calculate hoeffding bound, evaluate split
@@ -263,9 +264,9 @@ func (t *Tree) attemptSplit(leaf *leafNode, weight float64, trace *Trace) *split
 			bestSplit.Condition(),
 			bestSplit.PreStats(),
 			bestSplit.PostStats(),
-		)
+		), nil
 	}
-	return nil
+	return nil, nil
 }
 
 func (t *Tree) prune() {
