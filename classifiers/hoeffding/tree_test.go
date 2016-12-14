@@ -41,7 +41,7 @@ var _ = Describe("Tree", func() {
 		Expect(err).NotTo(HaveOccurred())
 		defer file.Close()
 
-		err = tree.WriteTo(file)
+		err = tree.DumpTo(file)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(file.Close()).NotTo(HaveOccurred())
 

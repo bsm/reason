@@ -1,7 +1,10 @@
-default: test
+default: vet test
 
 deps:
 	go get -t ./...
+
+vet:
+	go vet ./...
 
 test:
 	go test ./internal/... ./... -short

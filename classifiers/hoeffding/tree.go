@@ -182,8 +182,8 @@ func (t *Tree) Predict(inst core.Instance) core.Prediction {
 	return res
 }
 
-// WriteTo writes the tree to a writer
-func (t *Tree) WriteTo(w io.Writer) error {
+// DumpTo writes the tree to a writer
+func (t *Tree) DumpTo(w io.Writer) error {
 	enc := msgpack.NewEncoder(w)
 	defer enc.Close()
 
