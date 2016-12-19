@@ -32,6 +32,8 @@ const (
 	last5  = 0x1f
 	first3 = 0xe0
 	last7  = 0x7f
+
+	bufferSize = 1024 * 1024
 )
 
 // These are all the byte

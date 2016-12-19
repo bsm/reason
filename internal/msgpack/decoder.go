@@ -17,7 +17,7 @@ type Decoder struct {
 // NewDecoder opens a new encoder
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
-		r:   bufio.NewReader(r),
+		r:   bufio.NewReaderSize(r, bufferSize),
 		ctx: context.Background(),
 	}
 }

@@ -15,7 +15,7 @@ type Encoder struct {
 // NewEncoder opens a new encoder
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
-		w: bufio.NewWriter(w),
+		w: bufio.NewWriterSize(w, bufferSize),
 	}
 }
 
