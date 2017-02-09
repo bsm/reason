@@ -143,6 +143,7 @@ func (s *obsRStats) State() core.Prediction {
 	return core.Prediction{{
 		AttributeValue: core.AttributeValue(s.PreSplit.Mean()),
 		Votes:          s.PreSplit.TotalWeight(),
+		Variance:       s.PreSplit.Variance(),
 	}}
 }
 

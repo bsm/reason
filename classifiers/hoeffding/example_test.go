@@ -7,7 +7,7 @@ import (
 	"github.com/bsm/reason/core"
 )
 
-func ExampleWeather() {
+func ExampleTree_Classification() {
 	model := core.NewModel(
 		// Target
 		&core.Attribute{Name: "play", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("yes", "no")},
@@ -44,9 +44,14 @@ func ExampleWeather() {
 	}
 
 	// Predict
-	predicted := tree.Predict(core.MapInstance{"outlook": "sunny", "temperature": 85, "humidity": 85, "windy": "FALSE"})
+	prediction := tree.Predict(core.MapInstance{
+		"outlook":     "sunny",
+		"temperature": 85,
+		"humidity":    85,
+		"windy":       "FALSE",
+	}).Top()
 
-	fmt.Println(predicted.Top().Value())
+	fmt.Println(prediction.Index())
 	// Output:
 	// 1
 }

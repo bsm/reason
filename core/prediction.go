@@ -5,7 +5,12 @@ import "sort"
 // PredictedValue represents a predicted attribute value
 type PredictedValue struct {
 	AttributeValue
+
+	// Votes represents the number of votes for this prediction
 	Votes float64
+
+	// Variance returns the variance (regressions only)
+	Variance float64
 }
 
 // Prediction is a slice of predicted values
