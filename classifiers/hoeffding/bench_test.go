@@ -30,7 +30,8 @@ func BenchmarkTree_Predict_c(b *testing.B) {
 	benchmarkC(b, benchmarkPredict, func(t *Tree, s []core.Instance) {
 		max := len(s)
 		for i := 0; i < b.N; i++ {
-			t.Predict(s[i%max])
+			p := t.Predict(s[i%max])
+			p.Release()
 		}
 	})
 }
@@ -39,7 +40,8 @@ func BenchmarkTree_Predict_r(b *testing.B) {
 	benchmarkR(b, benchmarkPredict, func(t *Tree, s []core.Instance) {
 		max := len(s)
 		for i := 0; i < b.N; i++ {
-			t.Predict(s[i%max])
+			p := t.Predict(s[i%max])
+			p.Release()
 		}
 	})
 }

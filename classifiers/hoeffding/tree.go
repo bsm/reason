@@ -170,16 +170,14 @@ func (t *Tree) Train(inst core.Instance) *Trace {
 
 // Predict returns the raw votes by target index
 func (t *Tree) Predict(inst core.Instance) core.Prediction {
-	var res core.Prediction
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
-	t.mu.Lock()
 	node, parent, _ := t.root.Filter(inst, nil, -1)
 	if node == nil {
 		node = parent
 	}
-	res = node.Predict()
-	t.mu.Unlock()
-	return res
+	return node.Predict()
 }
 
 // DumpTo writes the tree to a writer
