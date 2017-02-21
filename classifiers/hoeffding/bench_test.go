@@ -8,8 +8,8 @@ import (
 	"github.com/bsm/reason/testdata"
 )
 
-func BenchmarkTreeTrain_C(b *testing.B) {
-	benchmarkTrainC(b, func(t *Tree, s []core.Instance) {
+func BenchmarkTree_Train_c(b *testing.B) {
+	benchmarkC(b, benchmarkTrain, func(t *Tree, s []core.Instance) {
 		max := len(s)
 		for i := 0; i < b.N; i++ {
 			t.Train(s[i%max])
@@ -17,8 +17,8 @@ func BenchmarkTreeTrain_C(b *testing.B) {
 	})
 }
 
-func BenchmarkTreeTrain_R(b *testing.B) {
-	benchmarkTrainR(b, func(t *Tree, s []core.Instance) {
+func BenchmarkTree_Train_r(b *testing.B) {
+	benchmarkR(b, benchmarkTrain, func(t *Tree, s []core.Instance) {
 		max := len(s)
 		for i := 0; i < b.N; i++ {
 			t.Train(s[i%max])
@@ -26,8 +26,26 @@ func BenchmarkTreeTrain_R(b *testing.B) {
 	})
 }
 
-func BenchmarkTreeTrain_CParallel(b *testing.B) {
-	benchmarkTrainC(b, func(t *Tree, s []core.Instance) {
+func BenchmarkTree_Predict_c(b *testing.B) {
+	benchmarkC(b, benchmarkPredict, func(t *Tree, s []core.Instance) {
+		max := len(s)
+		for i := 0; i < b.N; i++ {
+			t.Predict(s[i%max])
+		}
+	})
+}
+
+func BenchmarkTree_Predict_r(b *testing.B) {
+	benchmarkR(b, benchmarkPredict, func(t *Tree, s []core.Instance) {
+		max := len(s)
+		for i := 0; i < b.N; i++ {
+			t.Predict(s[i%max])
+		}
+	})
+}
+
+func BenchmarkTree_Train_cpb(b *testing.B) {
+	benchmarkC(b, benchmarkTrain, func(t *Tree, s []core.Instance) {
 		max := len(s)
 		cnt := int64(0)
 		b.RunParallel(func(pb *testing.PB) {
@@ -39,8 +57,8 @@ func BenchmarkTreeTrain_CParallel(b *testing.B) {
 	})
 }
 
-func BenchmarkTreeTrain_RParallel(b *testing.B) {
-	benchmarkTrainR(b, func(t *Tree, s []core.Instance) {
+func BenchmarkTree_Train_rpb(b *testing.B) {
+	benchmarkR(b, benchmarkTrain, func(t *Tree, s []core.Instance) {
 		max := len(s)
 		cnt := int64(0)
 		b.RunParallel(func(pb *testing.PB) {
@@ -52,27 +70,29 @@ func BenchmarkTreeTrain_RParallel(b *testing.B) {
 	})
 }
 
-func benchmarkTrainC(b *testing.B, cb func(*Tree, []core.Instance)) {
+func benchmarkC(b *testing.B, bm benchmarkFunc, fn func(*Tree, []core.Instance)) {
 	model := testdata.BigClassificationModel()
 	stream, err := testdata.Open("../../testdata/bigcls.csv", model)
 	if err != nil {
 		b.Fatal(err)
 	}
 	defer stream.Close()
-	benchmarkTrain(b, model, stream, cb)
+	bm(b, model, stream, fn)
 }
 
-func benchmarkTrainR(b *testing.B, cb func(*Tree, []core.Instance)) {
+func benchmarkR(b *testing.B, bm benchmarkFunc, fn func(*Tree, []core.Instance)) {
 	model := testdata.BigRegressionModel()
 	stream, err := testdata.Open("../../testdata/bigreg.csv", model)
 	if err != nil {
 		b.Fatal(err)
 	}
 	defer stream.Close()
-	benchmarkTrain(b, model, stream, cb)
+	bm(b, model, stream, fn)
 }
 
-func benchmarkTrain(b *testing.B, model *core.Model, stream *testdata.BigDataStream, cb func(*Tree, []core.Instance)) {
+type benchmarkFunc func(*testing.B, *core.Model, *testdata.BigDataStream, func(*Tree, []core.Instance))
+
+func benchmarkTrain(b *testing.B, model *core.Model, stream *testdata.BigDataStream, fn func(*Tree, []core.Instance)) {
 	sample, err := stream.ReadN(1000)
 	if err != nil {
 		b.Fatal(err)
@@ -80,5 +100,20 @@ func benchmarkTrain(b *testing.B, model *core.Model, stream *testdata.BigDataStr
 
 	tree := New(model, nil)
 	b.ResetTimer()
-	cb(tree, sample)
+	fn(tree, sample)
+}
+
+func benchmarkPredict(b *testing.B, model *core.Model, stream *testdata.BigDataStream, fn func(*Tree, []core.Instance)) {
+	sample, err := stream.ReadN(1000)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	tree := New(model, nil)
+	for _, inst := range sample {
+		tree.Train(inst)
+	}
+
+	b.ResetTimer()
+	fn(tree, sample)
 }
