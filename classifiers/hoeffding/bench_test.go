@@ -104,7 +104,7 @@ func benchmarkTrain(b *testing.B, model *core.Model, stream *testdata.BigDataStr
 }
 
 func benchmarkPredict(b *testing.B, model *core.Model, stream *testdata.BigDataStream, fn func(*Tree, []core.Instance)) {
-	sample, err := stream.ReadN(1000)
+	sample, err := stream.ReadN(50000)
 	if err != nil {
 		b.Fatal(err)
 	}
