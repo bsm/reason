@@ -1,19 +1,18 @@
+PKG=$(shell go list ./... | grep -v 'vendor')
+
 default: vet test
 
-deps:
-	go get -t ./...
-
 vet:
-	go vet ./...
+	go vet $(PKG)
 
 test:
-	go test ./internal/... ./... -short
+	go test $(PKG) -short
 
 test-full:
-	go test ./internal/... ./...
+	go test $(PKG)
 
 bench:
-	go test ./internal/... ./... -test.run=NONE -test.bench=. -benchmem -benchtime=1s
+	go test $(PKG) -test.run=NONE -test.bench=. -benchmem -benchtime=1s
 
 bench-race:
-	go test ./internal/... ./... -test.run=NONE -test.bench=. -race
+	go test $(PKG) -test.run=NONE -test.bench=. -race

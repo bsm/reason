@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"math"
+
 	"github.com/bsm/reason/classifiers"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/internal/msgpack"
@@ -126,7 +128,7 @@ func newObsRStats() *obsRStats {
 
 func (s *obsRStats) ByteSize() int        { return 40 }
 func (s *obsRStats) TotalWeight() float64 { return s.PreSplit.TotalWeight() }
-func (s *obsRStats) IsSufficient() bool   { return s.PreSplit.SampleVariance() != 0 }
+func (s *obsRStats) IsSufficient() bool   { return !math.IsNaN(s.PreSplit.SampleVariance()) }
 
 func (s *obsRStats) UpdatePreSplit(tv core.AttributeValue, weight float64) {
 	s.PreSplit.Append(tv.Value(), weight)

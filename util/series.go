@@ -41,7 +41,7 @@ func (s *NumSeries) Mean() float64 {
 	if s.weight != 0 {
 		return s.sum / s.weight
 	}
-	return 0.0
+	return math.NaN()
 }
 
 // Variance is variance of the series
@@ -50,7 +50,7 @@ func (s *NumSeries) Variance() float64 {
 		x := (s.sum * s.sum) / s.weight
 		return (s.sumSquares - x) / s.weight
 	}
-	return 0.0
+	return math.NaN()
 }
 
 // StdDev is the standard deviation of the series
@@ -64,7 +64,7 @@ func (s *NumSeries) SampleVariance() float64 {
 		x := (s.sum * s.sum) / s.weight
 		return (s.sumSquares - x) / (s.weight - 1)
 	}
-	return 0.0
+	return math.NaN()
 }
 
 // SampleStdDev is the sample standard deviation of the series
@@ -85,7 +85,7 @@ func (s *NumSeries) ProbDensity(value float64) float64 {
 			return 1.0
 		}
 	}
-	return 0.0
+	return math.NaN()
 }
 
 // Estimate estimates weight boundaries for a given value
