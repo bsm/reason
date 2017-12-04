@@ -1,23 +1,27 @@
-package calc
+package stats
 
-type KappaStat struct {
+// Kappa represents Cohen's kappa
+type Kappa struct {
 	m     [][]float64
 	ncols int
 }
 
-func NewKappaStat() *KappaStat { return new(KappaStat) }
+// NewKappa inits a new Kappa
+func NewKappa() *Kappa { return new(Kappa) }
 
-func (k *KappaStat) Record(expIndex, actIndex int, weight float64) {
-	if expIndex > actIndex {
-		k.grow(expIndex + 1)
+// Record records in instance of expected vs actual with a given weight
+func (k *Kappa) Record(expected, actual int, weight float64) {
+	if expected > actual {
+		k.grow(expected + 1)
 	} else {
-		k.grow(actIndex + 1)
+		k.grow(actual + 1)
 	}
 
-	k.m[actIndex][expIndex] += weight
+	k.m[actual][expected] += weight
 }
 
-func (k *KappaStat) Kappa() float64 {
+// Value returns the kappa value
+func (k *Kappa) Value() float64 {
 	pws := make([]float64, len(k.m))
 	tws := make([]float64, k.ncols)
 	sum := 0.0
@@ -41,7 +45,7 @@ func (k *KappaStat) Kappa() float64 {
 	return (obs - exp) / (sum - exp)
 }
 
-func (k *KappaStat) grow(n int) {
+func (k *Kappa) grow(n int) {
 	if d := n - len(k.m); d > 0 {
 		k.m = append(k.m, make([][]float64, d)...)
 	}

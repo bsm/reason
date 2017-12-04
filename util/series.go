@@ -3,8 +3,8 @@ package util
 import (
 	"math"
 
-	"github.com/bsm/reason/internal/calc"
 	"github.com/bsm/reason/internal/msgpack"
+	"github.com/bsm/reason/internal/stats"
 )
 
 func init() {
@@ -94,7 +94,7 @@ func (s *NumSeries) Estimate(value float64) (lessThan float64, equalTo float64, 
 
 	mean := s.Mean()
 	if stdDev := s.SampleStdDev(); stdDev > 0 {
-		lessThan = calc.NormProb((value-mean)/stdDev)*s.weight - equalTo
+		lessThan = stats.StdNormal.CDF((value-mean)/stdDev)*s.weight - equalTo
 	} else if value < mean {
 		lessThan = s.weight - equalTo
 	}

@@ -1,15 +1,15 @@
-package calc
+package stats
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("KappaStat", func() {
-	var subject *KappaStat
+var _ = Describe("Kappa", func() {
+	var subject *Kappa
 
 	BeforeEach(func() {
-		subject = NewKappaStat()
+		subject = NewKappa()
 		subject.Record(0, 0, 22)
 		subject.Record(0, 1, 7)
 		subject.Record(1, 0, 9)
@@ -17,7 +17,7 @@ var _ = Describe("KappaStat", func() {
 	})
 
 	It("should record", func() {
-		Expect(subject).To(Equal(&KappaStat{
+		Expect(subject).To(Equal(&Kappa{
 			m: [][]float64{
 				{22, 9},
 				{7, 13},
@@ -25,9 +25,9 @@ var _ = Describe("KappaStat", func() {
 			ncols: 2,
 		}))
 
-		k := NewKappaStat()
+		k := NewKappa()
 		k.Record(1, 3, 1.1)
-		Expect(k).To(Equal(&KappaStat{
+		Expect(k).To(Equal(&Kappa{
 			m: [][]float64{
 				{0, 0, 0, 0},
 				{0, 0, 0, 0},
@@ -38,8 +38,8 @@ var _ = Describe("KappaStat", func() {
 		}))
 	})
 
-	It("should calculate kappa", func() {
-		Expect(subject.Kappa()).To(BeNumerically("~", 0.353, 0.001))
+	It("should calculate value", func() {
+		Expect(subject.Value()).To(BeNumerically("~", 0.353, 0.001))
 	})
 
 })
