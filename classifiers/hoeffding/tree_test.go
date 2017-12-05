@@ -69,19 +69,19 @@ var _ = Describe("Tree", func() {
 		model := testdata.BigClassificationModel()
 		tree := trainTree("../../testdata/bigcls.csv", model)
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 163, NumActiveLeaves: 115, NumInactiveLeaves: 0, MaxDepth: 6,
+			NumNodes: 158, NumActiveLeaves: 111, NumInactiveLeaves: 0, MaxDepth: 6,
 		}))
 		tree.Prune(func(n, _ Node) bool {
 			return n.TotalWeight() < 3.0
 		})
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 163, NumActiveLeaves: 99, NumInactiveLeaves: 16, MaxDepth: 6,
+			NumNodes: 158, NumActiveLeaves: 96, NumInactiveLeaves: 15, MaxDepth: 6,
 		}))
 		tree.Prune(func(child, parent Node) bool {
 			return child.Predict().Index() == parent.Predict().Index()
 		})
 		Expect(tree.Info()).To(Equal(&TreeInfo{
-			NumNodes: 163, NumActiveLeaves: 28, NumInactiveLeaves: 87, MaxDepth: 6,
+			NumNodes: 158, NumActiveLeaves: 28, NumInactiveLeaves: 83, MaxDepth: 6,
 		}))
 	})
 
