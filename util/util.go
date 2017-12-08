@@ -1,5 +1,2 @@
+// Package util contains useful utilities and common data stuctures.
 package util
-
-import "unsafe"
-
-const sizeOfInt = int(unsafe.Sizeof(0))

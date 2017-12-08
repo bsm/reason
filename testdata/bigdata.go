@@ -4,62 +4,74 @@ import (
 	"encoding/csv"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/bsm/reason/core"
 )
 
-func BigClassificationModel() *core.Model {
-	return core.NewModel(
-		&core.Attribute{Name: "tv", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("c1", "c2")},
-		&core.Attribute{Name: "c1", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("v1", "v2", "v3", "v4", "v5")},
-		&core.Attribute{Name: "c2", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("v1", "v2", "v3", "v4", "v5")},
-		&core.Attribute{Name: "c3", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("v1", "v2", "v3", "v4", "v5")},
-		&core.Attribute{Name: "c4", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("v1", "v2", "v3", "v4", "v5")},
-		&core.Attribute{Name: "c5", Kind: core.AttributeKindNominal, Values: core.NewAttributeValues("v1", "v2", "v3", "v4", "v5")},
-		&core.Attribute{Name: "n1", Kind: core.AttributeKindNumeric},
-		&core.Attribute{Name: "n2", Kind: core.AttributeKindNumeric},
-		&core.Attribute{Name: "n3", Kind: core.AttributeKindNumeric},
-		&core.Attribute{Name: "n4", Kind: core.AttributeKindNumeric},
-		&core.Attribute{Name: "n5", Kind: core.AttributeKindNumeric},
-	)
-}
+var BigClassificationModel = core.NewModel(
+	core.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c2", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c4", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c5", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewNumericalFeature("n1"),
+	core.NewNumericalFeature("n2"),
+	core.NewNumericalFeature("n3"),
+	core.NewNumericalFeature("n4"),
+	core.NewNumericalFeature("n5"),
+	core.NewCategoricalFeature("target", []string{"c1", "c2"}),
+)
 
-func BigRegressionModel() *core.Model {
-	return core.NewModel(
-		&core.Attribute{Name: "tv", Kind: core.AttributeKindNumeric},
-		&core.Attribute{Name: "c1", Kind: core.AttributeKindNominal},
-		&core.Attribute{Name: "c2", Kind: core.AttributeKindNominal},
-		&core.Attribute{Name: "c3", Kind: core.AttributeKindNominal},
-		&core.Attribute{Name: "c4", Kind: core.AttributeKindNominal},
-		&core.Attribute{Name: "n1", Kind: core.AttributeKindNumeric},
-	)
-}
+var BigRegressionModel = core.NewModel(
+	core.NewCategoricalFeatureExpandable("c1", nil),
+	core.NewCategoricalFeatureExpandable("c2", nil),
+	core.NewCategoricalFeatureExpandable("c3", nil),
+	core.NewCategoricalFeatureExpandable("c4", nil),
+	core.NewNumericalFeature("n1"),
+	core.NewNumericalFeature("target"),
+)
+
+var (
+	bigClassificationFieldIndices = map[string]int{"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 10}
+	bigRegressionFieldIndices     = map[string]int{"c1": 0, "c2": 1, "c3": 2, "c4": 3, "n1": 4, "target": 5}
+)
 
 type BigDataStream struct {
 	file  *os.File
 	recs  *csv.Reader
 	model *core.Model
+	fix   map[string]int
 
-	inst core.MapInstance
-	err  error
+	x   core.MapExample
+	err error
 }
 
-func Open(fname string, model *core.Model) (*BigDataStream, error) {
+func OpenClassification(root string) (*BigDataStream, *core.Model, error) {
+	return open(filepath.Join(root, "bigcls.csv"), BigClassificationModel, bigClassificationFieldIndices)
+}
+
+func OpenRegression(root string) (*BigDataStream, *core.Model, error) {
+	return open(filepath.Join(root, "bigreg.csv"), BigRegressionModel, bigRegressionFieldIndices)
+}
+
+func open(fname string, model *core.Model, fix map[string]int) (*BigDataStream, *core.Model, error) {
 	f, err := os.Open(fname)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	recs := csv.NewReader(f)
-	recs.FieldsPerRecord = model.NumPredictors() + 1
+	recs.FieldsPerRecord = len(model.Features)
 
 	return &BigDataStream{
 		file:  f,
 		recs:  recs,
 		model: model,
-		inst:  make(core.MapInstance, recs.FieldsPerRecord),
-	}, nil
+		fix:   fix,
+		x:     make(core.MapExample, recs.FieldsPerRecord),
+	}, model, nil
 }
 
 func (s *BigDataStream) Next() bool {
@@ -73,38 +85,28 @@ func (s *BigDataStream) Next() bool {
 		return false
 	}
 
-	// init instance
-	s.inst = make(core.MapInstance, len(s.inst))
+	// init example
+	s.x = make(core.MapExample, len(s.x))
 
 	// read predictors
-	for i, attr := range s.model.Predictors() {
-		str := fields[i]
+	for name, feat := range s.model.Features {
+		str := fields[s.fix[name]]
 		if str == "?" {
 			continue
-		} else if attr.IsNominal() {
-			s.inst[attr.Name] = str
-		} else if s.inst[attr.Name], err = strconv.ParseFloat(str, 64); err != nil {
+		} else if feat.Kind.IsCategorical() {
+			s.x[name] = str
+		} else if s.x[name], err = strconv.ParseFloat(str, 64); err != nil {
 			s.err = err
 			return false
 		}
 	}
-
-	// read target
-	str := fields[len(fields)-1]
-	if target := s.model.Target(); target.IsNominal() {
-		s.inst[target.Name] = str
-	} else if s.inst[target.Name], err = strconv.ParseFloat(str, 64); err != nil {
-		s.err = err
-		return false
-	}
-
 	return true
 }
 
-func (s *BigDataStream) ReadN(n int) ([]core.Instance, error) {
-	res := make([]core.Instance, 0, n)
+func (s *BigDataStream) ReadN(n int) ([]core.Example, error) {
+	res := make([]core.Example, 0, n)
 	for s.Next() {
-		res = append(res, s.Instance())
+		res = append(res, s.Example())
 		if len(res) == n {
 			break
 		}
@@ -119,5 +121,5 @@ func (s *BigDataStream) Err() error {
 	return s.err
 }
 
-func (s *BigDataStream) Instance() core.Instance { return s.inst }
-func (s *BigDataStream) Close() error            { return s.file.Close() }
+func (s *BigDataStream) Example() core.Example { return s.x }
+func (s *BigDataStream) Close() error          { return s.file.Close() }

@@ -1,4 +1,4 @@
-package core
+package core_test
 
 import (
 	"testing"
@@ -11,3 +11,10 @@ func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "core")
 }
+
+type (
+	customNumeric int
+	customString  string
+)
+
+func intPtr(n int) *int { return &n }
