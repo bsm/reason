@@ -51,7 +51,7 @@ func newTree(t *internal.Tree, c *Config) (*Tree, error) {
 	if target == nil {
 		return nil, fmt.Errorf("hoeffding: unknown feature %q", t.Target)
 	} else if !target.Kind.IsNumerical() {
-		return nil, fmt.Errorf("hoeffding: feature %q is not categorical", t.Target)
+		return nil, fmt.Errorf("hoeffding: feature %q is not numerical", t.Target)
 	}
 
 	return &Tree{
