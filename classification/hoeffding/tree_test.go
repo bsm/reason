@@ -74,8 +74,7 @@ var _ = Describe("Tree", func() {
 		t, _, _ := train(3000, nil)
 
 		b := new(bytes.Buffer)
-		Expect(t.WriteText(b)).To(Equal(int64(241)))
-		Expect(b.Len()).To(Equal(241))
+		Expect(t.WriteText(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
 		Expect(s).To(ContainSubstring(`ROOT [weight:600]`))
@@ -86,8 +85,7 @@ var _ = Describe("Tree", func() {
 		t, _, _ := train(3000, nil)
 
 		b := new(bytes.Buffer)
-		Expect(t.WriteDOT(b)).To(Equal(int64(625)))
-		Expect(b.Len()).To(Equal(625))
+		Expect(t.WriteDOT(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
 		Expect(s).To(ContainSubstring(`N [label="weight: 600"];`))

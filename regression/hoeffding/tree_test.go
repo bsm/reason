@@ -74,20 +74,18 @@ var _ = Describe("Tree", func() {
 		t, _, _ := train(3000, nil)
 
 		b := new(bytes.Buffer)
-		Expect(t.WriteText(b)).To(Equal(int64(63782)))
-		Expect(b.Len()).To(Equal(63782))
+		Expect(t.WriteText(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
-		Expect(s).To(ContainSubstring(`ROOT [weight:2400, mean:0, variance: 1]`))
-		Expect(s).To(ContainSubstring("\tc4 = v4 [weight:23, mean:0, variance: 0]"))
+		Expect(s).To(ContainSubstring(`ROOT [weight:2400, mean:0.5, variance: 0.5]`))
+		Expect(s).To(ContainSubstring("\tc4 = v4 [weight:23, mean:0.2, variance: 0.1]"))
 	})
 
 	It("should write DOT", func() {
 		t, _, _ := train(3000, nil)
 
 		b := new(bytes.Buffer)
-		Expect(t.WriteDOT(b)).To(Equal(int64(80763)))
-		Expect(b.Len()).To(Equal(80763))
+		Expect(t.WriteDOT(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
 		Expect(s).To(ContainSubstring(`N [label="weight: 2400"];`))
