@@ -1,3 +1,5 @@
 *.dot
 *.svg
+java/dst/
+java/lib/
 vendor/

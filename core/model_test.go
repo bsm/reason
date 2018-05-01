@@ -1,55 +1,26 @@
-package core
+package core_test
 
 import (
-	"bytes"
-
-	"github.com/bsm/reason/internal/msgpack"
-
+	"github.com/bsm/reason/core"
+	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Model", func() {
-	var subject *Model
 
-	BeforeEach(func() {
-		subject = NewModel(
-			&Attribute{
-				Name:   "season",
-				Kind:   AttributeKindNominal,
-				Values: NewAttributeValues("winter", "spring", "summer", "autumn"),
-			},
-			&Attribute{
-				Name: "temperature",
-				Kind: AttributeKindNumeric,
-			},
-			&Attribute{
-				Name: "humidity",
-				Kind: AttributeKindNumeric,
-			},
-		)
-	})
+	model := core.NewModel(
+		core.NewNumericalFeature("num"),
+		core.NewCategoricalFeature("cat", []string{"a", "b"}),
+	)
 
-	It("should return target", func() {
-		Expect(subject.Target().Name).To(Equal("season"))
-	})
-
-	It("should return (immutable) predictor", func() {
-		Expect(subject.Predictor("humidity").Name).To(Equal("humidity"))
-	})
-
-	It("should encode/decode", func() {
-		buf := new(bytes.Buffer)
-		enc := msgpack.NewEncoder(buf)
-		err := enc.Encode(subject)
+	It("should marshal/unmarshal", func() {
+		bin, err := proto.Marshal(model)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(enc.Close()).NotTo(HaveOccurred())
 
-		var out *Model
-		dec := msgpack.NewDecoder(buf)
-		err = dec.Decode(&out)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(out).To(Equal(subject))
-		Expect(dec.Context().Value(ModelContextKey)).To(Equal(out))
+		other := new(core.Model)
+		Expect(proto.Unmarshal(bin, other)).NotTo(HaveOccurred())
+		Expect(other).To(Equal(model))
 	})
+
 })
