@@ -137,7 +137,7 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 
 	// Print node stats
 	var n int
-	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f, mean:%.1f, variance: %.1f]\n", node.Weight(), node.Stats.Mean(), node.Stats.Variance())
+	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", node.Weight(), node.Stats.Mean(), node.Stats.Variance())
 	nw += int64(n)
 	if err != nil {
 		return

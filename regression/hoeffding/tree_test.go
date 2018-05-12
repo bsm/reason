@@ -77,8 +77,8 @@ var _ = Describe("Tree", func() {
 		Expect(t.WriteText(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
-		Expect(s).To(ContainSubstring(`ROOT [weight:2400, mean:0.5, variance: 0.5]`))
-		Expect(s).To(ContainSubstring("\tc4 = v4 [weight:23, mean:0.2, variance: 0.1]"))
+		Expect(s).To(ContainSubstring(`ROOT [weight:2400 mean:0.5 variance:0.5]`))
+		Expect(s).To(ContainSubstring("\tc4 = v4 [weight:23 mean:0.2 variance:0.1]"))
 	})
 
 	It("should write DOT", func() {
