@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package blacksquaremedia.reason.regression.ftrl;
+
+import "github.com/bsm/reason/core/core.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.goproto_stringer_all) = true;
+option (gogoproto.goproto_unrecognized_all) = false;
+
+option go_package = "internal";
+option java_package = "com.blacksquaremedia.reason.regression";
+option java_outer_classname = "FTRLProtos";
+
+message Config {
+  // The number of hash buckets.
+  uint32 hash_buckets = 1;
+
+  // Learn rate alpha.
+  double alpha = 2;
+
+  // Learn rate beta.
+  double beta = 3;
+
+  // Regularization parameter 1.
+  double l1 = 4;
+
+  // Regularization parameter 2.
+  double l2 = 5;
+}
+
+// Optimizer wraps the optimizer data.
+message Optimizer {
+  // The underlying model.
+  blacksquaremedia.reason.core.Model model = 1;
+
+  // The target feature.
+  string target = 2;
+
+  // The config parameters
+  Config config = 3 [(gogoproto.nullable) = false];
+
+  // The gradient sums.
+  repeated double sums = 4;
+
+  // The weights.
+  repeated double weights = 5;
+}
