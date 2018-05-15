@@ -47,8 +47,7 @@ func (r *Reader) ReadDouble() (float64, error) {
 		return 0, err
 	}
 
-	v := uint64(binary.LittleEndian.Uint64(b))
-	return math.Float64frombits(v), nil
+	return math.Float64frombits(binary.LittleEndian.Uint64(b)), nil
 }
 
 // ReadMessage reads a message.

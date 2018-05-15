@@ -4,6 +4,10 @@ import (
 	"github.com/bsm/reason/core"
 )
 
+type ClassificationScore struct {
+	Accuracy, Kappa, LogLoss float64
+}
+
 func ClassificationModel() *core.Model {
 	return core.NewModel(
 		core.NewCategoricalFeature("play", []string{"yes", "no"}),

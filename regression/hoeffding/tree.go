@@ -153,8 +153,8 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 
 // WriteTo implements io.WriterTo
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
-	o.mu.RLock()
-	defer o.mu.RUnlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
 	return t.tree.WriteTo(w)
 }

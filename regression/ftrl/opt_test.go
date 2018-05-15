@@ -46,7 +46,7 @@ var _ = Describe("Optimizer", func() {
 	})
 
 	DescribeTable("should train & predict",
-		func(n int, expR2, expRMSE float64) {
+		func(n int, exp *testdata.RegressionScore) {
 			if testing.Short() && n > 1000 {
 				return
 			}
@@ -58,13 +58,25 @@ var _ = Describe("Optimizer", func() {
 				actual := model.Feature("target").Number(x)
 				eval.Record(prediction, actual, 1.0)
 			}
-			Expect(eval.R2()).To(BeNumerically("~", expR2, 0.001))
-			Expect(eval.RMSE()).To(BeNumerically("~", expRMSE, 0.001))
+			Expect(eval.R2()).To(BeNumerically("~", exp.R2, 0.001))
+			Expect(eval.RMSE()).To(BeNumerically("~", exp.RMSE, 0.001))
 		},
 
-		Entry("1,000", 1000, 0.044, 0.836),
-		Entry("5,000", 5000, 0.032, 1.047),
-		Entry("10,000", 10000, 0.053, 0.970),
-		Entry("20,000", 20000, 0.177, 0.459),
+		Entry("1,000", 1000, &testdata.RegressionScore{
+			R2:   0.044,
+			RMSE: 0.836,
+		}),
+		Entry("5,000", 5000, &testdata.RegressionScore{
+			R2:   0.032,
+			RMSE: 1.047,
+		}),
+		Entry("10,000", 10000, &testdata.RegressionScore{
+			R2:   0.053,
+			RMSE: 0.970,
+		}),
+		Entry("20,000", 20000, &testdata.RegressionScore{
+			R2:   0.177,
+			RMSE: 0.459,
+		}),
 	)
 })

@@ -2,6 +2,10 @@ package testdata
 
 import "github.com/bsm/reason/core"
 
+type RegressionScore struct {
+	R2, RMSE float64
+}
+
 func RegressionModel() *core.Model {
 	return core.NewModel(
 		core.NewNumericalFeature("hours"),

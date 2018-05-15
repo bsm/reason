@@ -41,8 +41,6 @@ func newOptimizer(o *internal.Optimizer) (*Optimizer, error) {
 	feat := o.Model.Feature(o.Target)
 	if feat == nil {
 		return nil, fmt.Errorf("ftrl: unknown feature %q", o.Target)
-	} else if !feat.Kind.IsNumerical() {
-		return nil, fmt.Errorf("ftrl: feature %q is not numerical", o.Target)
 	}
 	return &Optimizer{opt: o, target: feat}, nil
 }
@@ -89,8 +87,21 @@ func (o *Optimizer) Train(x core.Example, weight float64) {
 		return
 	}
 
-	y := o.target.Number(x)
-	if math.IsNaN(y) {
+	var y float64 // target
+	switch o.target.Kind {
+	case core.Feature_CATEGORICAL:
+		if v := o.target.Category(x); v < 0 {
+			return
+		} else if v > 0 {
+			y = 1.0
+		}
+	case core.Feature_NUMERICAL:
+		if v := o.target.Number(x); math.IsNaN(v) {
+			return
+		} else {
+			y = v
+		}
+	default:
 		return
 	}
 
