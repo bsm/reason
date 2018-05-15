@@ -33,15 +33,16 @@ var _ = Describe("Optimizer", func() {
 
 	It("should dump/load", func() {
 		t1, _, examples := train(3000)
-		Expect(t1.Predict(examples[4001])).To(BeNumerically("~", 0.252, 0.001))
+
+		Expect(t1.Predict(examples[4001])).To(BeNumerically("~", 0.213, 0.001))
 
 		b1 := new(bytes.Buffer)
-		Expect(t1.WriteTo(b1)).To(BeNumerically("~", 18891000, 1000))
-		Expect(b1.Len()).To(BeNumerically("~", 18891000, 1000))
+		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
 
-		t2, err := ftrl.Load(b1)
+		t2, err := ftrl.Load(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(t2.Predict(examples[4001])).To(BeNumerically("~", 0.252, 0.001))
+
+		Expect(t2.Predict(examples[4001])).To(BeNumerically("~", 0.213, 0.001))
 	})
 
 	DescribeTable("should train & predict",
@@ -58,20 +59,20 @@ var _ = Describe("Optimizer", func() {
 		},
 
 		Entry("1,000", 1000, &testdata.RegressionScore{
-			R2:   0.044,
+			R2:   0.045,
 			RMSE: 0.836,
 		}),
 		Entry("5,000", 5000, &testdata.RegressionScore{
-			R2:   0.032,
+			R2:   0.033,
 			RMSE: 1.047,
 		}),
 		Entry("10,000", 10000, &testdata.RegressionScore{
-			R2:   0.053,
-			RMSE: 0.970,
+			R2:   0.051,
+			RMSE: 0.971,
 		}),
 		Entry("20,000", 20000, &testdata.RegressionScore{
-			R2:   0.177,
-			RMSE: 0.459,
+			R2:   0.170,
+			RMSE: 0.460,
 		}),
 	)
 })

@@ -37,10 +37,9 @@ var _ = Describe("Optimizer", func() {
 		Expect(t1.Predict(examples[4001]).P(0)).To(BeNumerically("~", 0.215, 0.001))
 
 		b1 := new(bytes.Buffer)
-		Expect(t1.WriteTo(b1)).To(BeNumerically("~", 18875000, 2000))
-		Expect(b1.Len()).To(BeNumerically("~", 18875000, 2000))
+		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
 
-		t2, err := ftrl.Load(b1)
+		t2, err := ftrl.Load(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(t2.Predict(examples[4001]).P(0)).To(BeNumerically("~", 0.215, 0.001))
 	})

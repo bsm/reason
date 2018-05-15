@@ -12,15 +12,13 @@ import (
 )
 
 // NewOptimizer inits a new model with defaults
-func NewOptimizer(model *core.Model, target string, config *Config) *Optimizer {
-	o := &Optimizer{
-		Model:  model,
-		Target: target,
-		Config: *config,
+func NewOptimizer(model *core.Model, target string, size int) *Optimizer {
+	return &Optimizer{
+		Model:   model,
+		Target:  target,
+		Sums:    make([]float64, size),
+		Weights: make([]float64, size),
 	}
-	o.Sums = make([]float64, int(o.Config.HashBuckets))
-	o.Weights = make([]float64, int(o.Config.HashBuckets))
-	return o
 }
 
 // WriteTo writes a tree to a Writer.
@@ -34,16 +32,13 @@ func (o *Optimizer) WriteTo(w io.Writer) (int64, error) {
 	if err := wp.WriteStringField(2, o.Target); err != nil {
 		return wc.N, err
 	}
-	if err := wp.WriteMessageField(3, &o.Config); err != nil {
-		return wc.N, err
-	}
 	for _, f := range o.Sums {
-		if err := wp.WriteDoubleField(4, f); err != nil {
+		if err := wp.WriteDoubleField(3, f); err != nil {
 			return wc.N, err
 		}
 	}
 	for _, f := range o.Weights {
-		if err := wp.WriteDoubleField(5, f); err != nil {
+		if err := wp.WriteDoubleField(4, f); err != nil {
 			return wc.N, err
 		}
 	}
@@ -84,11 +79,7 @@ func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, err
 			}
 			o.Target = str
-		case 3: // config
-			if err := rp.ReadMessage(&o.Config); err != nil {
-				return rc.N, err
-			}
-		case 4: // sums
+		case 3: // sums
 			if wire != proto.WireFixed64 {
 				return rc.N, proto.ErrInternalBadWireType
 			}
@@ -98,7 +89,7 @@ func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, err
 			}
 			o.Sums = append(o.Sums, f)
-		case 5: // weights
+		case 4: // weights
 			if wire != proto.WireFixed64 {
 				return rc.N, proto.ErrInternalBadWireType
 			}

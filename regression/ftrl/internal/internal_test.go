@@ -14,17 +14,15 @@ var _ = Describe("Optimizer", func() {
 	var subject *internal.Optimizer
 
 	model := testdata.RegressionModel()
-	config := &internal.Config{HashBuckets: 10}
 
 	BeforeEach(func() {
-		subject = internal.NewOptimizer(model, "hours", config)
+		subject = internal.NewOptimizer(model, "hours", 10)
 	})
 
 	It("should init", func() {
 		Expect(subject).To(Equal(&internal.Optimizer{
 			Model:   model,
 			Target:  "hours",
-			Config:  *config,
 			Sums:    make([]float64, 10),
 			Weights: make([]float64, 10),
 		}))
@@ -32,10 +30,10 @@ var _ = Describe("Optimizer", func() {
 
 	It("should write and read", func() {
 		buf := new(bytes.Buffer)
-		Expect(subject.WriteTo(buf)).To(Equal(int64(352)))
+		Expect(subject.WriteTo(buf)).To(Equal(int64(348)))
 
 		dup := new(internal.Optimizer)
-		Expect(dup.ReadFrom(buf)).To(Equal(int64(352)))
+		Expect(dup.ReadFrom(buf)).To(Equal(int64(348)))
 		Expect(dup).To(Equal(subject))
 	})
 

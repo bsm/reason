@@ -1,12 +1,7 @@
 package ftrl
 
-import "github.com/bsm/reason/regression/ftrl/internal"
-
 // Config configures behaviour
 type Config struct {
-	// The number of hash buckets to use.
-	// Default: 1024*1024
-	HashBuckets uint32
 	// Learn rate alpha parameter.
 	// Default: 0.1
 	Alpha float64
@@ -34,18 +29,5 @@ func (c *Config) Norm() {
 	}
 	if c.L2 <= 0 {
 		c.L2 = 0.1
-	}
-	if c.HashBuckets == 0 {
-		c.HashBuckets = 1 << 20
-	}
-}
-
-func (c *Config) proto() *internal.Config {
-	return &internal.Config{
-		Alpha:       c.Alpha,
-		Beta:        c.Beta,
-		L1:          c.L1,
-		L2:          c.L2,
-		HashBuckets: c.HashBuckets,
 	}
 }

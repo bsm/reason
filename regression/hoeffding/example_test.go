@@ -34,7 +34,7 @@ func Example() {
 		{"outlook": "sunny", "temp": "mild", "humidity": "high", "windy": "true", "hours": 30},
 	}
 
-	// Init a tree with a model
+	// Init with a model
 	tree, err := hoeffding.New(model, "hours", &hoeffding.Config{
 		Config: common.Config{
 			GracePeriod:     2,
@@ -45,7 +45,7 @@ func Example() {
 		panic(err)
 	}
 
-	// Train tree
+	// Train
 	for _, x := range examples {
 		tree.Train(x, 1.0)
 	}

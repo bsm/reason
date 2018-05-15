@@ -1,10 +1,9 @@
-package hoeffding_test
+package ftrl_test
 
 import (
 	"fmt"
 
-	"github.com/bsm/reason/classification/hoeffding"
-	common "github.com/bsm/reason/common/hoeffding"
+	"github.com/bsm/reason/classification/ftrl"
 	"github.com/bsm/reason/core"
 )
 
@@ -35,34 +34,31 @@ func Example() {
 	}
 
 	// Init with a model
-	tree, err := hoeffding.New(model, "play", &hoeffding.Config{
-		Config: common.Config{
-			GracePeriod:     2,
-			SplitConfidence: 0.1,
-		},
-	})
+	opt, err := ftrl.New(model, "play", nil)
 	if err != nil {
 		panic(err)
 	}
 
 	// Train
-	for _, x := range examples {
-		tree.Train(x, 1.0)
+	for epoch := 0; epoch < 2000; epoch++ {
+		for _, x := range examples {
+			opt.Train(x, 1.0)
+		}
 	}
 
 	// Predict
-	prediction := tree.Predict(nil, core.MapExample{
+	prediction := opt.Predict(core.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",
 		"windy":    "false",
-	}).Best()
+	})
 
 	// Print categories with probabilities
 	fmt.Printf("yes: %.2f\n", prediction.P(0))
 	fmt.Printf(" no: %.2f\n", prediction.P(1))
 
 	// Output:
-	// yes: 0.40
-	//  no: 0.60
+	// yes: 0.41
+	//  no: 0.59
 }

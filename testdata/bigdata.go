@@ -25,10 +25,10 @@ var BigClassificationModel = core.NewModel(
 )
 
 var BigRegressionModel = core.NewModel(
-	core.NewCategoricalFeatureExpandable("c1", nil),
-	core.NewCategoricalFeatureExpandable("c2", nil),
-	core.NewCategoricalFeatureExpandable("c3", nil),
-	core.NewCategoricalFeatureExpandable("c4", nil),
+	core.NewCategoricalFeatureHashBuckets("c1", 1000),
+	core.NewCategoricalFeatureHashBuckets("c2", 100),
+	core.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"}),
+	core.NewCategoricalFeatureHashBuckets("c4", 1000),
 	core.NewNumericalFeature("n1"),
 	core.NewNumericalFeature("target"),
 )

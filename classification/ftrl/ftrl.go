@@ -11,9 +11,6 @@ import (
 
 // Config configures behaviour
 type Config struct {
-	// The number of hash buckets to use.
-	// Default: 1024*1024
-	HashBuckets uint32
 	// Learn rate alpha parameter.
 	// Default: 0.1
 	Alpha float64
@@ -30,13 +27,11 @@ type Config struct {
 
 // Optimizer is a thin wrapper around the regression/ftrl.Optimizer
 // with convenience methods for classifications.
-type Optimizer struct {
-	*regression.Optimizer
-}
+type Optimizer struct{ *regression.Optimizer }
 
 // Load loads an Optimizer from a reader.
-func Load(r io.Reader) (*Optimizer, error) {
-	opt, err := regression.Load(r)
+func Load(r io.Reader, config *Config) (*Optimizer, error) {
+	opt, err := regression.Load(r, (*regression.Config)(config))
 	if err != nil {
 		return nil, err
 	}

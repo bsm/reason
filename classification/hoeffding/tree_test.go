@@ -42,8 +42,7 @@ var _ = Describe("Tree", func() {
 		Expect(t1.Predict(nil, examples[4001]).Best().P(0)).To(BeNumerically("~", 0.273, 0.001))
 
 		b1 := new(bytes.Buffer)
-		Expect(t1.WriteTo(b1)).To(BeNumerically("~", 13371, 100))
-		Expect(b1.Len()).To(BeNumerically("~", 13371, 1000))
+		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
 
 		t2, err := hoeffding.Load(b1, c)
 		Expect(err).NotTo(HaveOccurred())

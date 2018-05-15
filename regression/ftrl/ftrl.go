@@ -1,32 +1,47 @@
+// Package FTRL performs Follow-The-Regularized-Leader adaptive learning.
 package ftrl
 
 import (
 	"math"
-	"strconv"
+	"sort"
 
 	"github.com/bsm/reason/core"
-	"github.com/cespare/xxhash"
 )
 
-func featureKV(feat *core.Feature, x core.Example) (key string, val float64) {
-	if feat.Kind.IsCategorical() {
-		if cat := feat.Category(x); cat > -1 {
-			key = feat.Name + "." + strconv.FormatUint(uint64(cat), 10)
-			val = 1.0
+func featureBV(feat *core.Feature, x core.Example, offset int) (int, float64) {
+	switch feat.Kind {
+	case core.Feature_CATEGORICAL:
+		if cat := feat.Category(x); cat != core.NoCategory {
+			return offset + int(cat), 1.0
 		}
-	} else if feat.Kind.IsNumerical() {
+	case core.Feature_NUMERICAL:
 		if num := feat.Number(x); !math.IsNaN(num) {
-			key = feat.Name
-			val = num
+			return offset, num
+		}
+	}
+	return -1, 0.0
+}
+
+func parseFeatures(features map[string]*core.Feature, target string) (predictors []string, offsets []int, size int) {
+	predictors = make([]string, 0, len(features)-1)
+	for _, feat := range features {
+		if feat.Name != target {
+			predictors = append(predictors, feat.Name)
+		}
+	}
+	sort.Strings(predictors)
+
+	offsets = make([]int, len(predictors))
+	for i, name := range predictors {
+		offsets[i] = size
+
+		feat := features[name]
+		switch feat.Kind {
+		case core.Feature_CATEGORICAL:
+			size += feat.NumCategories()
+		case core.Feature_NUMERICAL:
+			size += 1
 		}
 	}
 	return
-}
-
-func featureBV(feat *core.Feature, x core.Example, numBuckets uint32) (int, float64) {
-	key, val := featureKV(feat, x)
-	if key == "" {
-		return -1, 0
-	}
-	return int(xxhash.Sum64String(key) % uint64(numBuckets)), val
 }

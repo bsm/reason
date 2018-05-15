@@ -13,23 +13,6 @@ option go_package = "internal";
 option java_package = "com.blacksquaremedia.reason.regression";
 option java_outer_classname = "FTRLProtos";
 
-message Config {
-  // The number of hash buckets.
-  uint32 hash_buckets = 1;
-
-  // Learn rate alpha.
-  double alpha = 2;
-
-  // Learn rate beta.
-  double beta = 3;
-
-  // Regularization parameter 1.
-  double l1 = 4;
-
-  // Regularization parameter 2.
-  double l2 = 5;
-}
-
 // Optimizer wraps the optimizer data.
 message Optimizer {
   // The underlying model.
@@ -38,12 +21,9 @@ message Optimizer {
   // The target feature.
   string target = 2;
 
-  // The config parameters
-  Config config = 3 [(gogoproto.nullable) = false];
-
   // The gradient sums.
-  repeated double sums = 4;
+  repeated double sums = 3;
 
   // The weights.
-  repeated double weights = 5;
+  repeated double weights = 4;
 }
