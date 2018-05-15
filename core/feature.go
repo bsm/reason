@@ -77,6 +77,18 @@ func NewCategoricalFeatureVocabularyHashBuckets(name string, vocabulary []string
 	}
 }
 
+// NumCategories returns the total number of categories associated
+// with this feature. Will return -1 if unknown.
+func (f *Feature) NumCategories() int {
+	if f.Kind != Feature_CATEGORICAL {
+		return 0
+	}
+	if f.Strategy == Feature_IDENTITY {
+		return -1
+	}
+	return int(f.HashBuckets) + len(f.Vocabulary)
+}
+
 // Category will extract the categorical value from the example.
 // Will return NoCategory if value is unknown/unobtainable.
 func (f *Feature) Category(x Example) Category {

@@ -14,5 +14,5 @@ func (pp Predictions) Best() *Prediction {
 	return nil
 }
 
-// Prediction is a standard prediction of a classification.
+// Prediction is a standard prediction of a regression.
 type Prediction struct{ util.StreamStats }

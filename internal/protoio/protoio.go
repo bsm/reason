@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"io"
+	"math"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -38,6 +39,17 @@ func (r *Reader) ReadString() (string, error) {
 	return string(b), nil
 }
 
+// ReadDouble reads a float64.
+func (r *Reader) ReadDouble() (float64, error) {
+	b := r.getBuffer(8)
+	_, err := io.ReadFull(r, b)
+	if err != nil {
+		return 0, err
+	}
+
+	return math.Float64frombits(binary.LittleEndian.Uint64(b)), nil
+}
+
 // ReadMessage reads a message.
 func (r *Reader) ReadMessage(m proto.Message) error {
 	b, err := r.readBytes()
@@ -53,14 +65,16 @@ func (r *Reader) readBytes() ([]byte, error) {
 		return nil, err
 	}
 
-	n := int(u)
+	b := r.getBuffer(int(u))
+	_, err = io.ReadFull(r, b)
+	return b, err
+}
+
+func (r *Reader) getBuffer(n int) []byte {
 	if cap(r.tmp) < n {
 		r.tmp = make([]byte, 0, n)
 	}
-	b := r.tmp[:n]
-
-	_, err = io.ReadFull(r, b)
-	return b, err
+	return r.tmp[:n]
 }
 
 // ---------------------------------------------------------------------
@@ -105,6 +119,18 @@ func (w *Writer) WriteStringField(tag uint32, s string) error {
 	}
 
 	_, err := w.Writer.WriteString(s)
+	return err
+}
+
+// WriteDoubleField writes a float64.
+func (w *Writer) WriteDoubleField(tag uint32, v float64) error {
+	if err := w.WriteField(tag, proto.WireFixed64); err != nil {
+		return err
+	}
+
+	b := w.getBuffer(8)
+	binary.LittleEndian.PutUint64(b, math.Float64bits(v))
+	_, err := w.Write(b)
 	return err
 }
 

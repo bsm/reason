@@ -950,8 +950,9 @@ public final class GoGoProtos {
       "gle.protobuf.FieldOptions\030\361\373\003 \001(\t:0\n\007std" +
       "time\022\035.google.protobuf.FieldOptions\030\362\373\003 " +
       "\001(\010:4\n\013stdduration\022\035.google.protobuf.Fie" +
-      "ldOptions\030\363\373\003 \001(\010B!\n\023com.google.protobuf" +
-      "B\nGoGoProtos"
+      "ldOptions\030\363\373\003 \001(\010BE\n\023com.google.protobuf" +
+      "B\nGoGoProtosZ\"github.com/gogo/protobuf/g" +
+      "ogoproto"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

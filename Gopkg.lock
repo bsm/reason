@@ -18,12 +18,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/google/subcommands"
-  packages = ["."]
-  revision = "a3682377147edf596d303faabd89f81977b3f678"
-
-[[projects]]
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -88,7 +82,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
+  revision = "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -137,7 +131,7 @@
     "stat",
     "stat/distuv"
   ]
-  revision = "f402b0ae715a00004fc0a3140f43008a46cd99da"
+  revision = "be2398aa0a334225e27b868fa8c5101f0127fb2f"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -148,6 +142,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d2706abbaf4ae85b709277ec1bf060be5e2cbf6ce3bb625587974778e32312ab"
+  inputs-digest = "d10f110e5c544287b0aeb5f4b8c517267822d9864ea34de50496e2a7ce162b15"
   solver-name = "gps-cdcl"
   solver-version = 1
