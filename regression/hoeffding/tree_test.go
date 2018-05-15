@@ -2,7 +2,6 @@ package hoeffding_test
 
 import (
 	"bytes"
-	"testing"
 
 	common "github.com/bsm/reason/common/hoeffding"
 	"github.com/bsm/reason/core"
@@ -94,10 +93,6 @@ var _ = Describe("Tree", func() {
 
 	DescribeTable("should train & predict",
 		func(n int, expInfo *common.TreeInfo, exp *testdata.RegressionScore) {
-			if testing.Short() && n > 1000 {
-				return
-			}
-
 			tree, model, examples := train(n)
 			Expect(tree.Info()).To(Equal(expInfo))
 
@@ -119,7 +114,6 @@ var _ = Describe("Tree", func() {
 			R2:   0.002,
 			RMSE: 0.854,
 		}),
-
 		Entry("5,000", 5000, &common.TreeInfo{
 			NumNodes:    2224,
 			NumLearning: 2223,
@@ -128,7 +122,6 @@ var _ = Describe("Tree", func() {
 			R2:   0.170,
 			RMSE: 0.970,
 		}),
-
 		Entry("10,000", 10000, &common.TreeInfo{
 			NumNodes:    3688,
 			NumLearning: 3687,

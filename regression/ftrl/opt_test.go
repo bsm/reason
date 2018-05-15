@@ -2,7 +2,6 @@ package ftrl_test
 
 import (
 	"bytes"
-	"testing"
 
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/regression"
@@ -47,10 +46,6 @@ var _ = Describe("Optimizer", func() {
 
 	DescribeTable("should train & predict",
 		func(n int, exp *testdata.RegressionScore) {
-			if testing.Short() && n > 1000 {
-				return
-			}
-
 			opt, model, examples := train(n)
 			eval := regression.NewEvaluator()
 			for _, x := range examples[n:] {
