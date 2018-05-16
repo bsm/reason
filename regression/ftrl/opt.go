@@ -71,7 +71,7 @@ func (o *Optimizer) Predict(x core.Example) float64 {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	return o.predict(x, make(map[int]float64, len(o.opt.Model.Features)-1))
+	return o.predict(x, nil)
 }
 
 // Trains trains the optimizer with an example and a weight.
@@ -98,7 +98,7 @@ func (o *Optimizer) Train(x core.Example, weight float64) {
 		return
 	}
 
-	t := make(map[int]float64, len(o.opt.Model.Features)-1)
+	t := make(map[int]float64, len(o.predictors))
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -149,12 +149,17 @@ func (o *Optimizer) predict(x core.Example, t map[int]float64) float64 {
 		fabs := o.opt.Weights[bucket] * sign
 
 		if fabs <= o.config.L1 {
-			t[bucket] = 0
+			if t != nil {
+				t[bucket] = 0
+			}
 		} else {
 			step := o.config.L2 + (o.config.Beta+math.Sqrt(o.opt.Sums[bucket]))/o.config.Alpha
-			t[bucket] = sign * (o.config.L1 - fabs) / step
+			factor := sign * (o.config.L1 - fabs) / step
+			if t != nil {
+				t[bucket] = factor
+			}
+			wTx += factor * val
 		}
-		wTx += t[bucket] * val
 	}
 	return 1 / (1 + math.Exp(-math.Max(math.Min(wTx, 35), -35)))
 }

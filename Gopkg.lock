@@ -59,8 +59,8 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
-  version = "v1.3.0"
+  revision = "62bff4df71bdbc266561a0caee19f0594b17c240"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -131,7 +131,7 @@
     "stat",
     "stat/distuv"
   ]
-  revision = "be2398aa0a334225e27b868fa8c5101f0127fb2f"
+  revision = "3f7b30d06c1c427c1ee146170e8952f2caef1ad2"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
