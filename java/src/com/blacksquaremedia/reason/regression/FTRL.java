@@ -1,6 +1,7 @@
 package com.blacksquaremedia.reason.regression;
 
 import java.lang.Math;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import com.blacksquaremedia.reason.CoreProtos;
@@ -127,7 +128,10 @@ public class FTRL {
     int numBuckets = feature.getHashBuckets();
     byte[] data = value.getBytes();
     XXHash64 hash = this.hasher.hash64();
-    long bucket = hash.hash(data, 0, data.length, 0) % (long) numBuckets;
-    return (int) bucket + vocabulary.size();
+    long hashed = hash.hash(data, 0, data.length, 0);
+    BigInteger bigInt = new BigInteger(Long.toUnsignedString(hashed));
+    BigInteger bucket = bigInt.remainder(BigInteger.valueOf(numBuckets));
+
+    return bucket.intValue() + vocabulary.size();
 	}
 }

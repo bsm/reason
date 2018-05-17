@@ -1,5 +1,6 @@
 package com.blacksquaremedia.reason.classification;
 
+import java.math.BigInteger;
 import com.blacksquaremedia.reason.CoreProtos;
 import com.blacksquaremedia.reason.UtilProtos;
 import com.blacksquaremedia.reason.core.Example;
@@ -108,9 +109,11 @@ public class Hoeffding {
           // Calculate the index as HASH(value) % NUM_BUCKETS + SIZE(VOCABULARY)
           byte[] data = value.getBytes();
           XXHash64 hash = this.hasher.hash64();
-          long bucket = hash.hash(data, 0, data.length, 0) % (long) numBuckets;
+          long hashed = hash.hash(data, 0, data.length, 0);
+          BigInteger bigInt = new BigInteger(Long.toUnsignedString(hashed));
+          BigInteger bucket = bigInt.remainder(BigInteger.valueOf(numBuckets));
 
-          return this.findChildRef(nodes, (int) bucket + vocabulary.size());
+          return this.findChildRef(nodes, bucket.intValue() + vocabulary.size());
         }
         break;
     }
@@ -131,12 +134,12 @@ public class Hoeffding {
     return 0;
   }
 
-  private long findChildRef(HoeffdingProtos.SplitNode.Children nodes, int index) {
-    if (index > 0) {
-      if (index < nodes.getDenseCount()) {
-        return nodes.getDense(index);
-      } else if (nodes.getSparseCount() != 0) {
-        return nodes.getSparseOrDefault((long) (index), 0);
+  private long findChildRef(HoeffdingProtos.SplitNode.Children children, int index) {
+    if (index > -1) {
+      if (index < children.getDenseCount()) {
+        return children.getDense(index);
+      } else if (children.getSparseCount() != 0) {
+        return children.getSparseOrDefault((long) (index), 0);
       }
     }
     return 0;
