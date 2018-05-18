@@ -132,6 +132,10 @@ public class FTRL {
 
     // If the string isn't stored in the vocabulary, use bucket hashing.
     int numBuckets = feature.getHashBuckets();
+    if (numBuckets < 1) {
+      return -1;
+    }
+
     byte[] data = value.getBytes();
     XXHash64 hash = this.hasher.hash64();
     long hashed = hash.hash(data, 0, data.length, 0);
