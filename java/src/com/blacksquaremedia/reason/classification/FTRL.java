@@ -1,4 +1,4 @@
-package com.blacksquaremedia.reason.regression;
+package com.blacksquaremedia.reason.classification;
 
 import java.lang.Math;
 import java.math.BigInteger;
