@@ -1,56 +1,47 @@
+// Package FTRL performs Follow-The-Regularized-Leader adaptive learning.
 package ftrl
 
 import (
-	"io"
+	"math"
+	"sort"
 
-	"github.com/bsm/reason/classification"
 	"github.com/bsm/reason/core"
-	regression "github.com/bsm/reason/regression/ftrl"
-	"github.com/bsm/reason/util"
 )
 
-// Config configures behaviour
-type Config struct {
-	// Learn rate alpha parameter.
-	// Default: 0.1
-	Alpha float64
-	// Learn rate beta parameter.
-	// Default: 1.0
-	Beta float64
-	// Regularization strength #1.
-	// Default: 1.0
-	L1 float64
-	// Regularization strength #2.
-	// Default: 0.1
-	L2 float64
+func featureBV(feat *core.Feature, x core.Example, offset int) (int, float64) {
+	switch feat.Kind {
+	case core.Feature_CATEGORICAL:
+		if cat := feat.Category(x); cat != core.NoCategory {
+			return offset + int(cat), 1.0
+		}
+	case core.Feature_NUMERICAL:
+		if num := feat.Number(x); !math.IsNaN(num) {
+			return offset, num
+		}
+	}
+	return -1, 0.0
 }
 
-// Optimizer is a thin wrapper around the regression/ftrl.Optimizer
-// with convenience methods for classifications.
-type Optimizer struct{ *regression.Optimizer }
-
-// Load loads an Optimizer from a reader.
-func Load(r io.Reader, config *Config) (*Optimizer, error) {
-	opt, err := regression.Load(r, (*regression.Config)(config))
-	if err != nil {
-		return nil, err
+func parseFeatures(features map[string]*core.Feature, target string) (predictors []string, offsets []int, size int) {
+	predictors = make([]string, 0, len(features)-1)
+	for _, feat := range features {
+		if feat.Name != target {
+			predictors = append(predictors, feat.Name)
+		}
 	}
-	return &Optimizer{Optimizer: opt}, nil
-}
+	sort.Strings(predictors)
 
-// New inits a new Optimizer using a model, a target feature and a config.
-func New(model *core.Model, target string, config *Config) (*Optimizer, error) {
-	opt, err := regression.New(model, target, (*regression.Config)(config))
-	if err != nil {
-		return nil, err
-	}
-	return &Optimizer{Optimizer: opt}, nil
-}
+	offsets = make([]int, len(predictors))
+	for i, name := range predictors {
+		offsets[i] = size
 
-// Predict returns the prefiction
-func (o *Optimizer) Predict(x core.Example) *classification.Prediction {
-	p := o.Optimizer.Predict(x)
-	return &classification.Prediction{
-		Vector: util.Vector{Dense: []float64{1 - p, p}},
+		feat := features[name]
+		switch feat.Kind {
+		case core.Feature_CATEGORICAL:
+			size += feat.NumCategories()
+		case core.Feature_NUMERICAL:
+			size += 1
+		}
 	}
+	return
 }

@@ -55,8 +55,8 @@ func Example() {
 	})
 
 	// Print categories with probabilities
-	fmt.Printf("yes: %.2f\n", prediction.P(0))
-	fmt.Printf(" no: %.2f\n", prediction.P(1))
+	fmt.Printf("yes: %.2f\n", 1-prediction)
+	fmt.Printf(" no: %.2f\n", prediction)
 
 	// Output:
 	// yes: 0.41

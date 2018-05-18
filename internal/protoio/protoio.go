@@ -100,6 +100,14 @@ func (w *Writer) WriteVarint(u uint64) error {
 	return err
 }
 
+// WriteDouble writes a float64.
+func (w *Writer) WriteDouble(v float64) error {
+	b := w.getBuffer(8)
+	binary.LittleEndian.PutUint64(b, math.Float64bits(v))
+	_, err := w.Write(b)
+	return err
+}
+
 // WriteVarintField writes a number field.
 func (w *Writer) WriteVarintField(tag uint32, u uint64) error {
 	if err := w.WriteField(tag, proto.WireVarint); err != nil {
@@ -119,18 +127,6 @@ func (w *Writer) WriteStringField(tag uint32, s string) error {
 	}
 
 	_, err := w.Writer.WriteString(s)
-	return err
-}
-
-// WriteDoubleField writes a float64.
-func (w *Writer) WriteDoubleField(tag uint32, v float64) error {
-	if err := w.WriteField(tag, proto.WireFixed64); err != nil {
-		return err
-	}
-
-	b := w.getBuffer(8)
-	binary.LittleEndian.PutUint64(b, math.Float64bits(v))
-	_, err := w.Write(b)
 	return err
 }
 

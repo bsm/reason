@@ -6,8 +6,8 @@ import (
 	"math"
 	"sync"
 
+	"github.com/bsm/reason/classification/ftrl/internal"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/regression/ftrl/internal"
 )
 
 // Optimizer represents an FTRL optimiser. Regressions

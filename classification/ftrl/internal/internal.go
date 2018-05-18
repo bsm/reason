@@ -24,22 +24,42 @@ func NewOptimizer(model *core.Model, target string, size int) *Optimizer {
 // WriteTo writes a tree to a Writer.
 func (o *Optimizer) WriteTo(w io.Writer) (int64, error) {
 	wc := &iocount.Writer{W: w}
-	wp := protoio.Writer{Writer: bufio.NewWriter(wc)}
+	wp := &protoio.Writer{Writer: bufio.NewWriter(wc)}
 
-	if err := wp.WriteMessageField(1, o.Model); err != nil {
-		return wc.N, err
-	}
-	if err := wp.WriteStringField(2, o.Target); err != nil {
-		return wc.N, err
-	}
-	for _, f := range o.Sums {
-		if err := wp.WriteDoubleField(3, f); err != nil {
+	if o.Model != nil {
+		if err := wp.WriteMessageField(1, o.Model); err != nil {
 			return wc.N, err
 		}
 	}
-	for _, f := range o.Weights {
-		if err := wp.WriteDoubleField(4, f); err != nil {
+	if o.Target != "" {
+		if err := wp.WriteStringField(2, o.Target); err != nil {
 			return wc.N, err
+		}
+	}
+	if len(o.Sums) != 0 {
+		if err := wp.WriteField(3, proto.WireBytes); err != nil {
+			return wc.N, err
+		}
+		if err := wp.WriteVarint(uint64(len(o.Sums) * 8)); err != nil {
+			return wc.N, err
+		}
+		for _, f := range o.Sums {
+			if err := wp.WriteDouble(f); err != nil {
+				return wc.N, err
+			}
+		}
+	}
+	if len(o.Weights) != 0 {
+		if err := wp.WriteField(4, proto.WireBytes); err != nil {
+			return wc.N, err
+		}
+		if err := wp.WriteVarint(uint64(len(o.Weights) * 8)); err != nil {
+			return wc.N, err
+		}
+		for _, f := range o.Weights {
+			if err := wp.WriteDouble(f); err != nil {
+				return wc.N, err
+			}
 		}
 	}
 	return wc.N, wp.Flush()
@@ -48,7 +68,7 @@ func (o *Optimizer) WriteTo(w io.Writer) (int64, error) {
 // ReadFrom reads an optimizer from a Reader.
 func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 	rc := &iocount.Reader{R: r}
-	rp := protoio.Reader{Reader: bufio.NewReader(rc)}
+	rp := &protoio.Reader{Reader: bufio.NewReader(rc)}
 
 	for {
 		tag, wire, err := rp.ReadField()
@@ -80,27 +100,45 @@ func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 			}
 			o.Target = str
 		case 3: // sums
-			if wire != proto.WireFixed64 {
+			if wire != proto.WireBytes {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			f, err := rp.ReadDouble()
+			slice, err := readFloatSlice(rp)
 			if err != nil {
 				return rc.N, err
 			}
-			o.Sums = append(o.Sums, f)
+			o.Sums = slice
 		case 4: // weights
-			if wire != proto.WireFixed64 {
+			if wire != proto.WireBytes {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			f, err := rp.ReadDouble()
+			slice, err := readFloatSlice(rp)
 			if err != nil {
 				return rc.N, err
 			}
-			o.Weights = append(o.Weights, f)
+			o.Weights = slice
 		default:
 			return rc.N, fmt.Errorf("hoeffding: unexpected field tag %d", tag)
 		}
 	}
+}
+
+func readFloatSlice(rp *protoio.Reader) ([]float64, error) {
+	u, err := rp.ReadVarint()
+	if err != nil {
+		return nil, err
+	}
+	n := int(u / 8)
+	slice := make([]float64, 0, n)
+
+	for i := 0; i < n; i++ {
+		f, err := rp.ReadDouble()
+		if err != nil {
+			return nil, err
+		}
+		slice = append(slice, f)
+	}
+	return slice, nil
 }

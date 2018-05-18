@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bsm/reason/regression/ftrl/internal"
+	"github.com/bsm/reason/classification/ftrl/internal"
 	"github.com/bsm/reason/testdata"
+	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -30,10 +31,11 @@ var _ = Describe("Optimizer", func() {
 
 	It("should write and read", func() {
 		buf := new(bytes.Buffer)
-		Expect(subject.WriteTo(buf)).To(Equal(int64(348)))
+		Expect(subject.WriteTo(buf)).To(Equal(int64(332)))
+		Expect(proto.Marshal(subject)).To(Equal(buf.Bytes()))
 
 		dup := new(internal.Optimizer)
-		Expect(dup.ReadFrom(buf)).To(Equal(int64(348)))
+		Expect(dup.ReadFrom(buf)).To(Equal(int64(332)))
 		Expect(dup).To(Equal(subject))
 	})
 
@@ -41,5 +43,5 @@ var _ = Describe("Optimizer", func() {
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "regression/ftrl/internal")
+	RunSpecs(t, "classification/ftrl/internal")
 }

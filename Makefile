@@ -52,10 +52,10 @@ java/dst/com/blacksquaremedia/reason/CoreProtos.class: \
 		java/src/com/blacksquaremedia/reason/UtilProtos.java \
 		java/src/com/blacksquaremedia/reason/classification/Hoeffding.java \
 		java/src/com/blacksquaremedia/reason/classification/HoeffdingProtos.java \
+		java/src/com/blacksquaremedia/reason/classification/FTRL.java \
+		java/src/com/blacksquaremedia/reason/classification/FTRLProtos.java \
 		java/src/com/blacksquaremedia/reason/regression/Hoeffding.java \
 		java/src/com/blacksquaremedia/reason/regression/HoeffdingProtos.java \
-		java/src/com/blacksquaremedia/reason/regression/FTRL.java \
-		java/src/com/blacksquaremedia/reason/regression/FTRLProtos.java \
 		java/src/com/google/protobuf/GoGoProtos.java \
 		$(shell find java/src -name '*.java')
 	@mkdir -p $(dir $@)
@@ -81,11 +81,11 @@ java/src/com/blacksquaremedia/reason/classification/HoeffdingProtos.java: classi
 	@mkdir -p $(dir $@)
 	protoc --java_out=java/src --proto_path=$(PROTO_PATH) $<
 
-java/src/com/blacksquaremedia/reason/regression/HoeffdingProtos.java: regression/hoeffding/internal/internal.proto
+java/src/com/blacksquaremedia/reason/classification/FTRLProtos.java: classification/ftrl/internal/internal.proto
 	@mkdir -p $(dir $@)
 	protoc --java_out=java/src --proto_path=$(PROTO_PATH) $<
 
-java/src/com/blacksquaremedia/reason/regression/FTRLProtos.java: regression/ftrl/internal/internal.proto
+java/src/com/blacksquaremedia/reason/regression/HoeffdingProtos.java: regression/hoeffding/internal/internal.proto
 	@mkdir -p $(dir $@)
 	protoc --java_out=java/src --proto_path=$(PROTO_PATH) $<
 

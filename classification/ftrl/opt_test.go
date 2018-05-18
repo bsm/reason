@@ -3,9 +3,9 @@ package ftrl_test
 import (
 	"bytes"
 
+	"github.com/bsm/reason/classification/ftrl"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/regression"
-	"github.com/bsm/reason/regression/ftrl"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"

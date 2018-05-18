@@ -248,7 +248,7 @@ func (t *Tree) Accumulate(nodeRef int64, depth int, info *common.TreeInfo) {
 // WriteTo writes a tree to a Writer.
 func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 	wc := &iocount.Writer{W: w}
-	wp := protoio.Writer{Writer: bufio.NewWriter(wc)}
+	wp := &protoio.Writer{Writer: bufio.NewWriter(wc)}
 
 	if err := wp.WriteMessageField(1, t.Model); err != nil {
 		return wc.N, err
@@ -270,7 +270,7 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 // ReadFrom reads a tree from a Reader.
 func (t *Tree) ReadFrom(r io.Reader) (int64, error) {
 	rc := &iocount.Reader{R: r}
-	rp := protoio.Reader{Reader: bufio.NewReader(rc)}
+	rp := &protoio.Reader{Reader: bufio.NewReader(rc)}
 
 	for {
 		tag, wire, err := rp.ReadField()
