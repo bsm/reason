@@ -8,28 +8,69 @@ import (
 
 // NewVectorFromSlice initalizes a vector using a slice of weights.
 func NewVectorFromSlice(weights ...float64) *Vector {
-	return &Vector{Dense: weights}
+	return &Vector{Data: weights}
 }
 
 // Len returns the number of non-zero weights in the vector.
 func (vv *Vector) Len() int {
-	if vv.Dense != nil {
-		n := 0
-		for _, v := range vv.Dense {
-			if v != 0 {
-				n++
-			}
-		}
-		return n
+	if vv.Sparse != nil {
+		return len(vv.Sparse)
 	}
 
-	return len(vv.Sparse)
+	n := 0
+	for _, v := range vv.Data {
+		if v != 0 {
+			n++
+		}
+	}
+	return n
+}
+
+// ToDense converts the vector to dense.
+func (vv *Vector) ToDense() {
+	if vv.Sparse == nil {
+		return
+	}
+
+	data := make([]float64, 0, len(vv.Sparse))
+	vv.ForEach(func(i int, w float64) bool {
+		if n := i + 1; n > cap(data) {
+			newdata := make([]float64, n, 2*n)
+			copy(newdata, data)
+			data = newdata
+		} else if n > len(data) {
+			data = data[:n]
+		}
+		data[i] = w
+		return true
+	})
+	vv.Data = data
+	vv.Sparse = nil
+}
+
+// ToSparse converts the vector to sparse.
+func (vv *Vector) ToSparse() {
+	if vv.Sparse != nil {
+		return
+	}
+
+	data := make([]float64, 0, len(vv.Data)/2)
+	sparse := make([]int64, 0, len(vv.Data)/2)
+	vv.ForEach(func(i int, w float64) bool {
+		sparse = append(sparse, int64(i))
+		data = append(data, w)
+		return true
+	})
+	vv.Data = data
+	vv.Sparse = sparse
 }
 
 // Weight returns the total of all weights of the vector.
 func (vv *Vector) Weight() float64 {
 	sum := 0.0
-	vv.ForEachValue(func(w float64) bool { sum += w; return true })
+	for _, v := range vv.Data {
+		sum += v
+	}
 	return sum
 }
 
@@ -61,15 +102,14 @@ func (vv *Vector) Max() (pos int, weight float64) {
 
 // Clone creates a copy of the vector
 func (vv *Vector) Clone() *Vector {
-	nv := &Vector{SparseCap: vv.SparseCap}
-	if vv.Dense != nil {
-		nv.Dense = make([]float64, len(vv.Dense))
-		copy(nv.Dense, vv.Dense)
-	} else {
-		nv.Sparse = make(map[int64]float64, len(vv.Sparse))
-		for i, w := range vv.Sparse {
-			nv.Sparse[i] = w
-		}
+	nv := new(Vector)
+	if vv.Sparse != nil {
+		nv.Sparse = make([]int64, len(vv.Sparse))
+		copy(nv.Sparse, vv.Sparse)
+	}
+	if vv.Data != nil {
+		nv.Data = make([]float64, len(vv.Data))
+		copy(nv.Data, vv.Data)
 	}
 	return nv
 }
@@ -80,10 +120,12 @@ func (vv *Vector) Get(index int) float64 {
 		return 0.0
 	}
 
-	if vv.Dense != nil && index < len(vv.Dense) {
-		return vv.Dense[index]
-	} else if vv.Sparse != nil {
-		return vv.Sparse[int64(index)]
+	if vv.Sparse != nil {
+		index = vv.findSparse(index)
+	}
+
+	if index < len(vv.Data) {
+		return vv.Data[index]
 	}
 	return 0.0
 }
@@ -94,26 +136,25 @@ func (vv *Vector) Set(index int, weight float64) {
 		return
 	}
 
-	if vv.Dense != nil {
-		if n := index + 1; n > cap(vv.Dense) {
-			dense := make([]float64, n, 2*n)
-			copy(dense, vv.Dense)
-			vv.Dense = dense
-		} else if n > len(vv.Dense) {
-			vv.Dense = vv.Dense[:n]
+	if vv.Sparse != nil {
+		if stored := vv.findSparse(index); stored < len(vv.Data) {
+			vv.Data[stored] = weight
+		} else {
+			vv.Data = append(vv.Data, weight)
+			vv.Sparse = append(vv.Sparse, int64(index))
 		}
-		vv.Dense[index] = weight
+		vv.tryConvertToDense()
 		return
 	}
 
-	if n := int64(index + 1); n > vv.SparseCap {
-		vv.SparseCap = n
+	if n := index + 1; n > cap(vv.Data) {
+		dense := make([]float64, n, 2*n)
+		copy(dense, vv.Data)
+		vv.Data = dense
+	} else if n > len(vv.Data) {
+		vv.Data = vv.Data[:n]
 	}
-	if vv.Sparse == nil {
-		vv.Sparse = make(map[int64]float64, 1)
-	}
-	vv.Sparse[int64(index)] = weight
-	vv.tryConvertToDense()
+	vv.Data[index] = weight
 }
 
 // Add increments a weight at index by delta.
@@ -122,38 +163,39 @@ func (vv *Vector) Add(index int, delta float64) {
 		return
 	}
 
-	if vv.Dense != nil {
-		if index < len(vv.Dense) {
-			vv.Dense[index] += delta
+	if vv.Sparse != nil {
+		if stored := vv.findSparse(index); stored < len(vv.Data) {
+			vv.Data[stored] += delta
 		} else {
 			vv.Set(index, delta)
 		}
 		return
 	}
 
-	if n := int64(index + 1); n > vv.SparseCap {
-		vv.SparseCap = n
+	if index < len(vv.Data) {
+		vv.Data[index] += delta
+	} else {
+		vv.Set(index, delta)
 	}
-	if vv.Sparse == nil {
-		vv.Sparse = make(map[int64]float64, 1)
-	}
-	vv.Sparse[int64(index)] += delta
-	vv.tryConvertToDense()
 }
 
 // ForEach iterates over each index/value
 func (vv *Vector) ForEach(iter func(int, float64) bool) {
-	if vv.Dense != nil {
-		for i, w := range vv.Dense {
-			if w > 0 && !iter(i, w) {
+	if vv.Sparse != nil {
+		size := len(vv.Data)
+		for pos, i := range vv.Sparse {
+			if pos >= size {
+				break
+			}
+			if !iter(int(i), vv.Data[pos]) {
 				break
 			}
 		}
 		return
 	}
 
-	for i, w := range vv.Sparse {
-		if !iter(int(i), w) {
+	for i, w := range vv.Data {
+		if w > 0 && !iter(i, w) {
 			break
 		}
 	}
@@ -161,17 +203,21 @@ func (vv *Vector) ForEach(iter func(int, float64) bool) {
 
 // ForEachValue iterates over each value
 func (vv *Vector) ForEachValue(iter func(float64) bool) {
-	if vv.Dense != nil {
-		for _, w := range vv.Dense {
-			if w > 0 && !iter(w) {
+	if vv.Sparse != nil {
+		size := len(vv.Data)
+		for pos := range vv.Sparse {
+			if pos >= size {
+				break
+			}
+			if !iter(vv.Data[pos]) {
 				break
 			}
 		}
 		return
 	}
 
-	for _, w := range vv.Sparse {
-		if !iter(w) {
+	for _, w := range vv.Data {
+		if w > 0 && !iter(w) {
 			break
 		}
 	}
@@ -179,13 +225,11 @@ func (vv *Vector) ForEachValue(iter func(float64) bool) {
 
 // Clear removes all weights from the vector.
 func (vv *Vector) Clear() {
-	if vv.Dense != nil {
-		vv.Dense = vv.Dense[:0]
+	for i := range vv.Data {
+		vv.Data[i] = 0
 	}
-	if vv.Sparse != nil {
-		vv.Sparse = make(map[int64]float64)
-		vv.SparseCap = 0
-	}
+	vv.Data = vv.Data[:0]
+	vv.Sparse = vv.Sparse[:0]
 }
 
 // Mean returns the mean value of the vector.
@@ -234,14 +278,8 @@ func (vv *Vector) Normalize() {
 		return
 	}
 
-	if vv.Dense != nil {
-		for i, w := range vv.Dense {
-			vv.Dense[i] = w / sum
-		}
-	} else if vv.Sparse != nil {
-		for i, w := range vv.Sparse {
-			vv.Sparse[i] = w / sum
-		}
+	for i, w := range vv.Data {
+		vv.Data[i] = w / sum
 	}
 }
 
@@ -258,18 +296,26 @@ func (vv *Vector) csm() (n int, sum, mu float64) {
 }
 
 func (vv *Vector) tryConvertToDense() {
-	if !sparsedense.BetterOffDense(len(vv.Sparse), int(vv.SparseCap)) {
-		return
+	capacity := 0
+	for _, i := range vv.Sparse {
+		if n := int(i) + 1; n > capacity {
+			capacity = n
+		}
 	}
 
-	dense := make([]float64, int(vv.SparseCap))
-	vv.ForEach(func(i int, w float64) bool {
-		dense[i] = w
-		return true
-	})
-	vv.Dense = dense
-	vv.Sparse = nil
-	vv.SparseCap = 0
+	if sparsedense.BetterOffDense(len(vv.Sparse), capacity) {
+		vv.ToDense()
+	}
+}
+
+func (vv *Vector) findSparse(index int) int {
+	i64 := int64(index)
+	for pos, i := range vv.Sparse {
+		if i == i64 {
+			return pos
+		}
+	}
+	return len(vv.Sparse)
 }
 
 // --------------------------------------------------------------------
@@ -345,6 +391,7 @@ func (x *VectorDistribution) fetchDense(index int) *Vector {
 	s := x.Dense[index].Vector
 	if s == nil {
 		s = new(Vector)
+		s.ToSparse()
 		x.Dense[index].Vector = s
 	}
 	return s
@@ -363,6 +410,7 @@ func (x *VectorDistribution) fetchSparse(index int64) *Vector {
 		}
 
 		s = new(Vector)
+		s.ToSparse()
 		x.Sparse[index] = s
 	}
 	return s

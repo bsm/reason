@@ -155,10 +155,16 @@ func (f *Feature) ValueOf(cat Category) string {
 // Number will extract the numeric value from the example.
 // Will return NaN if value is unknown/unobtainable.
 func (f *Feature) Number(x Example) float64 {
+	return f.NumberOf(x.GetExampleValue(f.Name))
+}
+
+// NumberOf attempts to retrieve to numeric for the given value.
+// It may return NaN.
+func (f *Feature) NumberOf(v interface{}) float64 {
 	if f.Kind != Feature_NUMERICAL {
 		return math.NaN()
 	}
-	return numerify(x.GetExampleValue(f.Name))
+	return numerify(v)
 }
 
 func stringify(v interface{}) string {

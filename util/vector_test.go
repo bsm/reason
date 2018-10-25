@@ -17,23 +17,25 @@ var _ = Describe("Vector", func() {
 
 	BeforeEach(func() {
 		sparse = new(util.Vector)
+		sparse.ToSparse()
 		sparse.Set(0, 2.0)
 		sparse.Set(3, 7.0)
 		sparse.Set(4, 9.0)
 
-		dense = &util.Vector{Dense: []float64{}}
+		dense = new(util.Vector)
+		dense.ToDense()
 		dense.Set(0, 2.0)
 		dense.Set(3, 7.0)
 		dense.Set(4, 9.0)
 	})
 
 	It("should set", func() {
-		Expect(sparse).To(Equal(&util.Vector{Sparse: map[int64]float64{0: 2, 3: 7, 4: 9}, SparseCap: 5}))
-		Expect(dense).To(Equal(&util.Vector{Dense: []float64{2, 0, 0, 7, 9}}))
+		Expect(sparse).To(Equal(&util.Vector{Data: []float64{2, 7, 9}, Sparse: []int64{0, 3, 4}}))
+		Expect(dense).To(Equal(&util.Vector{Data: []float64{2, 0, 0, 7, 9}}))
 
 		sparse.Set(6, 8.0)
 		sparse.Set(-2, 4.0)
-		Expect(sparse).To(Equal(&util.Vector{Sparse: map[int64]float64{0: 2, 3: 7, 4: 9, 6: 8}, SparseCap: 7}))
+		Expect(sparse).To(Equal(&util.Vector{Data: []float64{2, 7, 9, 8}, Sparse: []int64{0, 3, 4, 6}}))
 	})
 
 	It("should get", func() {
@@ -49,20 +51,20 @@ var _ = Describe("Vector", func() {
 		sparse.Add(0, 1.0)
 		sparse.Add(1, 7.0)
 		sparse.Add(-1, 6.0)
-		Expect(sparse).To(Equal(&util.Vector{Sparse: map[int64]float64{0: 3, 1: 7, 3: 7, 4: 9}, SparseCap: 5}))
+		Expect(sparse).To(Equal(&util.Vector{Data: []float64{3, 7, 9, 7}, Sparse: []int64{0, 3, 4, 1}}))
 
 		dense.Add(0, 1.0)
 		dense.Add(1, 7.0)
 		dense.Add(-1, 6.0)
-		Expect(dense).To(Equal(&util.Vector{Dense: []float64{3, 7, 0, 7, 9}}))
+		Expect(dense).To(Equal(&util.Vector{Data: []float64{3, 7, 0, 7, 9}}))
 	})
 
 	It("should normalize", func() {
 		sparse.Normalize()
-		Expect(sparse).To(Equal(&util.Vector{Sparse: map[int64]float64{0: (1.0 / 9.0), 3: (7.0 / 18.0), 4: 0.5}, SparseCap: 5}))
+		Expect(sparse).To(Equal(&util.Vector{Data: []float64{(2.0 / 18), (7.0 / 18), 0.5}, Sparse: []int64{0, 3, 4}}))
 
 		dense.Normalize()
-		Expect(dense).To(Equal(&util.Vector{Dense: []float64{(1.0 / 9.0), 0, 0, (7.0 / 18.0), 0.5}}))
+		Expect(dense).To(Equal(&util.Vector{Data: []float64{(2.0 / 18), 0, 0, (7.0 / 18), 0.5}}))
 	})
 
 	It("should count", func() {
@@ -73,10 +75,10 @@ var _ = Describe("Vector", func() {
 
 	It("should clear", func() {
 		sparse.Clear()
-		Expect(sparse).To(Equal(&util.Vector{Sparse: map[int64]float64{}}))
+		Expect(sparse).To(Equal(&util.Vector{Data: []float64{}, Sparse: []int64{}}))
 
 		dense.Clear()
-		Expect(dense).To(Equal(&util.Vector{Dense: []float64{}}))
+		Expect(dense).To(Equal(&util.Vector{Data: []float64{}}))
 	})
 
 	It("should calculate total weight", func() {
@@ -209,7 +211,7 @@ var _ = Describe("VectorDistribution", func() {
 	})
 
 	It("should get", func() {
-		Expect(sparse.Get(0)).To(Equal(&util.Vector{Sparse: map[int64]float64{1: 1, 2: 1, 3: 1, 4: 1}, SparseCap: 5}))
+		Expect(sparse.Get(0)).To(Equal(&util.Vector{Data: []float64{1, 1, 1, 1}, Sparse: []int64{1, 2, 3, 4}}))
 		Expect(sparse.Get(2)).To(BeNil())
 		Expect(sparse.Get(-1)).To(BeNil())
 
@@ -264,6 +266,7 @@ func BenchmarkVector(b *testing.B) {
 	} {
 		b.Run(fmt.Sprintf("%d/%d", t.N, t.MaxIndex), func(b *testing.B) {
 			s := new(util.Vector)
+			s.ToSparse()
 			for i := 0; i < t.N; i++ {
 				offset := int(float64(i) * float64(t.MaxIndex) / float64(t.N))
 				s.Set(t.MaxIndex-offset, 1.0)
