@@ -16,16 +16,11 @@ option java_outer_classname = "UtilProtos";
 // The minimum value of each vector element is 0, which indicates "not set".
 message Vector {
   repeated double data = 1 [packed=true];
-  repeated int64 sparse = 2;
+  repeated uint32 sparse_dict = 2 [packed=true];
 }
 
-// Vector maintains a distribution of vectors.
-message VectorDistribution {
-  message Dense {
-    Vector vector = 1 [(gogoproto.embed) = true];
-  }
-
-  repeated Dense dense = 1 [(gogoproto.nullable) = false];
-  map<int64, Vector> sparse = 2;
-  int64 sparse_cap = 3;
+// Matrix is an auto-expanding matrix data type.
+message Matrix {
+  uint32 stride = 1;
+  repeated double data = 2 [packed=true];
 }

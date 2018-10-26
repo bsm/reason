@@ -86,6 +86,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:2657c4cf8f97a971af655c4add1f0696ab10a68b1f0c69aea7c364b82b2b4469"
+  name = "golang.org/x/exp"
+  packages = ["rand"]
+  pruneopts = "T"
+  revision = "42ba7d4b6eb299bf56fcfc4f0541a857ad0e2da3"
+
+[[projects]]
+  branch = "master"
   digest = "1:0c04b2a25e05e53a014eb3329cd9e3759bee811e333cf6db2ec1819d6c2dad31"
   name = "golang.org/x/net"
   packages = [
@@ -98,11 +106,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e14a47671a5bb6d5dff4f1d7b5f2b7ff96895db8304b164d1dac15a6ba2773da"
+  digest = "1:54491a5e069cbf3b9d1d5cf91355853af14f1b3824998f5eeb2fbf1b96525b24"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "T"
-  revision = "d989b31c87461dc8ab2f1cac6792814e27fadea9"
+  revision = "2772b66316d2c587efeb188dcd5ebc6987656e84"
 
 [[projects]]
   digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
@@ -129,6 +137,33 @@
   pruneopts = "T"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ca3c1ec92b508f4fbe7111a345cd8b875647afcc042980619da4a10ebc28ea54"
+  name = "gonum.org/v1/gonum"
+  packages = [
+    "blas",
+    "blas/blas64",
+    "blas/gonum",
+    "floats",
+    "internal/asm/c128",
+    "internal/asm/f32",
+    "internal/asm/f64",
+    "internal/math32",
+    "lapack",
+    "lapack/gonum",
+    "lapack/lapack64",
+    "mat",
+    "mathext",
+    "mathext/internal/amos",
+    "mathext/internal/cephes",
+    "mathext/internal/gonum",
+    "stat",
+    "stat/distuv",
+  ]
+  pruneopts = "T"
+  revision = "45a3ddb340688d6b1909e5f6523187915b54cfbd"
 
 [[projects]]
   digest = "1:7fc160b460a6fc506b37fcca68332464c3f2cd57b6e3f111f26c5bbfd2d5518e"
@@ -165,6 +200,7 @@
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/extensions/table",
     "github.com/onsi/gomega",
+    "gonum.org/v1/gonum/stat/distuv",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

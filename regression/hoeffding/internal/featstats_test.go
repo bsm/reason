@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/regression/hoeffding/internal"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,9 +12,9 @@ var _ = Describe("FeatureStats_Numerical", func() {
 
 	BeforeEach(func() {
 		subject = new(internal.FeatureStats_Numerical)
-		subject.Add(1.2, 2.2, 1.0)
-		subject.Add(4.2, 2.2, 1.0)
-		subject.Add(8.4, 2.2, 1.0)
+		subject.ObserveWeight(1.2, 2.2, 1.0)
+		subject.ObserveWeight(4.2, 2.2, 1.0)
+		subject.ObserveWeight(8.4, 2.2, 1.0)
 	})
 
 	It("should add", func() {
@@ -39,15 +40,15 @@ var _ = Describe("FeatureStats_Numerical", func() {
 	})
 
 	It("should calculate post-splits", func() {
-		s1 := subject.PostSplit(2.4)
-		Expect(s1.Len()).To(Equal(2))
-		Expect(s1.Get(0).Sum).To(Equal(2.2))
-		Expect(s1.Get(1).Sum).To(Equal(4.4))
+		s1 := regression.WrapStatsDistribution(subject.PostSplit(2.4))
+		Expect(s1.NumCategories()).To(Equal(2))
+		Expect(s1.Sum(0)).To(Equal(2.2))
+		Expect(s1.Sum(1)).To(Equal(4.4))
 
-		s2 := subject.PostSplit(4.8)
-		Expect(s2.Len()).To(Equal(2))
-		Expect(s2.Get(0).Sum).To(Equal(4.4))
-		Expect(s2.Get(1).Sum).To(Equal(2.2))
+		s2 := regression.WrapStatsDistribution(subject.PostSplit(4.8))
+		Expect(s2.NumCategories()).To(Equal(2))
+		Expect(s2.Sum(0)).To(Equal(4.4))
+		Expect(s2.Sum(1)).To(Equal(2.2))
 	})
 
 })
@@ -57,21 +58,21 @@ var _ = Describe("FeatureStats_Categorical", func() {
 
 	BeforeEach(func() {
 		subject = new(internal.FeatureStats_Categorical)
-		subject.Add(1, 2.2, 1.0)
-		subject.Add(4, 2.3, 1.0)
-		subject.Add(7, 2.4, 1.0)
+		subject.ObserveWeight(1, 2.2, 1.0)
+		subject.ObserveWeight(4, 2.3, 1.0)
+		subject.ObserveWeight(7, 2.4, 1.0)
 	})
 
 	It("should add", func() {
-		Expect(subject.Len()).To(Equal(3))
+		Expect(subject.NumCategories()).To(Equal(3))
 	})
 
 	It("should calculate post-splits", func() {
-		s := subject.PostSplit()
-		Expect(s.Len()).To(Equal(3))
-		Expect(s.Get(1).Sum).To(Equal(2.2))
-		Expect(s.Get(4).Sum).To(Equal(2.3))
-		Expect(s.Get(7).Sum).To(Equal(2.4))
+		s := regression.WrapStatsDistribution(subject.PostSplit())
+		Expect(s.NumCategories()).To(Equal(3))
+		Expect(s.Sum(1)).To(Equal(2.2))
+		Expect(s.Sum(4)).To(Equal(2.3))
+		Expect(s.Sum(7)).To(Equal(2.4))
 	})
 
 })

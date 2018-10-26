@@ -46,10 +46,7 @@ message FeatureStats {
   }
 
   message Categorical {
-    blacksquaremedia.reason.util.StreamStatsDistribution stats = 1 [
-      (gogoproto.embed) = true,
-      (gogoproto.nullable) = false
-    ];
+    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
 
   oneof kind {
@@ -62,7 +59,7 @@ message FeatureStats {
 message Node {
 
   // Observation stats for the node
-  blacksquaremedia.reason.util.StreamStats stats = 1;
+  blacksquaremedia.reason.util.Vector stats = 1;
 
   // Nodes can be leaf or split nodes.
   oneof kind {

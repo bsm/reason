@@ -10,6 +10,7 @@ import (
 	internal "github.com/bsm/reason/internal/hoeffding"
 	"github.com/bsm/reason/internal/iocount"
 	"github.com/bsm/reason/internal/protoio"
+	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/util"
 	"github.com/gogo/protobuf/proto"
 )
@@ -47,20 +48,17 @@ func (t *Tree) Len() int {
 }
 
 // Add adds a new leaf node
-func (t *Tree) Add(stats *util.StreamStats) int64 {
-	if stats == nil {
-		stats = new(util.StreamStats)
-	}
-
-	leaf := &LeafNode{WeightAtLastEval: stats.Weight}
+func (t *Tree) Add(vv *util.Vector) int64 {
+	stats := regression.WrapStats(vv)
+	leaf := &LeafNode{WeightAtLastEval: stats.TotalWeight()}
 	kind := &Node_Leaf{Leaf: leaf}
-	node := &Node{Kind: kind, Stats: stats}
+	node := &Node{Kind: kind, Stats: vv}
 	t.Nodes = append(t.Nodes, node)
 	return int64(len(t.Nodes))
 }
 
 // Split splits an existing leaf node
-func (t *Tree) Split(leafRef int64, feature string, pre *util.StreamStats, post *util.StreamStatsDistribution, pivot float64) {
+func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util.Matrix, pivot float64) {
 	if orig := t.Get(leafRef); orig == nil || orig.GetLeaf() == nil {
 		return
 	}
@@ -70,10 +68,12 @@ func (t *Tree) Split(leafRef int64, feature string, pre *util.StreamStats, post 
 		Pivot:   pivot,
 	}
 
-	post.ForEach(func(i int, stats *util.StreamStats) bool {
-		split.Children.SetRef(i, t.Add(stats))
-		return true
-	})
+	postStats := regression.WrapStatsDistribution(post)
+	numCats := postStats.NumCategories()
+	for i := 0; i < numCats; i++ {
+		vv := util.NewVectorFromSlice(postStats.Row(i)...)
+		split.Children.SetRef(i, t.Add(vv))
+	}
 
 	kind := &Node_Split{Split: split}
 	t.Set(leafRef, &Node{Kind: kind, Stats: pre})
@@ -103,7 +103,7 @@ func (t *Tree) Traverse(x core.Example, nodeRef int64, parent *Node, parentIndex
 }
 
 // Prune prunes the leaves of a node recursively
-func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(*util.StreamStats, *util.StreamStats) bool) {
+func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(regression.Stats, regression.Stats) bool) {
 	// Get the node
 	node := t.Get(nodeRef)
 	if node == nil {
@@ -120,7 +120,7 @@ func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(*util.StreamSt
 	}
 
 	// Disable if leaf (with a parent) and obsolete
-	if parent != nil && isObsolete(node.Stats, parent.Stats) {
+	if parent != nil && isObsolete(regression.WrapStats(node.Stats), regression.WrapStats(parent.Stats)) {
 		if leaf := node.GetLeaf(); leaf != nil {
 			leaf.Disable()
 		}

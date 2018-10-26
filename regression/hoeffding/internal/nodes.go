@@ -9,11 +9,11 @@ import (
 )
 
 // NewNode inits a node
-func NewNode(kind isNode_Kind, stats *util.StreamStats) *Node {
-	if stats == nil {
-		stats = new(util.StreamStats)
+func NewNode(kind isNode_Kind, vv *util.Vector) *Node {
+	if vv == nil {
+		vv = util.NewVector()
 	}
-	return &Node{Kind: kind, Stats: stats}
+	return &Node{Kind: kind, Stats: vv}
 }
 
 // IsSufficient returns true when a node has sufficient stats.
@@ -24,7 +24,7 @@ func (n *Node) IsSufficient() bool {
 
 // Weight returns the weight observed on the node.
 func (n *Node) Weight() float64 {
-	return n.Stats.Weight
+	return regression.WrapStats(n.Stats).TotalWeight()
 }
 
 // --------------------------------------------------------------------
@@ -97,7 +97,7 @@ func (n *LeafNode) EvaluateSplit(feature string, crit regression.SplitCriterion,
 		}
 		return c
 	case *FeatureStats_Categorical_:
-		if s := kind.Categorical; s.Len() > 1 {
+		if s := kind.Categorical; s.NumCategories() > 1 {
 			post := s.PostSplit()
 			return &SplitCandidate{
 				Feature:   feature,
@@ -120,7 +120,7 @@ func (n *LeafNode) Observe(m *core.Model, target *core.Feature, x core.Example, 
 	}
 
 	// Get example weight and update node stats
-	self.Stats.Add(targetVal, weight)
+	regression.WrapStats(self.Stats).ObserveWeight(targetVal, weight)
 
 	// Skip the remaining steps if this node is disabled
 	if n.IsDisabled {
@@ -148,11 +148,11 @@ func (n *LeafNode) Observe(m *core.Model, target *core.Feature, x core.Example, 
 		switch feat.Kind {
 		case core.Feature_CATEGORICAL:
 			if cat := feat.Category(x); core.IsCat(cat) {
-				stats.FetchCategorical().Add(cat, targetVal, weight)
+				stats.FetchCategorical().ObserveWeight(cat, targetVal, weight)
 			}
 		case core.Feature_NUMERICAL:
 			if num := feat.Number(x); core.IsNum(num) {
-				stats.FetchNumerical().Add(num, targetVal, weight)
+				stats.FetchNumerical().ObserveWeight(num, targetVal, weight)
 			}
 		}
 	}

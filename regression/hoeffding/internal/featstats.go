@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/internal/hoeffding"
+	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/util"
 )
 
@@ -28,20 +29,25 @@ func (s *FeatureStats) FetchNumerical() *FeatureStats_Numerical {
 
 // --------------------------------------------------------------------
 
-// PostSplit calculates a post-split distribution from previous observations.
-func (s *FeatureStats_Categorical) PostSplit() *util.StreamStatsDistribution {
-	return &s.StreamStatsDistribution
+// NumCategories returns the number of categories.
+func (s *FeatureStats_Categorical) NumCategories() int {
+	return regression.WrapStatsDistribution(&s.Matrix).NumCategories()
 }
 
-// Add adds an observation
-func (s *FeatureStats_Categorical) Add(featCat core.Category, targetVal, weight float64) {
-	s.StreamStatsDistribution.Add(int(featCat), targetVal, weight)
+// PostSplit calculates a post-split distribution from previous observations.
+func (s *FeatureStats_Categorical) PostSplit() *util.Matrix {
+	return &s.Matrix
+}
+
+// ObserveWeight adds an observation
+func (s *FeatureStats_Categorical) ObserveWeight(featCat core.Category, targetVal, weight float64) {
+	regression.WrapStatsDistribution(&s.Matrix).ObserveWeight(int(featCat), targetVal, weight)
 }
 
 // --------------------------------------------------------------------
 
-// Add adds an observation
-func (s *FeatureStats_Numerical) Add(featVal, targetVal, weight float64) {
+// ObserveWeight adds an observation.
+func (s *FeatureStats_Numerical) ObserveWeight(featVal, targetVal, weight float64) {
 	if len(s.Observations) == 0 || featVal < s.Min {
 		s.Min = featVal
 	}
@@ -62,14 +68,14 @@ func (s *FeatureStats_Numerical) PivotPoints() []float64 {
 }
 
 // PostSplit calculates a post-split distribution from previous observations
-func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.StreamStatsDistribution {
-	res := new(util.StreamStatsDistribution)
+func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.Matrix {
+	stats := regression.WrapStatsDistribution(nil)
 	for _, o := range s.Observations {
 		if o.FeatureValue <= pivot {
-			res.Add(0, o.TargetValue, o.Weight)
+			stats.ObserveWeight(0, o.TargetValue, o.Weight)
 		} else {
-			res.Add(1, o.TargetValue, o.Weight)
+			stats.ObserveWeight(1, o.TargetValue, o.Weight)
 		}
 	}
-	return res
+	return stats.Matrix
 }

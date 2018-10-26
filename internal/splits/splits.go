@@ -16,8 +16,10 @@ type GainRatioPenality struct {
 }
 
 func (p *GainRatioPenality) Update(w float64) {
-	rat := w / p.Weight
-	p.value -= rat * math.Log2(rat)
+	if p.Weight != 0 {
+		rat := w / p.Weight
+		p.value -= rat * math.Log2(rat)
+	}
 }
 
 func (p *GainRatioPenality) Value() float64 {
