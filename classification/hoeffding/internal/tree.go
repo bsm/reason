@@ -60,7 +60,7 @@ func (t *Tree) Add(stats *util.Vector) int64 {
 }
 
 // Split splits an existing leaf node
-func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util.VectorDistribution, pivot float64) {
+func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util.Matrix, pivot float64) {
 	if orig := t.Get(leafRef); orig == nil || orig.GetLeaf() == nil {
 		return
 	}
@@ -70,10 +70,15 @@ func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util
 		Pivot:   pivot,
 	}
 
-	post.ForEach(func(i int, stats *util.Vector) bool {
-		split.Children.SetRef(i, t.Add(stats))
-		return true
-	})
+	rows := post.NumRows()
+	for i := 0; i < rows; i++ {
+		if post.RowSum(i) > 0 {
+			// TODO: do we need to copy here?
+			row := append([]float64{}, post.Row(i)...)
+			vv := util.NewVectorFromSlice(row...)
+			split.SetChild(i, t.Add(vv))
+		}
+	}
 
 	kind := &Node_Split{Split: split}
 	t.Set(leafRef, &Node{Kind: kind, Stats: pre})
@@ -93,7 +98,7 @@ func (t *Tree) Traverse(x core.Example, nodeRef int64, parent *Node, parentIndex
 		feature := t.Model.Feature(split.Feature)
 
 		if nodeIndex := int(split.childCat(feature, x)); nodeIndex > -1 {
-			if childRef := split.Children.GetRef(nodeIndex); childRef > 0 {
+			if childRef := split.GetChild(nodeIndex); childRef > 0 {
 				return t.Traverse(x, childRef, node, nodeIndex, forEach)
 			}
 			return nil, nodeRef, node, nodeIndex
@@ -112,10 +117,11 @@ func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(*util.Vector, 
 
 	// Recurse if a split node
 	if split := node.GetSplit(); split != nil {
-		split.Children.ForEach(func(_ int, childRef int64) bool {
-			t.Prune(childRef, node, isObsolete)
-			return true
-		})
+		for _, childRef := range split.Children {
+			if childRef != 0 {
+				t.Prune(childRef, node, isObsolete)
+			}
+		}
 		return
 	}
 
@@ -135,8 +141,12 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 		return
 	}
 
+	var (
+		n  int
+		nn int64
+	)
+
 	// Print node stats
-	var n int
 	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f]\n", node.Weight())
 	nw += int64(n)
 	if err != nil {
@@ -151,14 +161,16 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 		}
 
 		subIndent := indent + "\t"
-		split.Children.ForEach(func(i int, childRef int64) bool {
-			var nn int64
+		for i, childRef := range split.Children {
+			if childRef == 0 {
+				continue
+			}
+
 			nn, err = t.WriteText(w, childRef, subIndent, internal.FormatNodeCondition(feat, i, split.Pivot))
 			nw += nn
-			return err == nil
-		})
-		if err != nil {
-			return
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -172,8 +184,12 @@ func (t *Tree) WriteDOT(w io.Writer, nodeRef int64, name, label string) (nw int6
 		return
 	}
 
+	var (
+		n  int
+		nn int64
+	)
+
 	// Write node data
-	var n int
 	n, err = fmt.Fprintf(w, `  %s [label="%sweight: %.0f"];`+"\n", name, label, node.Weight())
 	nw += int64(n)
 	if err != nil {
@@ -187,22 +203,23 @@ func (t *Tree) WriteDOT(w io.Writer, nodeRef int64, name, label string) (nw int6
 			return
 		}
 
-		split.Children.ForEach(func(i int, childRef int64) bool {
-			subName := fmt.Sprintf("%s_%d", name, i)
+		for i, childRef := range split.Children {
+			if childRef == 0 {
+				continue
+			}
 
+			subName := fmt.Sprintf("%s_%d", name, i)
 			n, err = fmt.Fprintf(w, "  %s -> %s;\n", name, subName)
 			nw += int64(n)
 			if err != nil {
-				return false
+				return
 			}
 
-			var nn int64
 			nn, err = t.WriteDOT(w, childRef, subName, internal.FormatNodeCondition(feat, i, split.Pivot)+`\n`)
 			nw += nn
-			return err == nil
-		})
-		if err != nil {
-			return
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -232,10 +249,11 @@ func (t *Tree) Accumulate(nodeRef int64, depth int, info *common.TreeInfo) {
 	}
 
 	if split := node.GetSplit(); split != nil {
-		split.Children.ForEach(func(_ int, childRef int64) bool {
-			t.Accumulate(childRef, depth+1, info)
-			return true
-		})
+		for _, childRef := range split.Children {
+			if childRef != 0 {
+				t.Accumulate(childRef, depth+1, info)
+			}
+		}
 	} else if leaf := node.GetLeaf(); leaf != nil {
 		if leaf.IsDisabled {
 			info.NumDisabled++

@@ -7,11 +7,22 @@ func NewMatrix() *Matrix {
 
 // Dims returns the number of rows and cols.
 func (m *Matrix) Dims() (rows, cols int) {
-	cols = int(m.Stride)
+	cols = m.NumCols()
 	if cols != 0 {
 		rows = len(m.Data) / cols
 	}
 	return
+}
+
+// NumRows returns the number of rows.
+func (m *Matrix) NumRows() int {
+	rows, _ := m.Dims()
+	return rows
+}
+
+// NumCols returns the number of cols.
+func (m *Matrix) NumCols() int {
+	return int(m.Stride)
 }
 
 // At gets the weight of cell (i, j).

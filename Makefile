@@ -1,4 +1,4 @@
-PKG=$(subst github.com/bsm/reason,.,$(shell go list ./... | grep -v 'vendor'))
+PKG=./...
 PROTOS=$(shell find .  -name '*.proto' -not -path './vendor/*')
 
 default: vet test

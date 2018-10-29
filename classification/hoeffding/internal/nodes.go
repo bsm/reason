@@ -26,6 +26,24 @@ func (n *Node) Weight() float64 {
 
 // --------------------------------------------------------------------
 
+func (n *SplitNode) GetChild(index int) int64 {
+	if index < len(n.Children) {
+		return n.Children[index]
+	}
+	return 0
+}
+
+func (n *SplitNode) SetChild(index int, nodeRef int64) {
+	if sz := index + 1; sz > cap(n.Children) {
+		children := make([]int64, sz, 2*sz)
+		copy(children, n.Children)
+		n.Children = children
+	} else if sz > len(n.Children) {
+		n.Children = n.Children[:sz]
+	}
+	n.Children[index] = nodeRef
+}
+
 func (n *SplitNode) childCat(feature *core.Feature, x core.Example) core.Category {
 	switch feature.Kind {
 	case core.Feature_CATEGORICAL:
@@ -94,7 +112,7 @@ func (n *LeafNode) EvaluateSplit(feature string, crit classification.SplitCriter
 		}
 		return c
 	case *FeatureStats_Categorical_:
-		if s := kind.Categorical; s.Len() > 1 {
+		if s := kind.Categorical; s.NumCategories() > 1 {
 			post := s.PostSplit()
 			return &SplitCandidate{
 				Feature:   feature,
@@ -145,11 +163,11 @@ func (n *LeafNode) Observe(m *core.Model, target *core.Feature, x core.Example, 
 		switch feat.Kind {
 		case core.Feature_CATEGORICAL:
 			if cat := feat.Category(x); core.IsCat(cat) {
-				stats.FetchCategorical().Add(cat, targetCat, weight)
+				stats.FetchCategorical().ObserveWeight(cat, targetCat, weight)
 			}
 		case core.Feature_NUMERICAL:
 			if num := feat.Number(x); core.IsNum(num) {
-				stats.FetchNumerical().Add(num, targetCat, weight)
+				stats.FetchNumerical().ObserveWeight(num, targetCat, weight)
 			}
 		}
 	}

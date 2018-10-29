@@ -9,19 +9,19 @@ import (
 
 var _ = Describe("SplitCriterion", func() {
 	var pre *util.Vector
-	var post1, post2, post3 *util.VectorDistribution
+	var post1, post2, post3 *util.Matrix
 
 	BeforeEach(func() {
 		pre = util.NewVectorFromSlice(9.0, 6.0)
 
-		post1 = new(util.VectorDistribution)
+		post1 = util.NewMatrix()
 		post1.Add(0, 0, 3.0)
-		post1.Add(0, 1, 2.0)
+		post1.Add(0, 2, 2.0)
 		post1.Add(1, 0, 4.0)
 		post1.Add(2, 0, 2.0)
-		post1.Add(2, 1, 4.0)
+		post1.Add(2, 2, 4.0)
 
-		post2 = new(util.VectorDistribution)
+		post2 = util.NewMatrix()
 		post2.Add(0, 0, 1.0)
 		post2.Add(1, 0, 2.0)
 		post2.Add(2, 0, 1.0)
@@ -35,9 +35,9 @@ var _ = Describe("SplitCriterion", func() {
 		post2.Add(8, 1, 1.0)
 		post2.Add(9, 1, 1.0)
 
-		post3 = new(util.VectorDistribution)
+		post3 = util.NewMatrix()
 		post3.Add(0, 0, 9.0)
-		post3.Add(0, 1, 6.0)
+		post3.Add(0, 2, 6.0)
 	})
 
 	Describe("GiniImpurity", func() {
@@ -95,6 +95,5 @@ var _ = Describe("SplitCriterion", func() {
 			Expect(base.Merit(pre, post2)).To(BeNumerically("~", 0.65, 0.01))
 			Expect(subject.Merit(pre, post2)).To(BeNumerically("~", 0.21, 0.01))
 		})
-
 	})
 })

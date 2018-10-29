@@ -36,11 +36,11 @@ message FeatureStats {
   message Numerical {
     blacksquaremedia.reason.util.Vector min = 1 [(gogoproto.nullable) = false];
     blacksquaremedia.reason.util.Vector max = 2 [(gogoproto.nullable) = false];
-    blacksquaremedia.reason.util.StreamStatsDistribution stats = 3 [(gogoproto.nullable) = false];
+    blacksquaremedia.reason.util.Matrix stats = 3 [(gogoproto.nullable) = false];
   }
 
   message Categorical {
-    blacksquaremedia.reason.util.VectorDistribution stats = 1 [
+    blacksquaremedia.reason.util.Matrix stats = 1 [
       (gogoproto.embed) = true,
       (gogoproto.nullable) = false
     ];
@@ -73,16 +73,8 @@ message SplitNode {
   // The pivot value for binary splits (numerical predictors).
   double pivot = 2;
 
-  // Children is a collection of child node references.
-  message Children {
-    repeated int64 dense = 1;
-
-    map<int64, int64> sparse = 2;
-    int64 sparse_cap = 3;
-  }
-
   // The child references.
-  Children children = 3 [(gogoproto.nullable) = false];
+  repeated int64 children = 3 [packed=true];
 }
 
 // LeafNode instances are the leaves within the tree.

@@ -38,7 +38,7 @@ func (p *Prediction) TopW() (core.Category, float64) {
 
 // W returns the weight of the given category.
 func (p *Prediction) W(cat core.Category) float64 {
-	return p.Get(int(cat))
+	return p.At(int(cat))
 }
 
 // P returns the probability of the given category.

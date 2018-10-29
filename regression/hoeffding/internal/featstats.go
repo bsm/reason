@@ -3,7 +3,6 @@ package internal
 import (
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/internal/hoeffding"
-	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/util"
 )
 
@@ -31,7 +30,7 @@ func (s *FeatureStats) FetchNumerical() *FeatureStats_Numerical {
 
 // NumCategories returns the number of categories.
 func (s *FeatureStats_Categorical) NumCategories() int {
-	return regression.WrapStatsDistribution(&s.Matrix).NumCategories()
+	return util.WrapNumStreams(&s.Matrix).NumCategories()
 }
 
 // PostSplit calculates a post-split distribution from previous observations.
@@ -41,7 +40,7 @@ func (s *FeatureStats_Categorical) PostSplit() *util.Matrix {
 
 // ObserveWeight adds an observation
 func (s *FeatureStats_Categorical) ObserveWeight(featCat core.Category, targetVal, weight float64) {
-	regression.WrapStatsDistribution(&s.Matrix).ObserveWeight(int(featCat), targetVal, weight)
+	util.WrapNumStreams(&s.Matrix).ObserveWeight(int(featCat), targetVal, weight)
 }
 
 // --------------------------------------------------------------------
@@ -69,13 +68,14 @@ func (s *FeatureStats_Numerical) PivotPoints() []float64 {
 
 // PostSplit calculates a post-split distribution from previous observations
 func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.Matrix {
-	stats := regression.WrapStatsDistribution(util.NewMatrix())
+	post := util.NewMatrix()
+	wrap := util.WrapNumStreams(post)
 	for _, o := range s.Observations {
 		if o.FeatureValue <= pivot {
-			stats.ObserveWeight(0, o.TargetValue, o.Weight)
+			wrap.ObserveWeight(0, o.TargetValue, o.Weight)
 		} else {
-			stats.ObserveWeight(1, o.TargetValue, o.Weight)
+			wrap.ObserveWeight(1, o.TargetValue, o.Weight)
 		}
 	}
-	return stats.Matrix
+	return post
 }

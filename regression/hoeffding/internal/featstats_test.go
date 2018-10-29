@@ -1,8 +1,8 @@
 package internal_test
 
 import (
-	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/regression/hoeffding/internal"
+	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -40,12 +40,12 @@ var _ = Describe("FeatureStats_Numerical", func() {
 	})
 
 	It("should calculate post-splits", func() {
-		s1 := regression.WrapStatsDistribution(subject.PostSplit(2.4))
+		s1 := util.WrapNumStreams(subject.PostSplit(2.4))
 		Expect(s1.NumCategories()).To(Equal(2))
 		Expect(s1.Sum(0)).To(Equal(2.2))
 		Expect(s1.Sum(1)).To(Equal(4.4))
 
-		s2 := regression.WrapStatsDistribution(subject.PostSplit(4.8))
+		s2 := util.WrapNumStreams(subject.PostSplit(4.8))
 		Expect(s2.NumCategories()).To(Equal(2))
 		Expect(s2.Sum(0)).To(Equal(4.4))
 		Expect(s2.Sum(1)).To(Equal(2.2))
@@ -68,7 +68,7 @@ var _ = Describe("FeatureStats_Categorical", func() {
 	})
 
 	It("should calculate post-splits", func() {
-		s := regression.WrapStatsDistribution(subject.PostSplit())
+		s := util.WrapNumStreams(subject.PostSplit())
 		Expect(s.NumCategories()).To(Equal(3))
 		Expect(s.Sum(1)).To(Equal(2.2))
 		Expect(s.Sum(4)).To(Equal(2.3))

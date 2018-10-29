@@ -3,9 +3,10 @@ package ftrl_test
 import (
 	"bytes"
 
+	"github.com/bsm/mlmetrics"
+
 	"github.com/bsm/reason/classification/ftrl"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -48,14 +49,14 @@ var _ = Describe("Optimizer", func() {
 	DescribeTable("should train & predict",
 		func(n int, exp *testdata.RegressionScore) {
 			opt, model, examples := train(n)
-			eval := regression.NewEvaluator()
+			metric := mlmetrics.NewRegression()
 			for _, x := range examples[n:] {
 				prediction := opt.Predict(x)
 				actual := model.Feature("target").Number(x)
-				eval.Record(prediction, actual, 1.0)
+				metric.Observe(actual, prediction)
 			}
-			Expect(eval.R2()).To(BeNumerically("~", exp.R2, 0.001))
-			Expect(eval.RMSE()).To(BeNumerically("~", exp.RMSE, 0.001))
+			Expect(metric.R2()).To(BeNumerically("~", exp.R2, 0.001))
+			Expect(metric.RMSE()).To(BeNumerically("~", exp.RMSE, 0.001))
 		},
 
 		Entry("1,000", 1000, &testdata.RegressionScore{

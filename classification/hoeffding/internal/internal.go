@@ -12,7 +12,7 @@ type SplitCandidate struct {
 	// Pre-split stats
 	PreSplit *util.Vector
 	// Post-split stats
-	PostSplit *util.VectorDistribution
+	PostSplit *util.Matrix
 }
 
 // SplitCandidates are a sortable collection of split candidates

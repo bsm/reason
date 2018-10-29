@@ -1,28 +1,27 @@
-package regression_test
+package util_test
 
 import (
 	"math"
 
-	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Stats", func() {
-	var subject, weight1, blank regression.Stats
+var _ = Describe("NumStream", func() {
+	var subject, weight1, blank util.NumStream
 
 	BeforeEach(func() {
-		subject = regression.WrapStats(util.NewVector())
+		subject = util.NewNumStream()
 		for _, v := range []float64{1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9} {
 			subject.Observe(v)
 		}
 
-		weight1 = regression.WrapStats(util.NewVector())
+		weight1 = util.NewNumStream()
 		weight1.Observe(5.4)
 
-		blank = regression.WrapStats(util.NewVector())
+		blank = util.NewNumStream()
 	})
 
 	It("should return total weight", func() {
@@ -91,11 +90,11 @@ var _ = Describe("Stats", func() {
 	})
 })
 
-var _ = Describe("StatsDistribution", func() {
-	var subject regression.StatsDistribution
+var _ = Describe("NumStreams", func() {
+	var subject util.NumStreams
 
 	BeforeEach(func() {
-		subject = regression.WrapStatsDistribution(util.NewMatrix())
+		subject = util.NewNumStreams()
 		for _, v := range []float64{1.1, 2.2, 3.3, 4.4} {
 			subject.Observe(0, v)
 		}

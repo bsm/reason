@@ -28,28 +28,40 @@ func (s *FeatureStats) FetchNumerical() *FeatureStats_Numerical {
 
 // --------------------------------------------------------------------
 
-// PostSplit calculates a post-split distribution from previous observations.
-func (s *FeatureStats_Categorical) PostSplit() *util.VectorDistribution {
-	return &s.VectorDistribution
+// NumCategories returns the number of categories.
+func (s *FeatureStats_Categorical) NumCategories() (n int) {
+	rows := s.NumRows()
+	for i := 0; i < rows; i++ {
+		if s.RowSum(i) > 0 {
+			n++
+		}
+	}
+	return n
 }
 
-// Add adds an observation
-func (s *FeatureStats_Categorical) Add(featCat, targetCat core.Category, weight float64) {
-	s.VectorDistribution.Add(int(featCat), int(targetCat), weight)
+// PostSplit calculates a post-split distribution from previous observations.
+func (s *FeatureStats_Categorical) PostSplit() *util.Matrix {
+	return &s.Matrix
+}
+
+// ObserveWeight adds an observation.
+func (s *FeatureStats_Categorical) ObserveWeight(featCat, targetCat core.Category, weight float64) {
+	s.Matrix.Add(int(featCat), int(targetCat), weight)
 }
 
 // --------------------------------------------------------------------
 
-// Add adds an observation
-func (s *FeatureStats_Numerical) Add(featVal float64, targetCat core.Category, weight float64) {
+// ObserveWeight adds an observation.
+func (s *FeatureStats_Numerical) ObserveWeight(featVal float64, targetCat core.Category, weight float64) {
 	targetPos := int(targetCat)
-	if v := s.Min.Get(targetPos); v == 0 || featVal < v {
+	if v := s.Min.At(targetPos); v == 0 || featVal < v {
 		s.Min.Set(targetPos, featVal)
 	}
-	if v := s.Max.Get(targetPos); v == 0 || featVal > v {
+	if v := s.Max.At(targetPos); v == 0 || featVal > v {
 		s.Max.Set(targetPos, featVal)
 	}
-	s.Stats.Add(targetPos, featVal, weight)
+	streams := util.WrapNumStreams(&s.Stats)
+	streams.ObserveWeight(targetPos, featVal, weight)
 }
 
 // PivotPoints determines the optimum split points for the range of values.
@@ -59,7 +71,7 @@ func (s *FeatureStats_Numerical) PivotPoints() []float64 {
 		if tmin == 0 || min < tmin {
 			tmin = min
 		}
-		if max := s.Max.Get(i); tmax == 0 || max > tmax {
+		if max := s.Max.At(i); tmax == 0 || max > tmax {
 			tmax = max
 		}
 		return true
@@ -68,19 +80,19 @@ func (s *FeatureStats_Numerical) PivotPoints() []float64 {
 }
 
 // PostSplit calculates a post-split distribution from previous observations
-func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.VectorDistribution {
-	res := new(util.VectorDistribution)
-	s.Stats.ForEach(func(i int, x *util.StreamStats) bool {
-		if min := s.Min.Get(i); min > 0 && pivot < min {
-			res.Add(1, i, x.Weight)
-		} else if max := s.Max.Get(i); max > 0 && pivot >= max {
-			res.Add(0, i, x.Weight)
+func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.Matrix {
+	post := util.NewMatrix()
+	wrap := util.WrapNumStreams(&s.Stats)
+	wrap.ForEach(func(cat int) {
+		if min := s.Min.At(cat); min > 0 && pivot < min {
+			post.Add(1, cat, wrap.TotalWeight(cat))
+		} else if max := s.Max.At(cat); max > 0 && pivot >= max {
+			post.Add(0, cat, wrap.TotalWeight(cat))
 		} else {
-			lt, eq, gt := x.Estimate(pivot)
-			res.Add(0, i, lt+eq)
-			res.Add(1, i, gt)
+			lt, eq, gt := wrap.Estimate(cat, pivot)
+			post.Add(0, cat, lt+eq)
+			post.Add(1, cat, gt)
 		}
-		return true
 	})
-	return res
+	return post
 }

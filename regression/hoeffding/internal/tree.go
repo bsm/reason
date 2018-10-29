@@ -10,7 +10,6 @@ import (
 	internal "github.com/bsm/reason/internal/hoeffding"
 	"github.com/bsm/reason/internal/iocount"
 	"github.com/bsm/reason/internal/protoio"
-	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/util"
 	"github.com/gogo/protobuf/proto"
 )
@@ -49,8 +48,8 @@ func (t *Tree) Len() int {
 
 // Add adds a new leaf node and returns the ref.
 func (t *Tree) Add(vv *util.Vector) int64 {
-	stats := regression.WrapStats(vv)
-	leaf := &LeafNode{WeightAtLastEval: stats.TotalWeight()}
+	stream := util.WrapNumStream(vv)
+	leaf := &LeafNode{WeightAtLastEval: stream.TotalWeight()}
 	node := &Node{Kind: &Node_Leaf{Leaf: leaf}, Stats: vv}
 	t.Nodes = append(t.Nodes, node)
 	return int64(len(t.Nodes))
@@ -67,11 +66,15 @@ func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util
 		Pivot:   pivot,
 	}
 
-	postStats := regression.WrapStatsDistribution(post)
-	postStats.ForEach(func(cat int) {
-		vv := util.NewVectorFromSlice(postStats.Row(cat)...)
-		split.SetChild(cat, t.Add(vv))
-	})
+	rows := post.NumRows()
+	for i := 0; i < rows; i++ {
+		if post.RowSum(i) > 0 {
+			// TODO: do we need to copy here?
+			row := append([]float64{}, post.Row(i)...)
+			vv := util.NewVectorFromSlice(row...)
+			split.SetChild(i, t.Add(vv))
+		}
+	}
 
 	kind := &Node_Split{Split: split}
 	t.Set(leafRef, &Node{Kind: kind, Stats: pre})
@@ -101,7 +104,7 @@ func (t *Tree) Traverse(x core.Example, nodeRef int64, parent *Node, parentIndex
 }
 
 // Prune prunes the leaves of a node recursively
-func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(regression.Stats, regression.Stats) bool) {
+func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(util.NumStream, util.NumStream) bool) {
 	// Get the node
 	node := t.Get(nodeRef)
 	if node == nil {
@@ -119,7 +122,7 @@ func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(regression.Sta
 	}
 
 	// Disable if leaf (with a parent) and obsolete
-	if parent != nil && isObsolete(regression.WrapStats(node.Stats), regression.WrapStats(parent.Stats)) {
+	if parent != nil && isObsolete(util.WrapNumStream(node.Stats), util.WrapNumStream(parent.Stats)) {
 		if leaf := node.GetLeaf(); leaf != nil {
 			leaf.Disable()
 		}
@@ -134,11 +137,15 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 		return
 	}
 
-	stats := regression.WrapStats(node.Stats)
+	var (
+		n  int
+		nn int64
+	)
+
+	stream := util.WrapNumStream(node.Stats)
 
 	// Print node stats
-	var n int
-	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", node.Weight(), stats.Mean(), stats.Variance())
+	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", stream.TotalWeight(), stream.Mean(), stream.Variance())
 	nw += int64(n)
 	if err != nil {
 		return
@@ -157,7 +164,6 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 				continue
 			}
 
-			var nn int64
 			nn, err = t.WriteText(w, childRef, subIndent, internal.FormatNodeCondition(feat, i, split.Pivot))
 			nw += nn
 			if err != nil {
@@ -176,8 +182,10 @@ func (t *Tree) WriteDOT(w io.Writer, nodeRef int64, name, label string) (nw int6
 		return
 	}
 
-	var n int
-	var nn int64
+	var (
+		n  int
+		nn int64
+	)
 
 	// Write node data
 	n, err = fmt.Fprintf(w, `  %s [label="%sweight: %.0f"];`+"\n", name, label, node.Weight())

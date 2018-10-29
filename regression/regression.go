@@ -1,13 +1,17 @@
 // Package regression contains tools for solving regression problems
 package regression
 
+import (
+	"github.com/bsm/reason/util"
+)
+
 // Predictions is a slice of predictions.
-type Predictions []Stats
+type Predictions []util.NumStream
 
 // Best returns the most accurate prediction.
-func (pp Predictions) Best() Stats {
+func (pp Predictions) Best() util.NumStream {
 	if n := len(pp); n != 0 {
 		return pp[n-1]
 	}
-	return WrapStats(nil)
+	return util.NewNumStream()
 }

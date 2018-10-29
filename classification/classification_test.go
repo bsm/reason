@@ -45,7 +45,6 @@ var _ = Describe("Prediction", func() {
 		Expect(subject.P(2)).To(Equal(0.6))
 		Expect(subject.P(5)).To(Equal(0.3))
 	})
-
 })
 
 // --------------------------------------------------------------------

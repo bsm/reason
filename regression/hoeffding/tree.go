@@ -91,7 +91,7 @@ func (t *Tree) Predict(dst regression.Predictions, x core.Example) regression.Pr
 	defer t.mu.RUnlock()
 
 	t.tree.Traverse(x, t.tree.Root, nil, -1, func(node *internal.Node) {
-		dst = append(dst, regression.WrapStats(node.Stats))
+		dst = append(dst, util.WrapNumStream(node.Stats))
 	})
 	return dst
 }

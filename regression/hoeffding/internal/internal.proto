@@ -77,7 +77,7 @@ message SplitNode {
   double pivot = 2;
 
   // The child references.
-  repeated int64 children = 3;
+  repeated int64 children = 3 [packed=true];
 }
 
 // LeafNode instances are the leaves within the tree.

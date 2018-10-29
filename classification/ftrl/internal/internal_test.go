@@ -12,7 +12,6 @@ import (
 
 var _ = Describe("Optimizer", func() {
 	var subject *internal.Optimizer
-
 	model := testdata.RegressionModel()
 
 	BeforeEach(func() {
@@ -36,7 +35,6 @@ var _ = Describe("Optimizer", func() {
 		Expect(dup.ReadFrom(buf)).To(Equal(int64(332)))
 		Expect(dup).To(Equal(subject))
 	})
-
 })
 
 func TestSuite(t *testing.T) {

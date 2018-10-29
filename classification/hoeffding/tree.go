@@ -104,7 +104,7 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 		if split := parent.GetSplit(); split != nil {
 			ref := t.tree.Add(nil)
 			node = t.tree.Get(ref)
-			split.Children.SetRef(parentIndex, ref)
+			split.SetChild(parentIndex, ref)
 		}
 	}
 	if node == nil {
@@ -142,7 +142,7 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 			if parent == nil {
 				t.tree.Root = nodeRef
 			} else if split := parent.GetSplit(); split != nil {
-				split.Children.SetRef(parentIndex, nodeRef)
+				split.SetChild(parentIndex, nodeRef)
 			}
 		}
 		return info

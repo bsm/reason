@@ -40,29 +40,29 @@ func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
 		return 0.0
 	}
 
-	fullWeight := 0.0
-	catCount := 0
-	postStats := WrapStatsDistribution(post)
-	postStats.ForEach(func(cat int) {
-		if w := postStats.TotalWeight(cat); w >= c.MinWeight {
-			fullWeight += w
-			catCount++
+	postWeight := 0.0
+	postCount := 0
+	postStreams := util.WrapNumStreams(post)
+	postStreams.ForEach(func(cat int) {
+		if w := postStreams.TotalWeight(cat); w >= c.MinWeight {
+			postWeight += w
+			postCount++
 		}
 	})
-	if catCount < 2 || fullWeight == 0 {
+	if postCount < 2 || postWeight == 0 {
 		return 0.0
 	}
 
-	preStats := WrapStats(pre)
-	preVar := preStats.Variance()
+	preStream := util.WrapNumStream(pre)
+	preVar := preStream.Variance()
 	if math.IsNaN(preVar) {
 		return 0.0
 	}
 
 	postVar := 0.0
-	postStats.ForEach(func(cat int) {
-		if w, v := postStats.TotalWeight(cat), postStats.Variance(cat); w >= c.MinWeight && !math.IsNaN(v) {
-			postVar += w * v / fullWeight
+	postStreams.ForEach(func(cat int) {
+		if w, v := postStreams.TotalWeight(cat), postStreams.Variance(cat); w >= c.MinWeight && !math.IsNaN(v) {
+			postVar += w * v / postWeight
 		}
 	})
 
@@ -77,16 +77,15 @@ func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
 type GainRatio struct{ SplitCriterion }
 
 func (c GainRatio) Merit(pre *util.Vector, post *util.Matrix) float64 {
-	merit := c.SplitCriterion.Merit(pre, post)
-	postStats := WrapStatsDistribution(post)
-	numCats := postStats.NumCategories()
-
+	postStreams := util.WrapNumStreams(post)
 	penalty := new(splits.GainRatioPenalty)
-	for i := 0; i < numCats; i++ {
-		penalty.Weight += postStats.TotalWeight(i)
-	}
-	for i := 0; i < numCats; i++ {
-		penalty.Update(postStats.TotalWeight(i))
-	}
+	postStreams.ForEach(func(cat int) {
+		penalty.Weight += postStreams.TotalWeight(cat)
+	})
+	postStreams.ForEach(func(cat int) {
+		penalty.Update(postStreams.TotalWeight(cat))
+	})
+
+	merit := c.SplitCriterion.Merit(pre, post)
 	return splits.NormMerit(merit / penalty.Value())
 }

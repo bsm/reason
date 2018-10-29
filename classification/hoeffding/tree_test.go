@@ -3,7 +3,8 @@ package hoeffding_test
 import (
 	"bytes"
 
-	"github.com/bsm/reason/classification/eval"
+	"github.com/bsm/mlmetrics"
+
 	"github.com/bsm/reason/classification/hoeffding"
 	common "github.com/bsm/reason/common/hoeffding"
 	"github.com/bsm/reason/core"
@@ -95,22 +96,22 @@ var _ = Describe("Tree", func() {
 			tree, model, examples := train(n)
 			Expect(tree.Info()).To(Equal(expInfo))
 
-			accuracy := eval.NewAccuracy()
-			kappa := eval.NewKappa()
-			logLoss := eval.NewLogLoss()
+			accuracy := mlmetrics.NewAccuracy()
+			confusion := mlmetrics.NewConfusionMatrix()
+			logLoss := mlmetrics.NewLogLoss()
 
 			for _, x := range examples[n:] {
 				predicted, probability := tree.Predict(nil, x).Best().Top()
 				actual := model.Feature("target").Category(x)
 
-				accuracy.Record(predicted, actual, 1.0)
-				kappa.Record(predicted, actual, 1.0)
-				logLoss.Record(probability, 1.0)
+				accuracy.Observe(int(actual), int(predicted))
+				confusion.Observe(int(actual), int(predicted))
+				logLoss.Observe(probability)
 			}
 
-			Expect(accuracy.Accuracy() * 100).To(BeNumerically("~", exp.Accuracy, 0.1))
-			Expect(kappa.Score()).To(BeNumerically("~", exp.Kappa, 0.001))
-			Expect(logLoss.Value()).To(BeNumerically("~", exp.LogLoss, 0.001))
+			Expect(accuracy.Rate() * 100).To(BeNumerically("~", exp.Accuracy, 0.1))
+			Expect(confusion.Kappa()).To(BeNumerically("~", exp.Kappa, 0.001))
+			Expect(logLoss.Score()).To(BeNumerically("~", exp.LogLoss, 0.001))
 		},
 
 		Entry("1,000", 1000, &common.TreeInfo{

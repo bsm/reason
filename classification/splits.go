@@ -15,7 +15,7 @@ type SplitCriterion interface {
 
 	// Merit calculates the merit of splitting for a given
 	// distribution before and after the split
-	Merit(pre *util.Vector, post *util.VectorDistribution) float64
+	Merit(pre *util.Vector, post *util.Matrix) float64
 }
 
 // DefaultSplitCriterion returns the default split criterion:
@@ -33,36 +33,32 @@ type GiniImpurity struct{}
 func (GiniImpurity) Range(_ *util.Vector) float64 { return 1.0 }
 
 // Merit implements SplitCriterion
-func (GiniImpurity) Merit(pre *util.Vector, post *util.VectorDistribution) float64 {
+func (GiniImpurity) Merit(pre *util.Vector, post *util.Matrix) float64 {
 	if pre == nil || post == nil {
 		return 0.0
 	}
 
-	total := 0.0
-	post.ForEach(func(_ int, vv *util.Vector) bool {
-		total += vv.Weight()
-		return true
-	})
+	total := post.Sum()
 	if total == 0 {
 		return 0.0
 	}
 
 	merit := 0.0
-	post.ForEach(func(_ int, vv *util.Vector) bool {
-		sum := vv.Weight()
-		merit += sum / total * calcGiniSplit(vv, sum)
-		return true
-	})
+	rows, _ := post.Dims()
+	for i := 0; i < rows; i++ {
+		if sum := post.RowSum(i); sum > 0 {
+			merit += sum / total * calcGiniSplit(post.Row(i), sum)
+		}
+	}
 	return splits.NormMerit(merit)
 }
 
-func calcGiniSplit(vv *util.Vector, sum float64) float64 {
+func calcGiniSplit(row []float64, sum float64) float64 {
 	res := 1.0
-	vv.ForEachValue(func(v float64) bool {
+	for _, v := range row {
 		sub := v / sum
 		res -= sub * sub
-		return true
-	})
+	}
 	return res
 }
 
@@ -84,42 +80,45 @@ func (InformationGain) Range(pre *util.Vector) float64 {
 }
 
 // Merit implements SplitCriterion
-func (c InformationGain) Merit(pre *util.Vector, post *util.VectorDistribution) float64 {
+func (c InformationGain) Merit(pre *util.Vector, post *util.Matrix) float64 {
 	if pre == nil || post == nil {
 		return 0.0
 	}
 
 	total := 0.0
 	count := 0
-	post.ForEach(func(_ int, vv *util.Vector) bool {
-		total += vv.Weight()
-		count++
-		return true
-	})
+	rows, _ := post.Dims()
+	for i := 0; i < rows; i++ {
+		if sum := post.RowSum(i); sum > 0 {
+			total += sum
+			count++
+		}
+	}
 	if count < 2 || total == 0 {
 		return 0.0
 	}
 
+	count = 0
 	if min := c.MinBranchFraction; min > 0 {
-		count = 0
-		post.ForEach(func(_ int, vv *util.Vector) bool {
-			if vv.Weight()/total > min {
+		for i := 0; i < rows; i++ {
+			if sum := post.RowSum(i); sum > 0 && sum/total > min {
 				if count++; count > 1 {
-					return false
+					break
 				}
 			}
-			return true
-		})
+		}
 	}
 	if count < 2 {
 		return 0.0
 	}
 
 	e1, e2 := pre.Entropy(), 0.0
-	post.ForEach(func(_ int, vv *util.Vector) bool {
-		e2 += vv.Weight() * vv.Entropy()
-		return true
-	})
+	for i := 0; i < rows; i++ {
+		vv := util.NewVectorFromSlice(post.Row(i)...)
+		if w := vv.Weight(); w > 0 {
+			e2 += w * vv.Entropy()
+		}
+	}
 	return splits.NormMerit(e1 - e2/total)
 }
 
@@ -131,16 +130,16 @@ func (c InformationGain) Merit(pre *util.Vector, post *util.VectorDistribution) 
 type GainRatio struct{ SplitCriterion }
 
 // Merit implements SplitCriterion
-func (c GainRatio) Merit(pre *util.Vector, post *util.VectorDistribution) float64 {
-	merit := c.SplitCriterion.Merit(pre, post)
+func (c GainRatio) Merit(pre *util.Vector, post *util.Matrix) float64 {
+	rows, _ := post.Dims()
 	penalty := new(splits.GainRatioPenalty)
-	post.ForEach(func(_ int, vv *util.Vector) bool {
-		penalty.Weight += vv.Weight()
-		return true
-	})
-	post.ForEach(func(_ int, vv *util.Vector) bool {
-		penalty.Update(vv.Weight())
-		return true
-	})
+	for i := 0; i < rows; i++ {
+		penalty.Weight += post.RowSum(i)
+	}
+	for i := 0; i < rows; i++ {
+		penalty.Update(post.RowSum(i))
+	}
+
+	merit := c.SplitCriterion.Merit(pre, post)
 	return splits.NormMerit(merit / penalty.Value())
 }

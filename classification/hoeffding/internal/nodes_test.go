@@ -27,12 +27,12 @@ var _ = Describe("LeafNode", func() {
 
 	It("should observe", func() {
 		Expect(wrapper.Weight()).To(Equal(14.0))
-		Expect(wrapper.Stats.Sparse).To(Equal(map[int64]float64{0: 9, 1: 5}))
+		Expect(wrapper.Stats.Data).To(Equal([]float64{9, 5}))
 
 		Expect(subject.FeatureStats).To(HaveLen(4))
 		Expect(subject.FeatureStats).To(HaveKey("temp"))
 		Expect(subject.FeatureStats["temp"].GetNumerical()).To(BeNil())
-		Expect(subject.FeatureStats["temp"].GetCategorical().Len()).To(Equal(3))
+		Expect(subject.FeatureStats["temp"].GetCategorical().NumCategories()).To(Equal(3))
 		Expect(subject.WeightAtLastEval).To(Equal(0.0))
 	})
 
@@ -46,7 +46,7 @@ var _ = Describe("LeafNode", func() {
 		Expect(cat.Range).To(Equal(1.0))
 		Expect(cat.Pivot).To(Equal(0.0))
 		Expect(cat.PreSplit.Weight()).To(Equal(14.0))
-		Expect(cat.PostSplit.Len()).To(Equal(3))
+		Expect(cat.PostSplit.NumRows()).To(Equal(3))
 	})
 
 	It("should allow to disable/enable", func() {

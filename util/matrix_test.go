@@ -73,7 +73,7 @@ var _ = Describe("Matrix", func() {
 		})
 
 		It("should calculate sums", func() {
-			Expect(subject.Sum()).To(Equal(0.0))
+			Expect(subject.Sum()).To(Equal(36.0))
 		})
 	}
 

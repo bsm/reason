@@ -14,12 +14,13 @@ var _ = Describe("Tree", func() {
 	var subject *internal.Tree
 
 	model := testdata.ClassificationModel()
-	pre := &util.Vector{Sparse: map[int64]float64{0: 9.0, 1: 5.0}}
-	post := &util.VectorDistribution{
-		Sparse: map[int64]*util.Vector{
-			0: &util.Vector{Sparse: map[int64]float64{0: 2, 1: 3}},
-			1: &util.Vector{Sparse: map[int64]float64{0: 4}},
-			2: &util.Vector{Sparse: map[int64]float64{0: 3, 1: 2}},
+	pre := util.NewVectorFromSlice(9.0, 5.0)
+	post := &util.Matrix{
+		Stride: 2,
+		Data: []float64{
+			2, 3,
+			4, 0,
+			3, 2,
 		},
 	}
 
@@ -46,7 +47,7 @@ var _ = Describe("Tree", func() {
 
 		split := subject.Get(1).GetSplit()
 		Expect(split).NotTo(BeNil())
-		Expect(split.Children.Len()).To(Equal(3))
+		Expect(split.Children).To(HaveLen(3))
 	})
 
 	It("should traverse", func() {
@@ -54,7 +55,7 @@ var _ = Describe("Tree", func() {
 		root := subject.Get(1)
 
 		node, nodeRef, parent, parentIndex := subject.Traverse(core.MapExample{"outlook": "overcast"}, 1, nil, -1, nil)
-		Expect(node.Stats.Sparse).To(Equal(map[int64]float64{0: 4}))
+		Expect(node.Stats).To(Equal(util.NewVectorFromSlice(4, 0)))
 		Expect(parent).To(Equal(root))
 		Expect(parentIndex).To(Equal(1))
 
