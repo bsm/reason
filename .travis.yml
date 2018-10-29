@@ -6,4 +6,4 @@ install:
 script:
   - make test bench bench-race
 env:
-	- GO111MODULE=on
+  - GO111MODULE=on
