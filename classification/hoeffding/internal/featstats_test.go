@@ -65,7 +65,7 @@ var _ = Describe("FeatureStats_Categorical", func() {
 		subject = new(internal.FeatureStats_Categorical)
 
 		// outlook: rainy=0 overcast=1 sunny=2
-		// play: 		yes=0 no=1
+		// play:    yes=0 no=1
 		subject.ObserveWeight(0, 1, 1.0) // rainy -> no
 		subject.ObserveWeight(0, 1, 1.0) // rainy -> no
 		subject.ObserveWeight(1, 0, 1.0) // overcast -> yes

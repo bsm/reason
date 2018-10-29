@@ -51,7 +51,7 @@ var _ = Describe("Matrix", func() {
 			Expect(subject.At(1, 1)).To(Equal(8.0))
 		})
 
-		It("should add", func() {
+		It("should observe", func() {
 			Expect(subject.At(1, 1)).To(Equal(5.0))
 			subject.Add(1, 1, 4.0)
 			subject.Add(-1, 0, 4.0)

@@ -29,8 +29,14 @@ func (s *FeatureStats) FetchNumerical() *FeatureStats_Numerical {
 // --------------------------------------------------------------------
 
 // NumCategories returns the number of categories.
-func (s *FeatureStats_Categorical) NumCategories() int {
-	return util.WrapNumStreams(&s.Matrix).NumCategories()
+func (s *FeatureStats_Categorical) NumCategories() (n int) {
+	rows := s.NumRows()
+	for i := 0; i < rows; i++ {
+		if s.RowSum(i) > 0 {
+			n++
+		}
+	}
+	return
 }
 
 // PostSplit calculates a post-split distribution from previous observations.

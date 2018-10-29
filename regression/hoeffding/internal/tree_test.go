@@ -33,7 +33,7 @@ var _ = Describe("Tree", func() {
 	})
 
 	It("should add (leaf) nodes", func() {
-		ref := subject.Add(util.NewVector())
+		ref := subject.Add(nil)
 		Expect(ref).To(Equal(int64(2)))
 		Expect(subject.Len()).To(Equal(2))
 

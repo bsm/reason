@@ -32,7 +32,6 @@ message Tree {
 // FeatureStats instances maintain stats based on
 // observation of a particular feature.
 message FeatureStats {
-
   message Numerical {
     double min = 1; // the minimum observed value
     double max = 2; // the maximum observed value
@@ -57,7 +56,6 @@ message FeatureStats {
 
 // Node is a tree node
 message Node {
-
   // Observation stats for the node
   blacksquaremedia.reason.util.Vector stats = 1;
 

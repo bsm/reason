@@ -32,7 +32,6 @@ message Tree {
 // FeatureStats instances maintain stats based on
 // observation of a particular feature.
 message FeatureStats {
-
   message Numerical {
     blacksquaremedia.reason.util.Vector min = 1 [(gogoproto.nullable) = false];
     blacksquaremedia.reason.util.Vector max = 2 [(gogoproto.nullable) = false];
@@ -40,10 +39,7 @@ message FeatureStats {
   }
 
   message Categorical {
-    blacksquaremedia.reason.util.Matrix stats = 1 [
-      (gogoproto.embed) = true,
-      (gogoproto.nullable) = false
-    ];
+    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
 
   oneof kind {
@@ -54,7 +50,6 @@ message FeatureStats {
 
 // Node is a tree node
 message Node {
-
   // Observation stats for the node
   blacksquaremedia.reason.util.Vector stats = 1;
 

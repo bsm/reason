@@ -36,7 +36,7 @@ func (s *FeatureStats_Categorical) NumCategories() (n int) {
 			n++
 		}
 	}
-	return n
+	return
 }
 
 // PostSplit calculates a post-split distribution from previous observations.

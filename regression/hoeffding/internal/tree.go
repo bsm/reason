@@ -20,7 +20,7 @@ func NewTree(model *core.Model, target string) *Tree {
 		Model:  model,
 		Target: target,
 	}
-	t.Root = t.Add(util.NewVector()) // init root
+	t.Root = t.Add(nil) // init root
 	return t
 }
 
@@ -47,10 +47,14 @@ func (t *Tree) Len() int {
 }
 
 // Add adds a new leaf node and returns the ref.
-func (t *Tree) Add(vv *util.Vector) int64 {
-	stream := util.WrapNumStream(vv)
-	leaf := &LeafNode{WeightAtLastEval: stream.TotalWeight()}
-	node := &Node{Kind: &Node_Leaf{Leaf: leaf}, Stats: vv}
+func (t *Tree) Add(stats *util.Vector) int64 {
+	if stats == nil {
+		stats = util.NewVector()
+	}
+
+	wrap := util.WrapNumStream(stats)
+	leaf := &LeafNode{WeightAtLastEval: wrap.TotalWeight()}
+	node := &Node{Kind: &Node_Leaf{Leaf: leaf}, Stats: stats}
 	t.Nodes = append(t.Nodes, node)
 	return int64(len(t.Nodes))
 }

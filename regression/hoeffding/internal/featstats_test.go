@@ -17,7 +17,7 @@ var _ = Describe("FeatureStats_Numerical", func() {
 		subject.ObserveWeight(8.4, 2.2, 1.0)
 	})
 
-	It("should add", func() {
+	It("should observe", func() {
 		Expect(subject).To(Equal(&internal.FeatureStats_Numerical{
 			Min: 1.2,
 			Max: 8.4,
@@ -63,7 +63,7 @@ var _ = Describe("FeatureStats_Categorical", func() {
 		subject.ObserveWeight(7, 2.4, 1.0)
 	})
 
-	It("should add", func() {
+	It("should observe", func() {
 		Expect(subject.NumCategories()).To(Equal(3))
 	})
 

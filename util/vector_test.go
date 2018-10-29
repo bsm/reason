@@ -55,7 +55,7 @@ var _ = Describe("Vector", func() {
 			Expect(subject.At(6)).To(Equal(8.0))
 		})
 
-		It("should add", func() {
+		It("should observe", func() {
 			Expect(subject.At(0)).To(Equal(2.0))
 			Expect(subject.At(1)).To(Equal(0.0))
 

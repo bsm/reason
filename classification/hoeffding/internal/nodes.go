@@ -3,16 +3,7 @@ package internal
 import (
 	"github.com/bsm/reason/classification"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/util"
 )
-
-// NewNode inits a node
-func NewNode(kind isNode_Kind, stats *util.Vector) *Node {
-	if stats == nil {
-		stats = new(util.Vector)
-	}
-	return &Node{Kind: kind, Stats: stats}
-}
 
 // IsSufficient returns true when a node has sufficient stats.
 func (n *Node) IsSufficient() bool {
@@ -114,6 +105,7 @@ func (n *LeafNode) EvaluateSplit(feature string, crit classification.SplitCriter
 	case *FeatureStats_Categorical_:
 		if s := kind.Categorical; s.NumCategories() > 1 {
 			post := s.PostSplit()
+
 			return &SplitCandidate{
 				Feature:   feature,
 				Merit:     crit.Merit(self.Stats, post),
