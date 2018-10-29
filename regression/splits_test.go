@@ -2,6 +2,7 @@ package regression_test
 
 import (
 	"github.com/bsm/reason/regression"
+	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -11,9 +12,9 @@ var _ = Describe("SplitCriterion", func() {
 	var post, post2 regression.StatsDistribution
 
 	BeforeEach(func() {
-		pre = regression.WrapStats(nil)
-		post = regression.WrapStatsDistribution(nil)
-		post2 = regression.WrapStatsDistribution(nil)
+		pre = regression.WrapStats(util.NewVector())
+		post = regression.WrapStatsDistribution(util.NewMatrix())
+		post2 = regression.WrapStatsDistribution(util.NewMatrix())
 
 		for _, v := range []float64{1.1, 1.2, 1.3, 1.4, 1.5} {
 			pre.Observe(v)

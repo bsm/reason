@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/bsm/reason/regression"
+	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -13,15 +14,15 @@ var _ = Describe("Stats", func() {
 	var subject, weight1, blank regression.Stats
 
 	BeforeEach(func() {
-		subject = regression.WrapStats(nil)
+		subject = regression.WrapStats(util.NewVector())
 		for _, v := range []float64{1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9} {
 			subject.Observe(v)
 		}
 
-		weight1 = regression.WrapStats(nil)
+		weight1 = regression.WrapStats(util.NewVector())
 		weight1.Observe(5.4)
 
-		blank = regression.WrapStats(nil)
+		blank = regression.WrapStats(util.NewVector())
 	})
 
 	It("should return total weight", func() {
@@ -94,7 +95,7 @@ var _ = Describe("StatsDistribution", func() {
 	var subject regression.StatsDistribution
 
 	BeforeEach(func() {
-		subject = regression.WrapStatsDistribution(nil)
+		subject = regression.WrapStatsDistribution(util.NewMatrix())
 		for _, v := range []float64{1.1, 2.2, 3.3, 4.4} {
 			subject.Observe(0, v)
 		}
@@ -108,6 +109,18 @@ var _ = Describe("StatsDistribution", func() {
 		Expect(subject.TotalWeight(0)).To(Equal(4.0))
 		Expect(subject.TotalWeight(1)).To(Equal(5.0))
 		Expect(subject.TotalWeight(2)).To(Equal(0.0))
+	})
+
+	It("should count the number of rows", func() {
+		Expect(subject.NumRows()).To(Equal(2))
+		subject.Observe(7, 3.3)
+		Expect(subject.NumRows()).To(Equal(8))
+	})
+
+	It("should count the number of categories", func() {
+		Expect(subject.NumCategories()).To(Equal(2))
+		subject.Observe(7, 3.3)
+		Expect(subject.NumCategories()).To(Equal(3))
 	})
 
 	It("should return value sum", func() {

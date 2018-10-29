@@ -33,7 +33,7 @@ var _ = Describe("Tree", func() {
 	})
 
 	It("should add (leaf) nodes", func() {
-		ref := subject.Add(nil)
+		ref := subject.Add(util.NewVector())
 		Expect(ref).To(Equal(int64(2)))
 		Expect(subject.Len()).To(Equal(2))
 
@@ -47,7 +47,7 @@ var _ = Describe("Tree", func() {
 
 		split := subject.Get(1).GetSplit()
 		Expect(split).NotTo(BeNil())
-		Expect(split.Children.Len()).To(Equal(3))
+		Expect(split.Children).To(HaveLen(3))
 	})
 
 	It("should traverse", func() {

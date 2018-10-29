@@ -71,6 +71,10 @@ var _ = Describe("Matrix", func() {
 			Expect(subject.RowSum(1)).To(Equal(26.0))
 			Expect(subject.RowSum(2)).To(Equal(0.0))
 		})
+
+		It("should calculate sums", func() {
+			Expect(subject.Sum()).To(Equal(0.0))
+		})
 	}
 
 	Describe("Dense", func() {

@@ -4,6 +4,7 @@ import (
 	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/regression/hoeffding/internal"
 	"github.com/bsm/reason/testdata"
+	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -17,7 +18,10 @@ var _ = Describe("LeafNode", func() {
 
 	BeforeEach(func() {
 		subject = new(internal.LeafNode)
-		wrapper = internal.NewNode(&internal.Node_Leaf{Leaf: subject}, nil)
+		wrapper = &internal.Node{
+			Kind:  &internal.Node_Leaf{Leaf: subject},
+			Stats: util.NewVector(),
+		}
 
 		target := model.Feature("hours")
 		for _, x := range examples {
@@ -27,7 +31,7 @@ var _ = Describe("LeafNode", func() {
 
 	It("should observe", func() {
 		Expect(wrapper.Weight()).To(Equal(14.0))
-		Expect(wrapper.Stats.Mean()).To(BeNumerically("~", 39.8, 0.1))
+		Expect(regression.WrapStats(wrapper.Stats).Mean()).To(BeNumerically("~", 39.8, 0.1))
 
 		Expect(subject.FeatureStats).To(HaveLen(4))
 		Expect(subject.FeatureStats).To(HaveKey("temp"))
@@ -46,7 +50,7 @@ var _ = Describe("LeafNode", func() {
 		Expect(cat.Range).To(Equal(1.0))
 		Expect(cat.Pivot).To(Equal(0.0))
 		Expect(regression.WrapStats(cat.PreSplit).TotalWeight()).To(Equal(14.0))
-		Expect(regression.WrapStatsDistribution(cat.PostSplit).NumCategories()).To(Equal(2))
+		Expect(regression.WrapStatsDistribution(cat.PostSplit).NumCategories()).To(Equal(3))
 
 		num := subject.EvaluateSplit("humidity", crit, wrapper)
 		Expect(num.Feature).To(Equal("humidity"))

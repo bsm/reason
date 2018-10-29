@@ -13,7 +13,7 @@ type Stats struct{ *util.Vector }
 // WrapStats init stats with a vector.
 func WrapStats(vv *util.Vector) Stats {
 	if vv == nil {
-		vv = util.NewVector()
+		panic("regression: received nil vector")
 	}
 	return Stats{Vector: vv}
 }
@@ -102,7 +102,7 @@ type StatsDistribution struct{ *util.Matrix }
 // WrapStatsDistribution init stats with a vector.
 func WrapStatsDistribution(mat *util.Matrix) StatsDistribution {
 	if mat == nil {
-		mat = util.NewMatrix()
+		panic("regression: received nil matrix")
 	}
 	return StatsDistribution{Matrix: mat}
 }
@@ -124,8 +124,25 @@ func (s StatsDistribution) ObserveWeight(cat int, value, weight float64) {
 	s.Add(cat, 2, wv*value)
 }
 
+// ForEach iterates over each category.
+func (s StatsDistribution) ForEach(iter func(int)) {
+	rows, _ := s.Dims()
+	for i := 0; i < rows; i++ {
+		if s.At(i, 0) != 0 {
+			iter(i)
+		}
+	}
+}
+
 // NumCategories returns the number of categories.
 func (s StatsDistribution) NumCategories() int {
+	n := 0
+	s.ForEach(func(_ int) { n++ })
+	return n
+}
+
+// NumRows returns the number of rows.
+func (s StatsDistribution) NumRows() int {
 	rows, _ := s.Dims()
 	return rows
 }

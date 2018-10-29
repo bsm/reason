@@ -59,7 +59,7 @@ func Example() {
 	}).Best()
 
 	// Print mean value with weight
-	fmt.Printf("mean: %.2f, weight: %.0f\n", prediction.Mean(), prediction.Weight)
+	fmt.Printf("mean: %.2f, weight: %.0f\n", prediction.Mean(), prediction.TotalWeight())
 
 	// Output:
 	// mean: 42.67, weight: 6

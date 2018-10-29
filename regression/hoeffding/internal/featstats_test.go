@@ -74,5 +74,4 @@ var _ = Describe("FeatureStats_Categorical", func() {
 		Expect(s.Sum(4)).To(Equal(2.3))
 		Expect(s.Sum(7)).To(Equal(2.4))
 	})
-
 })

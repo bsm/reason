@@ -133,7 +133,7 @@ type GainRatio struct{ SplitCriterion }
 // Merit implements SplitCriterion
 func (c GainRatio) Merit(pre *util.Vector, post *util.VectorDistribution) float64 {
 	merit := c.SplitCriterion.Merit(pre, post)
-	penalty := new(splits.GainRatioPenality)
+	penalty := new(splits.GainRatioPenalty)
 	post.ForEach(func(_ int, vv *util.Vector) bool {
 		penalty.Weight += vv.Weight()
 		return true

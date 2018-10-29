@@ -69,7 +69,7 @@ func (s *FeatureStats_Numerical) PivotPoints() []float64 {
 
 // PostSplit calculates a post-split distribution from previous observations
 func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.Matrix {
-	stats := regression.WrapStatsDistribution(nil)
+	stats := regression.WrapStatsDistribution(util.NewMatrix())
 	for _, o := range s.Observations {
 		if o.FeatureValue <= pivot {
 			stats.ObserveWeight(0, o.TargetValue, o.Weight)

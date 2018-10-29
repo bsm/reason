@@ -8,6 +8,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/bsm/reason/util"
+
 	common "github.com/bsm/reason/common/hoeffding"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/regression"
@@ -102,9 +104,9 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 	node, nodeRef, parent, parentIndex := t.tree.Traverse(x, t.tree.Root, nil, -1, nil)
 	if node == nil && parentIndex > -1 {
 		if split := parent.GetSplit(); split != nil {
-			ref := t.tree.Add(nil)
+			ref := t.tree.Add(util.NewVector())
 			node = t.tree.Get(ref)
-			split.Children.SetRef(parentIndex, ref)
+			split.SetChild(parentIndex, ref)
 		}
 	}
 	if node == nil {
@@ -118,7 +120,7 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 		// Pre-prune, if enabled
 		if t.config.PrunePeriod > 0 {
 			if t.cycles++; t.config.MaxLearningNodes > 0 && t.cycles%t.config.PrunePeriod == 0 {
-				t.prune(t.config.MaxLearningNodes)
+				// t.prune(t.config.MaxLearningNodes)
 			}
 		}
 
@@ -142,7 +144,7 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 			if parent == nil {
 				t.tree.Root = nodeRef
 			} else if split := parent.GetSplit(); split != nil {
-				split.Children.SetRef(parentIndex, nodeRef)
+				split.SetChild(parentIndex, nodeRef)
 			}
 		}
 		return info

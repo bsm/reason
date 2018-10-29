@@ -5,16 +5,7 @@ import (
 
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/regression"
-	"github.com/bsm/reason/util"
 )
-
-// NewNode inits a node
-func NewNode(kind isNode_Kind, vv *util.Vector) *Node {
-	if vv == nil {
-		vv = util.NewVector()
-	}
-	return &Node{Kind: kind, Stats: vv}
-}
 
 // IsSufficient returns true when a node has sufficient stats.
 func (n *Node) IsSufficient() bool {
@@ -28,6 +19,24 @@ func (n *Node) Weight() float64 {
 }
 
 // --------------------------------------------------------------------
+
+func (n *SplitNode) GetChild(index int) int64 {
+	if index < len(n.Children) {
+		return n.Children[index]
+	}
+	return 0
+}
+
+func (n *SplitNode) SetChild(index int, nodeRef int64) {
+	if sz := index + 1; sz > cap(n.Children) {
+		children := make([]int64, sz, 2*sz)
+		copy(children, n.Children)
+		n.Children = children
+	} else if sz > len(n.Children) {
+		n.Children = n.Children[:sz]
+	}
+	n.Children[index] = nodeRef
+}
 
 func (n *SplitNode) childCat(feature *core.Feature, x core.Example) core.Category {
 	switch feature.Kind {
@@ -99,6 +108,7 @@ func (n *LeafNode) EvaluateSplit(feature string, crit regression.SplitCriterion,
 	case *FeatureStats_Categorical_:
 		if s := kind.Categorical; s.NumCategories() > 1 {
 			post := s.PostSplit()
+
 			return &SplitCandidate{
 				Feature:   feature,
 				Merit:     crit.Merit(self.Stats, post),

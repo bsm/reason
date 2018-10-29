@@ -3,9 +3,10 @@ package hoeffding_test
 import (
 	"bytes"
 
+	"github.com/bsm/mlmetrics"
+
 	common "github.com/bsm/reason/common/hoeffding"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/regression"
 	"github.com/bsm/reason/regression/hoeffding"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
@@ -95,14 +96,14 @@ var _ = Describe("Tree", func() {
 			tree, model, examples := train(n)
 			Expect(tree.Info()).To(Equal(expInfo))
 
-			eval := regression.NewEvaluator()
+			metric := mlmetrics.NewRegression()
 			for _, x := range examples[n:] {
 				prediction := tree.Predict(nil, x).Best().Mean()
 				actual := model.Feature("target").Number(x)
-				eval.Record(prediction, actual, 1.0)
+				metric.Observe(actual, prediction)
 			}
-			Expect(eval.R2()).To(BeNumerically("~", exp.R2, 0.001))
-			Expect(eval.RMSE()).To(BeNumerically("~", exp.RMSE, 0.001))
+			Expect(metric.R2()).To(BeNumerically("~", exp.R2, 0.001))
+			Expect(metric.RMSE()).To(BeNumerically("~", exp.RMSE, 0.001))
 		},
 
 		Entry("1,000", 1000, &common.TreeInfo{

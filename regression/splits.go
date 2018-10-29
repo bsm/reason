@@ -40,21 +40,16 @@ func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
 		return 0.0
 	}
 
+	fullWeight := 0.0
+	catCount := 0
 	postStats := WrapStatsDistribution(post)
-	numCats := postStats.NumCategories()
-	if numCats < 2 {
-		return 0.0
-	}
-
-	weightSum := 0.0
-	subCount := 0
-	for i := 0; i < numCats; i++ {
-		if w := postStats.TotalWeight(i); w > c.MinWeight {
-			weightSum += w
-			subCount++
+	postStats.ForEach(func(cat int) {
+		if w := postStats.TotalWeight(cat); w >= c.MinWeight {
+			fullWeight += w
+			catCount++
 		}
-	}
-	if subCount < 2 || weightSum == 0 {
+	})
+	if catCount < 2 || fullWeight == 0 {
 		return 0.0
 	}
 
@@ -65,11 +60,12 @@ func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
 	}
 
 	postVar := 0.0
-	for i := 0; i < numCats; i++ {
-		if w, v := postStats.TotalWeight(i), postStats.Variance(i); w >= c.MinWeight && !math.IsNaN(v) {
-			postVar += w * v / weightSum
+	postStats.ForEach(func(cat int) {
+		if w, v := postStats.TotalWeight(cat), postStats.Variance(cat); w >= c.MinWeight && !math.IsNaN(v) {
+			postVar += w * v / fullWeight
 		}
-	}
+	})
+
 	return splits.NormMerit(preVar - postVar)
 }
 
@@ -85,7 +81,7 @@ func (c GainRatio) Merit(pre *util.Vector, post *util.Matrix) float64 {
 	postStats := WrapStatsDistribution(post)
 	numCats := postStats.NumCategories()
 
-	penalty := new(splits.GainRatioPenality)
+	penalty := new(splits.GainRatioPenalty)
 	for i := 0; i < numCats; i++ {
 		penalty.Weight += postStats.TotalWeight(i)
 	}

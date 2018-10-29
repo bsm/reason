@@ -21,7 +21,7 @@ func NewTree(model *core.Model, target string) *Tree {
 		Model:  model,
 		Target: target,
 	}
-	t.Root = t.Add(nil) // init root
+	t.Root = t.Add(util.NewVector()) // init root
 	return t
 }
 
@@ -47,12 +47,11 @@ func (t *Tree) Len() int {
 	return len(t.Nodes)
 }
 
-// Add adds a new leaf node
+// Add adds a new leaf node and returns the ref.
 func (t *Tree) Add(vv *util.Vector) int64 {
 	stats := regression.WrapStats(vv)
 	leaf := &LeafNode{WeightAtLastEval: stats.TotalWeight()}
-	kind := &Node_Leaf{Leaf: leaf}
-	node := &Node{Kind: kind, Stats: vv}
+	node := &Node{Kind: &Node_Leaf{Leaf: leaf}, Stats: vv}
 	t.Nodes = append(t.Nodes, node)
 	return int64(len(t.Nodes))
 }
@@ -69,11 +68,10 @@ func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util
 	}
 
 	postStats := regression.WrapStatsDistribution(post)
-	numCats := postStats.NumCategories()
-	for i := 0; i < numCats; i++ {
-		vv := util.NewVectorFromSlice(postStats.Row(i)...)
-		split.Children.SetRef(i, t.Add(vv))
-	}
+	postStats.ForEach(func(cat int) {
+		vv := util.NewVectorFromSlice(postStats.Row(cat)...)
+		split.SetChild(cat, t.Add(vv))
+	})
 
 	kind := &Node_Split{Split: split}
 	t.Set(leafRef, &Node{Kind: kind, Stats: pre})
@@ -93,7 +91,7 @@ func (t *Tree) Traverse(x core.Example, nodeRef int64, parent *Node, parentIndex
 		feature := t.Model.Feature(split.Feature)
 
 		if nodeIndex := int(split.childCat(feature, x)); nodeIndex > -1 {
-			if childRef := split.Children.GetRef(nodeIndex); childRef > 0 {
+			if childRef := split.GetChild(nodeIndex); childRef > 0 {
 				return t.Traverse(x, childRef, node, nodeIndex, forEach)
 			}
 			return nil, nodeRef, node, nodeIndex
@@ -112,10 +110,11 @@ func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(regression.Sta
 
 	// Recurse if a split node
 	if split := node.GetSplit(); split != nil {
-		split.Children.ForEach(func(_ int, childRef int64) bool {
-			t.Prune(childRef, node, isObsolete)
-			return true
-		})
+		for _, childRef := range split.Children {
+			if childRef != 0 {
+				t.Prune(childRef, node, isObsolete)
+			}
+		}
 		return
 	}
 
@@ -135,9 +134,11 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 		return
 	}
 
+	stats := regression.WrapStats(node.Stats)
+
 	// Print node stats
 	var n int
-	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", node.Weight(), node.Stats.Mean(), node.Stats.Variance())
+	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", node.Weight(), stats.Mean(), stats.Variance())
 	nw += int64(n)
 	if err != nil {
 		return
@@ -151,14 +152,17 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 		}
 
 		subIndent := indent + "\t"
-		split.Children.ForEach(func(i int, childRef int64) bool {
+		for i, childRef := range split.Children {
+			if childRef == 0 {
+				continue
+			}
+
 			var nn int64
 			nn, err = t.WriteText(w, childRef, subIndent, internal.FormatNodeCondition(feat, i, split.Pivot))
 			nw += nn
-			return err == nil
-		})
-		if err != nil {
-			return
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -172,8 +176,10 @@ func (t *Tree) WriteDOT(w io.Writer, nodeRef int64, name, label string) (nw int6
 		return
 	}
 
-	// Write node data
 	var n int
+	var nn int64
+
+	// Write node data
 	n, err = fmt.Fprintf(w, `  %s [label="%sweight: %.0f"];`+"\n", name, label, node.Weight())
 	nw += int64(n)
 	if err != nil {
@@ -187,22 +193,23 @@ func (t *Tree) WriteDOT(w io.Writer, nodeRef int64, name, label string) (nw int6
 			return
 		}
 
-		split.Children.ForEach(func(i int, childRef int64) bool {
-			subName := fmt.Sprintf("%s_%d", name, i)
+		for i, childRef := range split.Children {
+			if childRef == 0 {
+				continue
+			}
 
+			subName := fmt.Sprintf("%s_%d", name, i)
 			n, err = fmt.Fprintf(w, "  %s -> %s;\n", name, subName)
 			nw += int64(n)
 			if err != nil {
-				return false
+				return
 			}
 
-			var nn int64
 			nn, err = t.WriteDOT(w, childRef, subName, internal.FormatNodeCondition(feat, i, split.Pivot)+`\n`)
 			nw += nn
-			return err == nil
-		})
-		if err != nil {
-			return
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -232,10 +239,11 @@ func (t *Tree) Accumulate(nodeRef int64, depth int, info *common.TreeInfo) {
 	}
 
 	if split := node.GetSplit(); split != nil {
-		split.Children.ForEach(func(_ int, childRef int64) bool {
-			t.Accumulate(childRef, depth+1, info)
-			return true
-		})
+		for _, childRef := range split.Children {
+			if childRef != 0 {
+				t.Accumulate(childRef, depth+1, info)
+			}
+		}
 	} else if leaf := node.GetLeaf(); leaf != nil {
 		if leaf.IsDisabled {
 			info.NumDisabled++

@@ -83,9 +83,18 @@ func (m *Matrix) RowSum(i int) float64 {
 	return sum
 }
 
+// Sum returns the sum of all weights.
+func (m *Matrix) Sum() float64 {
+	sum := 0.0
+	for _, v := range m.Data {
+		sum += v
+	}
+	return sum
+}
+
 func (m *Matrix) expand(i, j int) {
 	rows, cols := m.Dims()
-	if i < rows && j < rows {
+	if i < rows && j < cols {
 		return
 	}
 
