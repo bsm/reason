@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bsm/reason/classification/ftrl/internal"
+	"github.com/bsm/reason/classifier/ftrl/internal"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,5 +39,5 @@ var _ = Describe("Optimizer", func() {
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "classification/ftrl/internal")
+	RunSpecs(t, "classifier/ftrl/internal")
 }

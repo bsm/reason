@@ -3,7 +3,7 @@ package ftrl_test
 import (
 	"fmt"
 
-	"github.com/bsm/reason/classification/ftrl"
+	"github.com/bsm/reason/classifier/ftrl"
 	"github.com/bsm/reason/core"
 )
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/bsm/mlmetrics"
 
-	"github.com/bsm/reason/classification/ftrl"
+	"github.com/bsm/reason/classifier/ftrl"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"

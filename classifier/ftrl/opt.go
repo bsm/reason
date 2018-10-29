@@ -6,7 +6,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/bsm/reason/classification/ftrl/internal"
+	"github.com/bsm/reason/classifier/ftrl/internal"
 	"github.com/bsm/reason/core"
 )
 
@@ -83,7 +83,7 @@ func (o *Optimizer) Train(x core.Example, weight float64) {
 	var y float64 // target
 	switch o.target.Kind {
 	case core.Feature_CATEGORICAL:
-		if v := o.target.Category(x); v < 0 {
+		if v := o.target.Category(x); v == core.NoCategory {
 			return
 		} else if v > 0 {
 			y = 1.0

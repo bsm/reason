@@ -132,5 +132,4 @@ var _ = Describe("Tree", func() {
 			RMSE: 0.616,
 		}),
 	)
-
 })
