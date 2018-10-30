@@ -38,7 +38,7 @@ func (m *Tree) Reset()         { *m = Tree{} }
 func (m *Tree) String() string { return proto.CompactTextString(m) }
 func (*Tree) ProtoMessage()    {}
 func (*Tree) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{0}
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{0}
 }
 func (m *Tree) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Tree.Unmarshal(m, b)
@@ -62,9 +62,10 @@ var xxx_messageInfo_Tree proto.InternalMessageInfo
 // observation of a particular feature.
 type FeatureStats struct {
 	// Types that are valid to be assigned to Kind:
-	//	*FeatureStats_Cat
-	//	*FeatureStats_NumClassification
-	//	*FeatureStats_NumRegression
+	//	*FeatureStats_ClsNum
+	//	*FeatureStats_ClsCat
+	//	*FeatureStats_RegNum
+	//	*FeatureStats_RegCat
 	Kind                 isFeatureStats_Kind `protobuf_oneof:"kind"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 }
@@ -73,7 +74,7 @@ func (m *FeatureStats) Reset()         { *m = FeatureStats{} }
 func (m *FeatureStats) String() string { return proto.CompactTextString(m) }
 func (*FeatureStats) ProtoMessage()    {}
 func (*FeatureStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{1}
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{1}
 }
 func (m *FeatureStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats.Unmarshal(m, b)
@@ -97,19 +98,23 @@ type isFeatureStats_Kind interface {
 	isFeatureStats_Kind()
 }
 
-type FeatureStats_Cat struct {
-	Cat *FeatureStats_Categorical `protobuf:"bytes,1,opt,name=cat,oneof"`
+type FeatureStats_ClsNum struct {
+	ClsNum *FeatureStats_ClassificationNumerical `protobuf:"bytes,1,opt,name=cls_num,json=clsNum,oneof"`
 }
-type FeatureStats_NumClassification struct {
-	NumClassification *FeatureStats_NumericalClassification `protobuf:"bytes,2,opt,name=num_classification,json=numClassification,oneof"`
+type FeatureStats_ClsCat struct {
+	ClsCat *FeatureStats_ClassificationCategorical `protobuf:"bytes,2,opt,name=cls_cat,json=clsCat,oneof"`
 }
-type FeatureStats_NumRegression struct {
-	NumRegression *FeatureStats_NumericalRegression `protobuf:"bytes,3,opt,name=num_regression,json=numRegression,oneof"`
+type FeatureStats_RegNum struct {
+	RegNum *FeatureStats_RegressionNumerical `protobuf:"bytes,3,opt,name=reg_num,json=regNum,oneof"`
+}
+type FeatureStats_RegCat struct {
+	RegCat *FeatureStats_RegressionCategorical `protobuf:"bytes,4,opt,name=reg_cat,json=regCat,oneof"`
 }
 
-func (*FeatureStats_Cat) isFeatureStats_Kind()               {}
-func (*FeatureStats_NumClassification) isFeatureStats_Kind() {}
-func (*FeatureStats_NumRegression) isFeatureStats_Kind()     {}
+func (*FeatureStats_ClsNum) isFeatureStats_Kind() {}
+func (*FeatureStats_ClsCat) isFeatureStats_Kind() {}
+func (*FeatureStats_RegNum) isFeatureStats_Kind() {}
+func (*FeatureStats_RegCat) isFeatureStats_Kind() {}
 
 func (m *FeatureStats) GetKind() isFeatureStats_Kind {
 	if m != nil {
@@ -118,23 +123,30 @@ func (m *FeatureStats) GetKind() isFeatureStats_Kind {
 	return nil
 }
 
-func (m *FeatureStats) GetCat() *FeatureStats_Categorical {
-	if x, ok := m.GetKind().(*FeatureStats_Cat); ok {
-		return x.Cat
+func (m *FeatureStats) GetClsNum() *FeatureStats_ClassificationNumerical {
+	if x, ok := m.GetKind().(*FeatureStats_ClsNum); ok {
+		return x.ClsNum
 	}
 	return nil
 }
 
-func (m *FeatureStats) GetNumClassification() *FeatureStats_NumericalClassification {
-	if x, ok := m.GetKind().(*FeatureStats_NumClassification); ok {
-		return x.NumClassification
+func (m *FeatureStats) GetClsCat() *FeatureStats_ClassificationCategorical {
+	if x, ok := m.GetKind().(*FeatureStats_ClsCat); ok {
+		return x.ClsCat
 	}
 	return nil
 }
 
-func (m *FeatureStats) GetNumRegression() *FeatureStats_NumericalRegression {
-	if x, ok := m.GetKind().(*FeatureStats_NumRegression); ok {
-		return x.NumRegression
+func (m *FeatureStats) GetRegNum() *FeatureStats_RegressionNumerical {
+	if x, ok := m.GetKind().(*FeatureStats_RegNum); ok {
+		return x.RegNum
+	}
+	return nil
+}
+
+func (m *FeatureStats) GetRegCat() *FeatureStats_RegressionCategorical {
+	if x, ok := m.GetKind().(*FeatureStats_RegCat); ok {
+		return x.RegCat
 	}
 	return nil
 }
@@ -142,9 +154,10 @@ func (m *FeatureStats) GetNumRegression() *FeatureStats_NumericalRegression {
 // XXX_OneofFuncs is for the internal use of the proto package.
 func (*FeatureStats) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
 	return _FeatureStats_OneofMarshaler, _FeatureStats_OneofUnmarshaler, _FeatureStats_OneofSizer, []interface{}{
-		(*FeatureStats_Cat)(nil),
-		(*FeatureStats_NumClassification)(nil),
-		(*FeatureStats_NumRegression)(nil),
+		(*FeatureStats_ClsNum)(nil),
+		(*FeatureStats_ClsCat)(nil),
+		(*FeatureStats_RegNum)(nil),
+		(*FeatureStats_RegCat)(nil),
 	}
 }
 
@@ -152,19 +165,24 @@ func _FeatureStats_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 	m := msg.(*FeatureStats)
 	// kind
 	switch x := m.Kind.(type) {
-	case *FeatureStats_Cat:
+	case *FeatureStats_ClsNum:
 		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Cat); err != nil {
+		if err := b.EncodeMessage(x.ClsNum); err != nil {
 			return err
 		}
-	case *FeatureStats_NumClassification:
+	case *FeatureStats_ClsCat:
 		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.NumClassification); err != nil {
+		if err := b.EncodeMessage(x.ClsCat); err != nil {
 			return err
 		}
-	case *FeatureStats_NumRegression:
+	case *FeatureStats_RegNum:
 		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.NumRegression); err != nil {
+		if err := b.EncodeMessage(x.RegNum); err != nil {
+			return err
+		}
+	case *FeatureStats_RegCat:
+		_ = b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.RegCat); err != nil {
 			return err
 		}
 	case nil:
@@ -177,29 +195,37 @@ func _FeatureStats_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 func _FeatureStats_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
 	m := msg.(*FeatureStats)
 	switch tag {
-	case 1: // kind.cat
+	case 1: // kind.cls_num
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(FeatureStats_Categorical)
+		msg := new(FeatureStats_ClassificationNumerical)
 		err := b.DecodeMessage(msg)
-		m.Kind = &FeatureStats_Cat{msg}
+		m.Kind = &FeatureStats_ClsNum{msg}
 		return true, err
-	case 2: // kind.num_classification
+	case 2: // kind.cls_cat
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(FeatureStats_NumericalClassification)
+		msg := new(FeatureStats_ClassificationCategorical)
 		err := b.DecodeMessage(msg)
-		m.Kind = &FeatureStats_NumClassification{msg}
+		m.Kind = &FeatureStats_ClsCat{msg}
 		return true, err
-	case 3: // kind.num_regression
+	case 3: // kind.reg_num
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(FeatureStats_NumericalRegression)
+		msg := new(FeatureStats_RegressionNumerical)
 		err := b.DecodeMessage(msg)
-		m.Kind = &FeatureStats_NumRegression{msg}
+		m.Kind = &FeatureStats_RegNum{msg}
+		return true, err
+	case 4: // kind.reg_cat
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(FeatureStats_RegressionCategorical)
+		err := b.DecodeMessage(msg)
+		m.Kind = &FeatureStats_RegCat{msg}
 		return true, err
 	default:
 		return false, nil
@@ -210,18 +236,23 @@ func _FeatureStats_OneofSizer(msg proto.Message) (n int) {
 	m := msg.(*FeatureStats)
 	// kind
 	switch x := m.Kind.(type) {
-	case *FeatureStats_Cat:
-		s := proto.Size(x.Cat)
+	case *FeatureStats_ClsNum:
+		s := proto.Size(x.ClsNum)
 		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *FeatureStats_NumClassification:
-		s := proto.Size(x.NumClassification)
+	case *FeatureStats_ClsCat:
+		s := proto.Size(x.ClsCat)
 		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *FeatureStats_NumRegression:
-		s := proto.Size(x.NumRegression)
+	case *FeatureStats_RegNum:
+		s := proto.Size(x.RegNum)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *FeatureStats_RegCat:
+		s := proto.Size(x.RegCat)
 		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
@@ -232,131 +263,162 @@ func _FeatureStats_OneofSizer(msg proto.Message) (n int) {
 	return n
 }
 
-type FeatureStats_NumericalClassification struct {
+type FeatureStats_ClassificationNumerical struct {
 	Min                  util.Vector `protobuf:"bytes,1,opt,name=min" json:"min"`
 	Max                  util.Vector `protobuf:"bytes,2,opt,name=max" json:"max"`
 	Stats                util.Matrix `protobuf:"bytes,3,opt,name=stats" json:"stats"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 }
 
-func (m *FeatureStats_NumericalClassification) Reset()         { *m = FeatureStats_NumericalClassification{} }
-func (m *FeatureStats_NumericalClassification) String() string { return proto.CompactTextString(m) }
-func (*FeatureStats_NumericalClassification) ProtoMessage()    {}
-func (*FeatureStats_NumericalClassification) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{1, 0}
+func (m *FeatureStats_ClassificationNumerical) Reset()         { *m = FeatureStats_ClassificationNumerical{} }
+func (m *FeatureStats_ClassificationNumerical) String() string { return proto.CompactTextString(m) }
+func (*FeatureStats_ClassificationNumerical) ProtoMessage()    {}
+func (*FeatureStats_ClassificationNumerical) Descriptor() ([]byte, []int) {
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{1, 0}
 }
-func (m *FeatureStats_NumericalClassification) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FeatureStats_NumericalClassification.Unmarshal(m, b)
+func (m *FeatureStats_ClassificationNumerical) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FeatureStats_ClassificationNumerical.Unmarshal(m, b)
 }
-func (m *FeatureStats_NumericalClassification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FeatureStats_NumericalClassification.Marshal(b, m, deterministic)
+func (m *FeatureStats_ClassificationNumerical) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FeatureStats_ClassificationNumerical.Marshal(b, m, deterministic)
 }
-func (dst *FeatureStats_NumericalClassification) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FeatureStats_NumericalClassification.Merge(dst, src)
+func (dst *FeatureStats_ClassificationNumerical) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeatureStats_ClassificationNumerical.Merge(dst, src)
 }
-func (m *FeatureStats_NumericalClassification) XXX_Size() int {
-	return xxx_messageInfo_FeatureStats_NumericalClassification.Size(m)
+func (m *FeatureStats_ClassificationNumerical) XXX_Size() int {
+	return xxx_messageInfo_FeatureStats_ClassificationNumerical.Size(m)
 }
-func (m *FeatureStats_NumericalClassification) XXX_DiscardUnknown() {
-	xxx_messageInfo_FeatureStats_NumericalClassification.DiscardUnknown(m)
+func (m *FeatureStats_ClassificationNumerical) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeatureStats_ClassificationNumerical.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_FeatureStats_NumericalClassification proto.InternalMessageInfo
+var xxx_messageInfo_FeatureStats_ClassificationNumerical proto.InternalMessageInfo
 
-type FeatureStats_NumericalRegression struct {
+type FeatureStats_ClassificationCategorical struct {
+	util.Matrix          `protobuf:"bytes,1,opt,name=stats,embedded=stats" json:"stats"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+}
+
+func (m *FeatureStats_ClassificationCategorical) Reset() {
+	*m = FeatureStats_ClassificationCategorical{}
+}
+func (m *FeatureStats_ClassificationCategorical) String() string { return proto.CompactTextString(m) }
+func (*FeatureStats_ClassificationCategorical) ProtoMessage()    {}
+func (*FeatureStats_ClassificationCategorical) Descriptor() ([]byte, []int) {
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{1, 1}
+}
+func (m *FeatureStats_ClassificationCategorical) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FeatureStats_ClassificationCategorical.Unmarshal(m, b)
+}
+func (m *FeatureStats_ClassificationCategorical) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FeatureStats_ClassificationCategorical.Marshal(b, m, deterministic)
+}
+func (dst *FeatureStats_ClassificationCategorical) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeatureStats_ClassificationCategorical.Merge(dst, src)
+}
+func (m *FeatureStats_ClassificationCategorical) XXX_Size() int {
+	return xxx_messageInfo_FeatureStats_ClassificationCategorical.Size(m)
+}
+func (m *FeatureStats_ClassificationCategorical) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeatureStats_ClassificationCategorical.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FeatureStats_ClassificationCategorical proto.InternalMessageInfo
+
+type FeatureStats_RegressionNumerical struct {
 	Min                  float64                                        `protobuf:"fixed64,1,opt,name=min,proto3" json:"min,omitempty"`
 	Max                  float64                                        `protobuf:"fixed64,2,opt,name=max,proto3" json:"max,omitempty"`
-	Observations         []FeatureStats_NumericalRegression_Observation `protobuf:"bytes,3,rep,name=observations" json:"observations"`
+	Observations         []FeatureStats_RegressionNumerical_Observation `protobuf:"bytes,3,rep,name=observations" json:"observations"`
 	XXX_NoUnkeyedLiteral struct{}                                       `json:"-"`
 }
 
-func (m *FeatureStats_NumericalRegression) Reset()         { *m = FeatureStats_NumericalRegression{} }
-func (m *FeatureStats_NumericalRegression) String() string { return proto.CompactTextString(m) }
-func (*FeatureStats_NumericalRegression) ProtoMessage()    {}
-func (*FeatureStats_NumericalRegression) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{1, 1}
+func (m *FeatureStats_RegressionNumerical) Reset()         { *m = FeatureStats_RegressionNumerical{} }
+func (m *FeatureStats_RegressionNumerical) String() string { return proto.CompactTextString(m) }
+func (*FeatureStats_RegressionNumerical) ProtoMessage()    {}
+func (*FeatureStats_RegressionNumerical) Descriptor() ([]byte, []int) {
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{1, 2}
 }
-func (m *FeatureStats_NumericalRegression) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FeatureStats_NumericalRegression.Unmarshal(m, b)
+func (m *FeatureStats_RegressionNumerical) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FeatureStats_RegressionNumerical.Unmarshal(m, b)
 }
-func (m *FeatureStats_NumericalRegression) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FeatureStats_NumericalRegression.Marshal(b, m, deterministic)
+func (m *FeatureStats_RegressionNumerical) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FeatureStats_RegressionNumerical.Marshal(b, m, deterministic)
 }
-func (dst *FeatureStats_NumericalRegression) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FeatureStats_NumericalRegression.Merge(dst, src)
+func (dst *FeatureStats_RegressionNumerical) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeatureStats_RegressionNumerical.Merge(dst, src)
 }
-func (m *FeatureStats_NumericalRegression) XXX_Size() int {
-	return xxx_messageInfo_FeatureStats_NumericalRegression.Size(m)
+func (m *FeatureStats_RegressionNumerical) XXX_Size() int {
+	return xxx_messageInfo_FeatureStats_RegressionNumerical.Size(m)
 }
-func (m *FeatureStats_NumericalRegression) XXX_DiscardUnknown() {
-	xxx_messageInfo_FeatureStats_NumericalRegression.DiscardUnknown(m)
+func (m *FeatureStats_RegressionNumerical) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeatureStats_RegressionNumerical.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_FeatureStats_NumericalRegression proto.InternalMessageInfo
+var xxx_messageInfo_FeatureStats_RegressionNumerical proto.InternalMessageInfo
 
-type FeatureStats_NumericalRegression_Observation struct {
+type FeatureStats_RegressionNumerical_Observation struct {
 	FeatureValue         float64  `protobuf:"fixed64,1,opt,name=feature_value,json=featureValue,proto3" json:"feature_value,omitempty"`
 	TargetValue          float64  `protobuf:"fixed64,2,opt,name=target_value,json=targetValue,proto3" json:"target_value,omitempty"`
 	Weight               float64  `protobuf:"fixed64,3,opt,name=weight,proto3" json:"weight,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 }
 
-func (m *FeatureStats_NumericalRegression_Observation) Reset() {
-	*m = FeatureStats_NumericalRegression_Observation{}
+func (m *FeatureStats_RegressionNumerical_Observation) Reset() {
+	*m = FeatureStats_RegressionNumerical_Observation{}
 }
-func (m *FeatureStats_NumericalRegression_Observation) String() string {
+func (m *FeatureStats_RegressionNumerical_Observation) String() string {
 	return proto.CompactTextString(m)
 }
-func (*FeatureStats_NumericalRegression_Observation) ProtoMessage() {}
-func (*FeatureStats_NumericalRegression_Observation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{1, 1, 0}
+func (*FeatureStats_RegressionNumerical_Observation) ProtoMessage() {}
+func (*FeatureStats_RegressionNumerical_Observation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{1, 2, 0}
 }
-func (m *FeatureStats_NumericalRegression_Observation) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FeatureStats_NumericalRegression_Observation.Unmarshal(m, b)
+func (m *FeatureStats_RegressionNumerical_Observation) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FeatureStats_RegressionNumerical_Observation.Unmarshal(m, b)
 }
-func (m *FeatureStats_NumericalRegression_Observation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FeatureStats_NumericalRegression_Observation.Marshal(b, m, deterministic)
+func (m *FeatureStats_RegressionNumerical_Observation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FeatureStats_RegressionNumerical_Observation.Marshal(b, m, deterministic)
 }
-func (dst *FeatureStats_NumericalRegression_Observation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FeatureStats_NumericalRegression_Observation.Merge(dst, src)
+func (dst *FeatureStats_RegressionNumerical_Observation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeatureStats_RegressionNumerical_Observation.Merge(dst, src)
 }
-func (m *FeatureStats_NumericalRegression_Observation) XXX_Size() int {
-	return xxx_messageInfo_FeatureStats_NumericalRegression_Observation.Size(m)
+func (m *FeatureStats_RegressionNumerical_Observation) XXX_Size() int {
+	return xxx_messageInfo_FeatureStats_RegressionNumerical_Observation.Size(m)
 }
-func (m *FeatureStats_NumericalRegression_Observation) XXX_DiscardUnknown() {
-	xxx_messageInfo_FeatureStats_NumericalRegression_Observation.DiscardUnknown(m)
+func (m *FeatureStats_RegressionNumerical_Observation) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeatureStats_RegressionNumerical_Observation.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_FeatureStats_NumericalRegression_Observation proto.InternalMessageInfo
+var xxx_messageInfo_FeatureStats_RegressionNumerical_Observation proto.InternalMessageInfo
 
-type FeatureStats_Categorical struct {
+type FeatureStats_RegressionCategorical struct {
 	util.Matrix          `protobuf:"bytes,1,opt,name=stats,embedded=stats" json:"stats"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 }
 
-func (m *FeatureStats_Categorical) Reset()         { *m = FeatureStats_Categorical{} }
-func (m *FeatureStats_Categorical) String() string { return proto.CompactTextString(m) }
-func (*FeatureStats_Categorical) ProtoMessage()    {}
-func (*FeatureStats_Categorical) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{1, 2}
+func (m *FeatureStats_RegressionCategorical) Reset()         { *m = FeatureStats_RegressionCategorical{} }
+func (m *FeatureStats_RegressionCategorical) String() string { return proto.CompactTextString(m) }
+func (*FeatureStats_RegressionCategorical) ProtoMessage()    {}
+func (*FeatureStats_RegressionCategorical) Descriptor() ([]byte, []int) {
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{1, 3}
 }
-func (m *FeatureStats_Categorical) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FeatureStats_Categorical.Unmarshal(m, b)
+func (m *FeatureStats_RegressionCategorical) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FeatureStats_RegressionCategorical.Unmarshal(m, b)
 }
-func (m *FeatureStats_Categorical) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FeatureStats_Categorical.Marshal(b, m, deterministic)
+func (m *FeatureStats_RegressionCategorical) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FeatureStats_RegressionCategorical.Marshal(b, m, deterministic)
 }
-func (dst *FeatureStats_Categorical) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FeatureStats_Categorical.Merge(dst, src)
+func (dst *FeatureStats_RegressionCategorical) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FeatureStats_RegressionCategorical.Merge(dst, src)
 }
-func (m *FeatureStats_Categorical) XXX_Size() int {
-	return xxx_messageInfo_FeatureStats_Categorical.Size(m)
+func (m *FeatureStats_RegressionCategorical) XXX_Size() int {
+	return xxx_messageInfo_FeatureStats_RegressionCategorical.Size(m)
 }
-func (m *FeatureStats_Categorical) XXX_DiscardUnknown() {
-	xxx_messageInfo_FeatureStats_Categorical.DiscardUnknown(m)
+func (m *FeatureStats_RegressionCategorical) XXX_DiscardUnknown() {
+	xxx_messageInfo_FeatureStats_RegressionCategorical.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_FeatureStats_Categorical proto.InternalMessageInfo
+var xxx_messageInfo_FeatureStats_RegressionCategorical proto.InternalMessageInfo
 
 // Node is a tree node
 type Node struct {
@@ -375,7 +437,7 @@ func (m *Node) Reset()         { *m = Node{} }
 func (m *Node) String() string { return proto.CompactTextString(m) }
 func (*Node) ProtoMessage()    {}
 func (*Node) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{2}
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{2}
 }
 func (m *Node) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Node.Unmarshal(m, b)
@@ -519,7 +581,7 @@ func (m *SplitNode) Reset()         { *m = SplitNode{} }
 func (m *SplitNode) String() string { return proto.CompactTextString(m) }
 func (*SplitNode) ProtoMessage()    {}
 func (*SplitNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{3}
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{3}
 }
 func (m *SplitNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SplitNode.Unmarshal(m, b)
@@ -554,7 +616,7 @@ func (m *LeafNode) Reset()         { *m = LeafNode{} }
 func (m *LeafNode) String() string { return proto.CompactTextString(m) }
 func (*LeafNode) ProtoMessage()    {}
 func (*LeafNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_71e221cd2d8a799c, []int{4}
+	return fileDescriptor_internal_f1078f466b7f1db7, []int{4}
 }
 func (m *LeafNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LeafNode.Unmarshal(m, b)
@@ -577,10 +639,11 @@ var xxx_messageInfo_LeafNode proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*Tree)(nil), "blacksquaremedia.reason.classifier.hoeffding.Tree")
 	proto.RegisterType((*FeatureStats)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats")
-	proto.RegisterType((*FeatureStats_NumericalClassification)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.NumericalClassification")
-	proto.RegisterType((*FeatureStats_NumericalRegression)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.NumericalRegression")
-	proto.RegisterType((*FeatureStats_NumericalRegression_Observation)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.NumericalRegression.Observation")
-	proto.RegisterType((*FeatureStats_Categorical)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.Categorical")
+	proto.RegisterType((*FeatureStats_ClassificationNumerical)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.ClassificationNumerical")
+	proto.RegisterType((*FeatureStats_ClassificationCategorical)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.ClassificationCategorical")
+	proto.RegisterType((*FeatureStats_RegressionNumerical)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.RegressionNumerical")
+	proto.RegisterType((*FeatureStats_RegressionNumerical_Observation)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.RegressionNumerical.Observation")
+	proto.RegisterType((*FeatureStats_RegressionCategorical)(nil), "blacksquaremedia.reason.classifier.hoeffding.FeatureStats.RegressionCategorical")
 	proto.RegisterType((*Node)(nil), "blacksquaremedia.reason.classifier.hoeffding.Node")
 	proto.RegisterType((*SplitNode)(nil), "blacksquaremedia.reason.classifier.hoeffding.SplitNode")
 	proto.RegisterType((*LeafNode)(nil), "blacksquaremedia.reason.classifier.hoeffding.LeafNode")
@@ -588,61 +651,62 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("classifier/hoeffding/internal/internal.proto", fileDescriptor_internal_71e221cd2d8a799c)
+	proto.RegisterFile("classifier/hoeffding/internal/internal.proto", fileDescriptor_internal_f1078f466b7f1db7)
 }
 
-var fileDescriptor_internal_71e221cd2d8a799c = []byte{
-	// 822 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x4b, 0x6f, 0x1c, 0x45,
-	0x10, 0x9e, 0xde, 0x87, 0x63, 0xd7, 0x38, 0xd8, 0xe9, 0xa0, 0xb0, 0xda, 0xc3, 0xda, 0x38, 0x08,
-	0xed, 0x21, 0x99, 0x91, 0x36, 0x12, 0x0f, 0x8b, 0x03, 0x6c, 0x1e, 0xda, 0x83, 0xe3, 0x44, 0x6d,
-	0x94, 0x83, 0x39, 0xac, 0x7a, 0x67, 0x7a, 0x67, 0x5b, 0x9e, 0x99, 0x36, 0xdd, 0x3d, 0x1b, 0x47,
-	0x48, 0x5c, 0xe0, 0x07, 0xf0, 0x4f, 0x38, 0xf2, 0x0f, 0x50, 0x8e, 0x11, 0x17, 0x38, 0x45, 0x8a,
-	0x72, 0xe2, 0x5f, 0xa0, 0x7e, 0xec, 0x4b, 0x60, 0x60, 0x93, 0x5c, 0x46, 0x5d, 0x35, 0x5d, 0x5f,
-	0x7d, 0x55, 0xf5, 0xd5, 0xce, 0xc2, 0xad, 0x24, 0xa7, 0x4a, 0xf1, 0x31, 0x67, 0x32, 0x9e, 0x08,
-	0x36, 0x1e, 0xa7, 0xbc, 0xcc, 0x62, 0x5e, 0x6a, 0x26, 0x4b, 0x9a, 0xcf, 0x0f, 0xd1, 0xb9, 0x14,
-	0x5a, 0xe0, 0x5b, 0xa3, 0x9c, 0x26, 0x67, 0xea, 0xdb, 0x8a, 0x4a, 0x56, 0xb0, 0x94, 0xd3, 0x48,
-	0x32, 0xaa, 0x44, 0x19, 0x2d, 0x50, 0xa2, 0x39, 0x4a, 0x7b, 0x27, 0x11, 0x92, 0xc5, 0xe6, 0xe1,
-	0xc2, 0xdb, 0x3b, 0x95, 0xe6, 0x79, 0x6c, 0x1e, 0xde, 0x71, 0x3b, 0xe3, 0x7a, 0x52, 0x8d, 0xa2,
-	0x44, 0x14, 0x71, 0x26, 0x32, 0x11, 0x5b, 0xf7, 0xa8, 0x1a, 0x5b, 0xcb, 0x1a, 0xf6, 0xe4, 0xae,
-	0x1f, 0xfc, 0x82, 0xa0, 0xf1, 0xb5, 0x64, 0x0c, 0x7f, 0x0e, 0xcd, 0x42, 0xa4, 0x2c, 0x6f, 0xa1,
-	0x7d, 0xd4, 0x0d, 0x7b, 0x37, 0xa3, 0x4b, 0x79, 0x99, 0xe4, 0x0f, 0xcd, 0x55, 0xe2, 0x22, 0xf0,
-	0x0d, 0xd8, 0xd0, 0x54, 0x66, 0x4c, 0xb7, 0x6a, 0xfb, 0xa8, 0xbb, 0x45, 0xbc, 0x85, 0x31, 0x34,
-	0xa4, 0x10, 0xba, 0x55, 0xdf, 0x47, 0xdd, 0x3a, 0xb1, 0x67, 0x3c, 0x80, 0x66, 0x29, 0x52, 0xa6,
-	0x5a, 0x8d, 0xfd, 0x7a, 0x37, 0xec, 0xf5, 0xa2, 0x75, 0xca, 0x8f, 0x8e, 0x45, 0xca, 0x88, 0x03,
-	0x38, 0xf8, 0xed, 0x0a, 0x6c, 0x3f, 0x60, 0x54, 0x57, 0x92, 0x9d, 0x68, 0xaa, 0x15, 0x3e, 0x85,
-	0x7a, 0x42, 0xb5, 0xe7, 0xff, 0x60, 0x3d, 0xe0, 0x65, 0xa0, 0xe8, 0x2e, 0xd5, 0x2c, 0x13, 0x92,
-	0x27, 0x34, 0x1f, 0x04, 0xc4, 0x80, 0xe2, 0x1f, 0x10, 0xe0, 0xb2, 0x2a, 0x86, 0xb3, 0xe0, 0x84,
-	0x6a, 0x2e, 0x4a, 0x5b, 0x6f, 0xd8, 0x23, 0x6f, 0x91, 0xeb, 0xb8, 0x2a, 0x98, 0xcd, 0x74, 0x77,
-	0x05, 0x79, 0x10, 0x90, 0x6b, 0x65, 0x55, 0xac, 0x3a, 0xf1, 0x53, 0x78, 0xcf, 0x90, 0x90, 0x2c,
-	0x93, 0x4c, 0x29, 0x43, 0xa0, 0x6e, 0x09, 0x1c, 0xbf, 0x0b, 0x02, 0x64, 0x8e, 0x3a, 0x08, 0xc8,
-	0xd5, 0xb2, 0x2a, 0x16, 0x8e, 0xf6, 0xef, 0x08, 0x3e, 0xb8, 0x84, 0x29, 0xfe, 0x02, 0xea, 0x05,
-	0x2f, 0x7d, 0xdb, 0x3f, 0xba, 0x94, 0x89, 0x95, 0xe8, 0x13, 0x96, 0x68, 0x21, 0xfb, 0x8d, 0xe7,
-	0x2f, 0xf7, 0x02, 0x62, 0xc2, 0x6c, 0x34, 0xbd, 0xf0, 0x8d, 0x5c, 0x2f, 0x9a, 0x5e, 0xe0, 0x2f,
-	0xa1, 0xa9, 0x4c, 0x15, 0xbe, 0x0f, 0xff, 0x11, 0xff, 0x90, 0x6a, 0xc9, 0x2f, 0x7c, 0xbc, 0x0b,
-	0x6c, 0xff, 0x5c, 0x83, 0xeb, 0xff, 0xd0, 0x02, 0xbc, 0xbb, 0xa8, 0x0a, 0x39, 0xa6, 0xbb, 0x0b,
-	0xa6, 0xc8, 0x65, 0xff, 0x11, 0xc1, 0xb6, 0x18, 0x29, 0x26, 0xa7, 0xb6, 0x13, 0x86, 0x85, 0xd1,
-	0xf4, 0xe9, 0xbb, 0x9d, 0x46, 0xf4, 0x68, 0x91, 0xc2, 0x73, 0x5f, 0xc9, 0xda, 0x2e, 0x20, 0x5c,
-	0xba, 0x82, 0x6f, 0xc2, 0xd5, 0xb1, 0x83, 0x1c, 0x4e, 0x69, 0x5e, 0x31, 0x5f, 0xc3, 0xb6, 0x77,
-	0x3e, 0x31, 0x3e, 0xfc, 0x21, 0x6c, 0xbb, 0x25, 0xf5, 0x77, 0x5c, 0x55, 0xa1, 0xf3, 0xb9, 0x2b,
-	0x37, 0x60, 0xe3, 0x29, 0xe3, 0xd9, 0xc4, 0xed, 0x2f, 0x22, 0xde, 0x6a, 0x9f, 0x40, 0xb8, 0xb4,
-	0x20, 0xf8, 0xde, 0x6c, 0x04, 0x68, 0x8d, 0x11, 0x6c, 0x9a, 0x32, 0x5e, 0xbc, 0xdc, 0x43, 0x7e,
-	0x0c, 0xfd, 0x0d, 0x68, 0x9c, 0xf1, 0x32, 0x3d, 0xf8, 0x13, 0x41, 0xc3, 0x2c, 0x39, 0x3e, 0x5c,
-	0x0b, 0xd6, 0x29, 0xc3, 0x83, 0xe1, 0x23, 0x68, 0xe4, 0x8c, 0x8e, 0xbd, 0xa8, 0x3e, 0x59, 0x6f,
-	0x1c, 0x47, 0x8c, 0x8e, 0x0d, 0x83, 0x41, 0x40, 0x2c, 0x0a, 0x7e, 0x04, 0x4d, 0x75, 0x9e, 0x73,
-	0xed, 0x35, 0xf6, 0xe9, 0x7a, 0x70, 0x27, 0x26, 0xd4, 0xe3, 0x39, 0x9c, 0x79, 0xad, 0xdf, 0xc0,
-	0xd6, 0xfc, 0x2d, 0x6e, 0xc1, 0x15, 0x3f, 0x20, 0x5b, 0xf1, 0x16, 0x99, 0x99, 0xf8, 0x7d, 0x68,
-	0x9e, 0xf3, 0xa9, 0xd0, 0x7e, 0x46, 0xce, 0xc0, 0x1d, 0xd8, 0x4c, 0x26, 0x3c, 0x4f, 0x25, 0x2b,
-	0xad, 0xec, 0xea, 0xfd, 0xda, 0x2e, 0x22, 0x73, 0xdf, 0xc1, 0xaf, 0x35, 0xd8, 0x9c, 0x95, 0x82,
-	0x8b, 0x85, 0x24, 0x66, 0x4d, 0x35, 0x42, 0x1d, 0xbc, 0x59, 0x67, 0x56, 0x14, 0x7b, 0xbf, 0xd4,
-	0xf2, 0xd9, 0x5c, 0x5c, 0xee, 0x87, 0xf8, 0x36, 0x5c, 0x77, 0x5a, 0x19, 0x52, 0x3d, 0xcc, 0xa9,
-	0xd2, 0x43, 0x36, 0xa5, 0xb9, 0xe7, 0xbf, 0xeb, 0x5e, 0x7d, 0xa5, 0x8f, 0xa8, 0xd2, 0xf7, 0xa7,
-	0x34, 0xc7, 0x7b, 0x10, 0x72, 0x35, 0x4c, 0xb9, 0xa2, 0xa3, 0x9c, 0xa5, 0xb6, 0xcd, 0x9b, 0x04,
-	0xb8, 0xba, 0xe7, 0x3d, 0xed, 0xef, 0xe0, 0xda, 0xdf, 0x52, 0x9a, 0x75, 0x3c, 0x63, 0xcf, 0x7c,
-	0xb3, 0xcc, 0x11, 0x3f, 0x86, 0xe6, 0x42, 0xcc, 0x61, 0xef, 0xf0, 0xcd, 0xd7, 0x90, 0x38, 0xa0,
-	0xc3, 0xda, 0x67, 0xa8, 0xff, 0xfd, 0xf3, 0x57, 0x9d, 0xe0, 0x8f, 0x57, 0x1d, 0xf4, 0xd3, 0xeb,
-	0x4e, 0xf0, 0xe2, 0x75, 0x27, 0x80, 0x8f, 0x13, 0x51, 0xfc, 0x0f, 0xec, 0xfe, 0xce, 0x60, 0x06,
-	0xfe, 0xd8, 0x7c, 0x6a, 0xd5, 0xe9, 0x9d, 0xa5, 0x4f, 0xf3, 0x48, 0x15, 0xb1, 0x0b, 0x89, 0xff,
-	0xf5, 0xef, 0xc2, 0x68, 0xc3, 0x7e, 0xa7, 0xef, 0xfc, 0x15, 0x00, 0x00, 0xff, 0xff, 0x33, 0x66,
-	0x6a, 0x2c, 0x56, 0x08, 0x00, 0x00,
+var fileDescriptor_internal_f1078f466b7f1db7 = []byte{
+	// 843 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xcd, 0x6e, 0x5b, 0x45,
+	0x14, 0xf6, 0xf8, 0x2f, 0xc9, 0x71, 0x50, 0xc2, 0x14, 0x8a, 0xf1, 0xc2, 0x09, 0x29, 0x42, 0x59,
+	0xb4, 0xd7, 0x92, 0x2b, 0xf1, 0x13, 0xb1, 0x00, 0xa7, 0x45, 0x5e, 0xa4, 0x69, 0x74, 0x5b, 0x75,
+	0x51, 0x84, 0xac, 0xf1, 0xbd, 0xc7, 0x37, 0xa3, 0xcc, 0xbd, 0x13, 0x66, 0xe6, 0x9a, 0x54, 0x48,
+	0xac, 0x78, 0x00, 0x1e, 0x80, 0x77, 0x60, 0xc9, 0x1b, 0xa0, 0x2e, 0xbb, 0x83, 0x55, 0xa5, 0xaa,
+	0x2b, 0xde, 0x02, 0xcd, 0x8f, 0xed, 0xb4, 0x34, 0x80, 0x43, 0x36, 0xd6, 0xcc, 0xb9, 0xe7, 0x7c,
+	0xdf, 0x7c, 0xe7, 0x7c, 0xf7, 0x7a, 0xe0, 0x66, 0x22, 0x98, 0xd6, 0x7c, 0xc2, 0x51, 0xf5, 0x8e,
+	0x25, 0x4e, 0x26, 0x29, 0x2f, 0xb2, 0x1e, 0x2f, 0x0c, 0xaa, 0x82, 0x89, 0xf9, 0x22, 0x3a, 0x55,
+	0xd2, 0x48, 0x7a, 0x73, 0x2c, 0x58, 0x72, 0xa2, 0xbf, 0x2d, 0x99, 0xc2, 0x1c, 0x53, 0xce, 0x22,
+	0x85, 0x4c, 0xcb, 0x22, 0x5a, 0xa0, 0x44, 0x73, 0x94, 0xce, 0x46, 0x22, 0x15, 0xf6, 0xec, 0x8f,
+	0x2f, 0xef, 0x6c, 0x94, 0x86, 0x8b, 0x9e, 0xfd, 0x09, 0x81, 0x5b, 0x19, 0x37, 0xc7, 0xe5, 0x38,
+	0x4a, 0x64, 0xde, 0xcb, 0x64, 0x26, 0x7b, 0x2e, 0x3c, 0x2e, 0x27, 0x6e, 0xe7, 0x36, 0x6e, 0xe5,
+	0xd3, 0x77, 0x7e, 0x25, 0x50, 0x7f, 0xa8, 0x10, 0xe9, 0x67, 0xd0, 0xc8, 0x65, 0x8a, 0xa2, 0x4d,
+	0xb6, 0xc9, 0x6e, 0xab, 0x7f, 0x23, 0xba, 0xf0, 0x5c, 0x96, 0xfc, 0x9e, 0x4d, 0x8d, 0x7d, 0x05,
+	0xbd, 0x0e, 0x4d, 0xc3, 0x54, 0x86, 0xa6, 0x5d, 0xdd, 0x26, 0xbb, 0x6b, 0x71, 0xd8, 0x51, 0x0a,
+	0x75, 0x25, 0xa5, 0x69, 0xd7, 0xb6, 0xc9, 0x6e, 0x2d, 0x76, 0x6b, 0x3a, 0x84, 0x46, 0x21, 0x53,
+	0xd4, 0xed, 0xfa, 0x76, 0x6d, 0xb7, 0xd5, 0xef, 0x47, 0xcb, 0xc8, 0x8f, 0x0e, 0x65, 0x8a, 0xb1,
+	0x07, 0xd8, 0xf9, 0x79, 0x0d, 0xd6, 0xbf, 0x42, 0x66, 0x4a, 0x85, 0x0f, 0x0c, 0x33, 0x9a, 0xe6,
+	0xb0, 0x92, 0x08, 0x3d, 0x2a, 0xca, 0x3c, 0x68, 0x88, 0x97, 0x03, 0x3f, 0x0f, 0x16, 0xed, 0x87,
+	0x8c, 0x84, 0x19, 0x2e, 0x8b, 0xc3, 0x32, 0x47, 0xc5, 0x13, 0x26, 0x86, 0x95, 0xb8, 0x99, 0x08,
+	0x7d, 0x58, 0xe6, 0x54, 0x7a, 0xba, 0x84, 0x79, 0xd9, 0xad, 0xfe, 0xc3, 0x2b, 0xa3, 0xdb, 0x67,
+	0x06, 0x33, 0x79, 0x9e, 0x70, 0x9f, 0x19, 0xca, 0x61, 0x45, 0x61, 0xe6, 0xf4, 0xd5, 0x1c, 0xe1,
+	0xe1, 0xff, 0x20, 0x8c, 0x31, 0x53, 0xa8, 0xf5, 0xeb, 0xda, 0x14, 0x66, 0x56, 0xdb, 0x89, 0xa7,
+	0xb2, 0xda, 0xea, 0x8e, 0xea, 0xe8, 0x4a, 0xa8, 0x5e, 0xd3, 0xa5, 0x30, 0xdb, 0x67, 0xa6, 0xf3,
+	0x3b, 0x81, 0xf7, 0x2e, 0x68, 0x37, 0xfd, 0x1c, 0x6a, 0x39, 0x2f, 0xc2, 0x3c, 0x3f, 0xbc, 0xf0,
+	0x10, 0xce, 0xff, 0x8f, 0x30, 0x31, 0x52, 0x0d, 0xea, 0x4f, 0x9f, 0x6f, 0x55, 0x62, 0x5b, 0xe6,
+	0xaa, 0xd9, 0x59, 0x18, 0xcf, 0x72, 0xd5, 0xec, 0x8c, 0x7e, 0x01, 0x0d, 0x6d, 0x05, 0x84, 0x6e,
+	0xff, 0x4b, 0xfd, 0x3d, 0x66, 0x14, 0x3f, 0x0b, 0xf5, 0xbe, 0xb0, 0xc3, 0xe0, 0xfd, 0x0b, 0x07,
+	0x4b, 0xef, 0xcc, 0xe0, 0xc9, 0x12, 0xf0, 0xab, 0x16, 0xfe, 0xd9, 0xf3, 0x2d, 0x32, 0xa3, 0xf8,
+	0xa5, 0x0a, 0xd7, 0xde, 0x30, 0x4b, 0xba, 0xb9, 0x68, 0x1c, 0xf1, 0xcd, 0xd8, 0x5c, 0x34, 0x83,
+	0x78, 0x81, 0x3f, 0x12, 0x58, 0x97, 0x63, 0x8d, 0x6a, 0xea, 0x0e, 0x67, 0x85, 0xda, 0x77, 0xf2,
+	0xf1, 0xd5, 0xda, 0x2a, 0xba, 0xbf, 0xa0, 0x08, 0xed, 0x79, 0x85, 0xb5, 0x93, 0x43, 0xeb, 0x5c,
+	0x0a, 0xbd, 0x01, 0x6f, 0x4d, 0x3c, 0xe4, 0x68, 0xca, 0x44, 0x89, 0x41, 0xc3, 0x7a, 0x08, 0x3e,
+	0xb2, 0x31, 0xfa, 0x01, 0xac, 0xfb, 0x8f, 0x4c, 0xc8, 0xf1, 0xaa, 0x5a, 0x3e, 0xe6, 0x53, 0xae,
+	0x43, 0xf3, 0x3b, 0xe4, 0xd9, 0xb1, 0xff, 0xfe, 0x90, 0x38, 0xec, 0x3a, 0xdf, 0xc0, 0xbb, 0x6f,
+	0x74, 0xe4, 0xd5, 0x0c, 0x64, 0xd0, 0x84, 0xfa, 0x09, 0x2f, 0xd2, 0x9d, 0x3f, 0x09, 0xd4, 0xed,
+	0xe7, 0x8a, 0xee, 0x2d, 0x05, 0xeb, 0x6d, 0x18, 0xc0, 0xe8, 0x01, 0xd4, 0x05, 0xb2, 0x49, 0x70,
+	0xf0, 0xc7, 0xcb, 0x0d, 0xe6, 0x00, 0xd9, 0xc4, 0x9e, 0x60, 0x58, 0x89, 0x1d, 0x0a, 0xbd, 0x0f,
+	0x0d, 0x7d, 0x2a, 0xb8, 0x09, 0x86, 0xfe, 0x64, 0x39, 0xb8, 0x07, 0xb6, 0x34, 0xe0, 0x79, 0x9c,
+	0xb9, 0xd6, 0xaf, 0x61, 0x6d, 0xfe, 0x94, 0xb6, 0x61, 0x25, 0x8c, 0xca, 0x29, 0x5e, 0x8b, 0x67,
+	0x5b, 0xfa, 0x0e, 0x34, 0x4e, 0xf9, 0x54, 0x9a, 0x30, 0x2d, 0xbf, 0xa1, 0x5d, 0x58, 0x4d, 0x8e,
+	0xb9, 0x48, 0x15, 0x16, 0xce, 0x80, 0xb5, 0x41, 0x75, 0x93, 0xc4, 0xf3, 0xd8, 0xce, 0x6f, 0x55,
+	0x58, 0x9d, 0x49, 0xa1, 0xf9, 0xc2, 0x1c, 0xb3, 0xa6, 0x5a, 0xcb, 0x0e, 0x2f, 0xd7, 0x99, 0x57,
+	0xbc, 0x7b, 0xb7, 0x30, 0xea, 0xc9, 0xdc, 0x66, 0xfe, 0x2f, 0xe5, 0x16, 0x5c, 0xf3, 0xae, 0x19,
+	0x31, 0x33, 0x12, 0x4c, 0x9b, 0x11, 0x4e, 0x99, 0x08, 0xe7, 0xdf, 0xf4, 0x8f, 0xbe, 0x34, 0x07,
+	0x4c, 0x9b, 0xbb, 0x53, 0x26, 0xe8, 0x16, 0xb4, 0xb8, 0x1e, 0xa5, 0x5c, 0xb3, 0xb1, 0xc0, 0xd4,
+	0xb5, 0x79, 0x35, 0x06, 0xae, 0xef, 0x84, 0x48, 0xe7, 0x7b, 0x78, 0xfb, 0x6f, 0x94, 0xf6, 0xc5,
+	0x3c, 0xc1, 0x27, 0xa1, 0x59, 0x76, 0x49, 0x8f, 0xa0, 0xb1, 0xb0, 0x75, 0xab, 0xbf, 0x77, 0xf9,
+	0x17, 0x32, 0xf6, 0x40, 0x7b, 0xd5, 0x4f, 0xc9, 0xe0, 0x87, 0xa7, 0x2f, 0xba, 0x95, 0x3f, 0x5e,
+	0x74, 0xc9, 0x4f, 0x2f, 0xbb, 0x95, 0x67, 0x2f, 0xbb, 0x15, 0xf8, 0x28, 0x91, 0xf9, 0x7f, 0xc0,
+	0x1e, 0x6c, 0x0c, 0x67, 0xe0, 0x47, 0xf6, 0xd2, 0xa0, 0x1f, 0xdf, 0x3e, 0x77, 0xc9, 0x18, 0xeb,
+	0xbc, 0xe7, 0x4b, 0x7a, 0xff, 0x78, 0xf1, 0x19, 0x37, 0xdd, 0x8d, 0xe3, 0xf6, 0x5f, 0x01, 0x00,
+	0x00, 0xff, 0xff, 0xf4, 0xf0, 0x9f, 0x7d, 0x20, 0x09, 0x00, 0x00,
 }

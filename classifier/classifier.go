@@ -10,6 +10,7 @@ import (
 const (
 	Classification Problem = iota + 1
 	Regression
+	problemTerminator
 )
 
 type Problem uint8
@@ -23,6 +24,11 @@ func ParseProblem(s string) (Problem, error) {
 		return Regression, nil
 	}
 	return 0, fmt.Errorf("reason: unable to parse problem %q", s)
+}
+
+// IsValid returns true if the problem is valid and known.
+func (p Problem) IsValid() bool {
+	return p >= Classification && p <= Regression
 }
 
 // String returns the Problem name.
