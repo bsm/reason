@@ -16,8 +16,7 @@ type Config struct {
 	L2 float64
 }
 
-// Norm inits and normalizes the config
-func (c *Config) Norm() {
+func (c *Config) norm() {
 	if c.Alpha <= 0 {
 		c.Alpha = 0.1
 	}

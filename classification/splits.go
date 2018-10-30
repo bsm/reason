@@ -72,7 +72,7 @@ type InformationGain struct {
 // Range implements SplitCriterion
 func (InformationGain) Range(pre *util.Vector) float64 {
 	if pre != nil {
-		if sz := pre.Len(); sz > 2 {
+		if sz := pre.NNZ(); sz > 2 {
 			return math.Log2(float64(sz))
 		}
 	}

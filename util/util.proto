@@ -13,10 +13,9 @@ option java_package = "com.blacksquaremedia.reason";
 option java_outer_classname = "UtilProtos";
 
 // Vector represents a vector of weights.
-// The minimum value of each vector element is 0, which indicates "not set".
+// The minimum value of each weight is 0, which indicates "not set".
 message Vector {
   repeated double data = 1 [packed=true];
-  repeated uint32 sparse_dict = 2 [packed=true];
 }
 
 // Matrix is an auto-expanding matrix data type.

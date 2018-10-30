@@ -66,17 +66,9 @@ func (s *FeatureStats_Numerical) ObserveWeight(featVal float64, targetCat core.C
 
 // PivotPoints determines the optimum split points for the range of values.
 func (s *FeatureStats_Numerical) PivotPoints() []float64 {
-	var tmin, tmax float64
-	s.Min.ForEach(func(i int, min float64) bool {
-		if tmin == 0 || min < tmin {
-			tmin = min
-		}
-		if max := s.Max.At(i); tmax == 0 || max > tmax {
-			tmax = max
-		}
-		return true
-	})
-	return hoeffding.PivotPoints(tmin, tmax)
+	_, min := s.Min.Min()
+	_, max := s.Max.Max()
+	return hoeffding.PivotPoints(min, max)
 }
 
 // PostSplit calculates a post-split distribution from previous observations

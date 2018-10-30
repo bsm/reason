@@ -40,7 +40,7 @@ func New(model *core.Model, target string, config *Config) (*Optimizer, error) {
 	return newOptimizer(opt, predictors, offsets, config)
 }
 
-func newOptimizer(opt *internal.Optimizer, predictors []string, offsets []int, c *Config) (*Optimizer, error) {
+func newOptimizer(opt *internal.Optimizer, predictors []string, offsets []int, config *Config) (*Optimizer, error) {
 	feat := opt.Model.Feature(opt.Target)
 	if feat == nil {
 		return nil, fmt.Errorf("ftrl: unknown feature %q", opt.Target)
@@ -51,18 +51,18 @@ func newOptimizer(opt *internal.Optimizer, predictors []string, offsets []int, c
 		}
 	}
 
-	var config Config
-	if c != nil {
-		config = *c
+	var conf Config
+	if config != nil {
+		conf = *config
 	}
-	config.Norm()
+	conf.norm()
 
 	return &Optimizer{
 		opt:        opt,
 		target:     feat,
 		predictors: predictors,
 		offsets:    offsets,
-		config:     config,
+		config:     conf,
 	}, nil
 }
 

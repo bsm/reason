@@ -7,7 +7,7 @@ import (
 
 // IsSufficient returns true when a node has sufficient stats.
 func (n *Node) IsSufficient() bool {
-	return n.Stats.Len() > 1
+	return n.Stats.NNZ() > 1
 }
 
 // Weight returns the weight observed on the node.

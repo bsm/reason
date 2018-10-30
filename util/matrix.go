@@ -94,6 +94,20 @@ func (m *Matrix) RowSum(i int) float64 {
 	return sum
 }
 
+// ColSum returns the sum of all weights in col i.
+func (m *Matrix) ColSum(i int) float64 {
+	if i < 0 {
+		return 0.0
+	}
+
+	stride := int(m.Stride)
+	sum := 0.0
+	for x := i; x < len(m.Data); x += stride {
+		sum += m.Data[x]
+	}
+	return sum
+}
+
 // Sum returns the sum of all weights.
 func (m *Matrix) Sum() float64 {
 	sum := 0.0

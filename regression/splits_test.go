@@ -18,19 +18,15 @@ var _ = Describe("SplitCriterion", func() {
 		sPost := util.WrapNumStreams(post)
 		sPost2 := util.WrapNumStreams(post2)
 
-		for _, v := range []float64{1.1, 1.2, 1.3, 1.4, 1.5} {
+		for i, v := range []float64{1.1, 1.2, 1.3, 1.4, 1.5} {
 			sPre.Observe(v)
 			sPost.Observe(0, v)
-			for i := 0; i < 100; i++ {
-				sPost2.Observe(i, v)
-			}
+			sPost2.Observe(i, v)
 		}
-		for _, v := range []float64{6.6, 6.7, 6.8} {
+		for i, v := range []float64{6.6, 6.7, 6.8} {
 			sPre.Observe(v)
 			sPost.Observe(2, v)
-			for i := 100; i < 200; i++ {
-				sPost2.Observe(i, v)
-			}
+			sPost2.Observe(i+4, v)
 		}
 	})
 
@@ -59,10 +55,10 @@ var _ = Describe("SplitCriterion", func() {
 
 		It("should reduce merit of 'super-attributes'", func() {
 			Expect(base.Merit(pre, post)).To(BeNumerically("~", 7.81, 0.01))
-			Expect(base.Merit(pre, post2)).To(BeNumerically("~", 7.81, 0.01))
-
 			Expect(subject.Merit(pre, post)).To(BeNumerically("~", 8.18, 0.01))
-			Expect(subject.Merit(pre, post2)).To(BeNumerically("~", 1.03, 0.01))
+
+			Expect(base.Merit(pre, post2)).To(BeNumerically("~", 4.58, 0.01))
+			Expect(subject.Merit(pre, post2)).To(BeNumerically("~", 1.66, 0.01))
 		})
 	})
 })

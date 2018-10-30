@@ -4,56 +4,33 @@ import (
 	"math"
 )
 
-// NewVectorFromSlice initalizes a vector using a slice of weights.
-func NewVectorFromSlice(weights ...float64) *Vector {
-	return &Vector{Data: weights}
-}
-
 // NewVector inits a new (sparse) vector.
 func NewVector() *Vector {
 	return new(Vector)
 }
 
-// IsSparse returns true if the vector uses sparse representation.
-func (vv *Vector) IsSparse() bool {
-	return vv.SparseDict != nil && len(vv.SparseDict) == len(vv.Data)
+// NewVectorFromSlice initalizes a vector using a slice of weights.
+func NewVectorFromSlice(weights ...float64) *Vector {
+	return &Vector{Data: weights}
 }
 
-// MakeSparse converts a vector to sparse storage.
-func (vv *Vector) MakeSparse() {
-	if vv.IsSparse() {
-		return
-	}
-
-	nv := Vector{
-		Data:       make([]float64, 0, len(vv.Data)*5),
-		SparseDict: make([]uint32, 0, len(vv.Data)*5),
-	}
-	vv.ForEach(func(i int, w float64) bool {
-		nv.Set(i, w)
-		return true
-	})
-	*vv = nv
+// Dims returns the number of rows and cols.
+func (vv *Vector) Dims() (rows, cols int) {
+	return 1, vv.NumCols()
 }
 
-// MakeDense converts a vector to dense storage.
-func (vv *Vector) MakeDense() {
-	if !vv.IsSparse() {
-		return
-	}
-
-	nv := Vector{
-		Data: make([]float64, 0, len(vv.SparseDict)*5),
-	}
-	vv.ForEach(func(i int, w float64) bool {
-		nv.Set(i, w)
-		return true
-	})
-	*vv = nv
+// NumRows returns the number of rows.
+func (vv *Vector) NumRows() int {
+	return 1
 }
 
-// Len returns the number of non-zero weights in the vector.
-func (vv *Vector) Len() int {
+// NumCols returns the number of cols.
+func (vv *Vector) NumCols() int {
+	return len(vv.Data)
+}
+
+// NNZ returns the number of non-zero weights in the vector.
+func (vv *Vector) NNZ() int {
 	n := 0
 	for _, v := range vv.Data {
 		if v != 0 {
@@ -75,26 +52,24 @@ func (vv *Vector) Weight() float64 {
 // Min returns the position of the minimum weight in the vector (with value).
 func (vv *Vector) Min() (pos int, weight float64) {
 	pos = -1
-	vv.ForEach(func(i int, w float64) bool {
-		if i == 0 || w < weight {
+	for i, w := range vv.Data {
+		if w > 0 && (weight == 0 || w < weight) {
 			pos = i
 			weight = w
 		}
-		return true
-	})
+	}
 	return pos, weight
 }
 
 // Max returns the position od the maximum weight in the vector (with value).
 func (vv *Vector) Max() (pos int, weight float64) {
 	pos = -1
-	vv.ForEach(func(i int, w float64) bool {
+	for i, w := range vv.Data {
 		if w > weight {
 			pos = i
 			weight = w
 		}
-		return true
-	})
+	}
 	return
 }
 
@@ -105,23 +80,12 @@ func (vv *Vector) Clone() *Vector {
 		nv.Data = make([]float64, len(vv.Data))
 		copy(nv.Data, vv.Data)
 	}
-	if vv.SparseDict != nil {
-		nv.SparseDict = make([]uint32, len(vv.SparseDict))
-		copy(nv.SparseDict, vv.SparseDict)
-	}
 	return nv
 }
 
 // At returns weight at index.
 func (vv *Vector) At(index int) float64 {
-	if index < 0 {
-		return 0.0
-	}
-
-	if vv.IsSparse() {
-		index = vv.sparsePos(index)
-	}
-	if index < len(vv.Data) {
+	if index > -1 && index < len(vv.Data) {
 		return vv.Data[index]
 	}
 	return 0.0
@@ -130,16 +94,6 @@ func (vv *Vector) At(index int) float64 {
 // Set sets a weight at index.
 func (vv *Vector) Set(index int, weight float64) {
 	if index < 0 {
-		return
-	}
-
-	if vv.IsSparse() {
-		if pos := vv.sparsePos(index); pos < len(vv.Data) {
-			vv.Data[pos] = weight
-		} else {
-			vv.Data = append(vv.Data, weight)
-			vv.SparseDict = append(vv.SparseDict, uint32(index))
-		}
 		return
 	}
 
@@ -159,55 +113,10 @@ func (vv *Vector) Add(index int, delta float64) {
 		return
 	}
 
-	if vv.IsSparse() {
-		if pos := vv.sparsePos(index); pos < len(vv.Data) {
-			vv.Data[pos] += delta
-		} else {
-			vv.Set(index, delta)
-		}
-		return
-	}
-
 	if index < len(vv.Data) {
 		vv.Data[index] += delta
 	} else {
 		vv.Set(index, delta)
-	}
-}
-
-// ForEach iterates over each index/value
-func (vv *Vector) ForEach(iter func(int, float64) bool) {
-	if vv.IsSparse() {
-		for i, u := range vv.SparseDict {
-			if w := vv.Data[i]; w > 0 && !iter(int(u), w) {
-				break
-			}
-		}
-		return
-	}
-
-	for i, w := range vv.Data {
-		if w > 0 && !iter(i, w) {
-			break
-		}
-	}
-}
-
-// ForEachValue iterates over each value
-func (vv *Vector) ForEachValue(iter func(float64) bool) {
-	if vv.IsSparse() {
-		for i := range vv.SparseDict {
-			if w := vv.Data[i]; w > 0 && !iter(w) {
-				break
-			}
-		}
-		return
-	}
-
-	for _, w := range vv.Data {
-		if w > 0 && !iter(w) {
-			break
-		}
 	}
 }
 
@@ -221,12 +130,13 @@ func (vv *Vector) Mean() float64 {
 func (vv *Vector) Variance() float64 {
 	if n, _, mu := vv.csm(); n > 1 {
 		var ss, cs float64
-		vv.ForEachValue(func(w float64) bool {
-			dt := w - mu
-			ss += dt * dt
-			cs += dt
-			return true
-		})
+		for _, w := range vv.Data {
+			if w > 0 {
+				dt := w - mu
+				ss += dt * dt
+				cs += dt
+			}
+		}
 		return (ss - cs*cs/float64(n)) / float64(n-1)
 	}
 	return math.NaN()
@@ -236,11 +146,12 @@ func (vv *Vector) Variance() float64 {
 func (vv *Vector) Entropy() float64 {
 	ent := 0.0
 	sum := 0.0
-	vv.ForEachValue(func(w float64) bool {
-		ent -= w * math.Log2(w)
-		sum += w
-		return true
-	})
+	for _, w := range vv.Data {
+		if w > 0 {
+			ent -= w * math.Log2(w)
+			sum += w
+		}
+	}
 	if sum > 0 {
 		return (ent + sum*math.Log2(sum)) / sum
 	}
@@ -259,30 +170,22 @@ func (vv *Vector) Normalize() {
 		return
 	}
 
-	vv.ForEach(func(i int, w float64) bool {
-		vv.Set(i, w/sum)
-		return true
-	})
+	for i, w := range vv.Data {
+		if w > 0 {
+			vv.Set(i, w/sum)
+		}
+	}
 }
 
 func (vv *Vector) csm() (n int, sum, mu float64) {
-	vv.ForEachValue(func(w float64) bool {
-		n++
-		sum += w
-		return true
-	})
+	for _, w := range vv.Data {
+		if w > 0 {
+			n++
+			sum += w
+		}
+	}
 	if n > 0 {
 		mu = sum / float64(n)
 	}
 	return
-}
-
-func (vv *Vector) sparsePos(index int) int {
-	x := uint32(index)
-	for i, u := range vv.SparseDict {
-		if u == x {
-			return i
-		}
-	}
-	return len(vv.Data)
 }
