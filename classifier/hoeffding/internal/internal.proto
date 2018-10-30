@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package blacksquaremedia.reason.regression.hoeffding;
+package blacksquaremedia.reason.classifier.hoeffding;
 
 import "core/core.proto";
 import "util/util.proto";
@@ -11,8 +11,8 @@ option (gogoproto.goproto_stringer_all) = true;
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
-option go_package = "github.com/bsm/reason/regression/hoeffding/internal";
-option java_package = "com.blacksquaremedia.reason.regression";
+option go_package = "github.com/bsm/reason/classifier/hoeffding/internal";
+option java_package = "com.blacksquaremedia.reason.classifier";
 option java_outer_classname = "HoeffdingProtos";
 
 // Tree wraps the tree data.
@@ -33,7 +33,12 @@ message Tree {
 // FeatureStats instances maintain stats based on
 // observation of a particular feature.
 message FeatureStats {
-  message Numerical {
+  message NumericalClassification {
+    blacksquaremedia.reason.util.Vector min = 1 [(gogoproto.nullable) = false];
+    blacksquaremedia.reason.util.Vector max = 2 [(gogoproto.nullable) = false];
+    blacksquaremedia.reason.util.Matrix stats = 3 [(gogoproto.nullable) = false];
+  }
+  message NumericalRegression {
     double min = 1; // the minimum observed value
     double max = 2; // the maximum observed value
 
@@ -44,14 +49,14 @@ message FeatureStats {
     }
     repeated Observation observations = 3 [(gogoproto.nullable) = false];
   }
-
   message Categorical {
     blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
 
   oneof kind {
-    Numerical numerical = 1;
-    Categorical categorical = 2;
+    Categorical cat = 1;
+    NumericalClassification num_classification = 2;
+    NumericalRegression num_regression = 3;
   }
 }
 

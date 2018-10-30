@@ -32,5 +32,5 @@ PROTO_PATH=.:$$GOPATH/src:$$GOPATH/src/github.com/gogo/protobuf/protobuf
 ### proto.go
 
 %.pb.go: %.proto
-	protoc --gogo_out=. --proto_path=${PROTO_PATH} $<
+	protoc --gogo_out=paths=source_relative:. --proto_path=${PROTO_PATH} $<
 

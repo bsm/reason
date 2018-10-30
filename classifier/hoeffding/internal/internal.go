@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/bsm/reason/util"
+import util "github.com/bsm/reason/util"
 
 // SplitCandidate is a candidate for a split decision
 type SplitCandidate struct {

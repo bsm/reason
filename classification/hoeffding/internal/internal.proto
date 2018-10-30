@@ -2,15 +2,16 @@ syntax = "proto3";
 
 package blacksquaremedia.reason.classification.hoeffding;
 
-import "github.com/bsm/reason/core/core.proto";
-import "github.com/bsm/reason/util/util.proto";
+import "core/core.proto";
+import "util/util.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.goproto_stringer_all) = true;
 option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
 
-option go_package = "internal";
+option go_package = "github.com/bsm/reason/classification/hoeffding/internal";
 option java_package = "com.blacksquaremedia.reason.classification";
 option java_outer_classname = "HoeffdingProtos";
 
