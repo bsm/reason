@@ -178,7 +178,7 @@ func (c VarianceReduction) RegressionMerit(pre *util.NumStream, post *util.NumSt
 	relevantN := 0
 	rows := post.NumRows()
 	for i := 0; i < rows; i++ {
-		if s := post.At(i); s != nil && s.Weight > c.MinWeight {
+		if s := post.At(i); s != nil && s.Weight >= c.MinWeight {
 			relevantW += s.Weight
 			relevantN++
 		}
@@ -194,7 +194,7 @@ func (c VarianceReduction) RegressionMerit(pre *util.NumStream, post *util.NumSt
 
 	postVar := 0.0
 	for i := 0; i < rows; i++ {
-		if s := post.At(i); s != nil && s.Weight > c.MinWeight {
+		if s := post.At(i); s != nil && s.Weight >= c.MinWeight {
 			if v := s.Variance(); !math.IsNaN(v) {
 				postVar += s.Weight * v / relevantW
 			}

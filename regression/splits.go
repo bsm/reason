@@ -11,11 +11,11 @@ import (
 // for regressions
 type SplitCriterion interface {
 	// Range returns the range of the split merit.
-	Range(pre *util.Vector) float64
+	Range(pre *util.NumStream) float64
 
 	// Merit calculates the merit of splitting for a given
 	// distribution before and after the split
-	Merit(pre *util.Vector, post *util.Matrix) float64
+	Merit(pre *util.NumStream, post *util.NumStreams) float64
 }
 
 // DefaultSplitCriterion returns the default split criterion:
@@ -32,40 +32,41 @@ type VarianceReduction struct {
 }
 
 // Range implements SplitCriterion
-func (VarianceReduction) Range(_ *util.Vector) float64 { return 1.0 }
+func (VarianceReduction) Range(_ *util.NumStream) float64 { return 1.0 }
 
 // Merit implements SplitCriterion
-func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
-	if pre == nil {
+func (c VarianceReduction) Merit(pre *util.NumStream, post *util.NumStreams) float64 {
+	if pre == nil || post == nil {
 		return 0.0
 	}
 
-	postWeight := 0.0
-	postCount := 0
-	postStreams := util.WrapNumStreams(post)
-	postStreams.ForEach(func(cat int) {
-		if w := postStreams.TotalWeight(cat); w >= c.MinWeight {
-			postWeight += w
-			postCount++
+	relevantW := 0.0
+	relevantN := 0
+	rows := post.NumRows()
+	for i := 0; i < rows; i++ {
+		if s := post.At(i); s != nil && s.Weight >= c.MinWeight {
+			relevantW += s.Weight
+			relevantN++
 		}
-	})
-	if postCount < 2 || postWeight == 0 {
+	}
+
+	if relevantN < 2 || relevantW <= 0 {
 		return 0.0
 	}
 
-	preStream := util.WrapNumStream(pre)
-	preVar := preStream.Variance()
+	preVar := pre.Variance()
 	if math.IsNaN(preVar) {
 		return 0.0
 	}
 
 	postVar := 0.0
-	postStreams.ForEach(func(cat int) {
-		if w, v := postStreams.TotalWeight(cat), postStreams.Variance(cat); w >= c.MinWeight && !math.IsNaN(v) {
-			postVar += w * v / postWeight
+	for i := 0; i < rows; i++ {
+		if s := post.At(i); s != nil && s.Weight >= c.MinWeight {
+			if v := s.Variance(); !math.IsNaN(v) {
+				postVar += s.Weight * v / relevantW
+			}
 		}
-	})
-
+	}
 	return splits.NormMerit(preVar - postVar)
 }
 
@@ -76,16 +77,19 @@ func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
 // values over attributes that have a smaller number of values.
 type GainRatio struct{ SplitCriterion }
 
-func (c GainRatio) Merit(pre *util.Vector, post *util.Matrix) float64 {
-	postStreams := util.WrapNumStreams(post)
+func (c GainRatio) Merit(pre *util.NumStream, post *util.NumStreams) float64 {
 	penalty := new(splits.GainRatioPenalty)
-	postStreams.ForEach(func(cat int) {
-		penalty.Weight += postStreams.TotalWeight(cat)
-	})
-	postStreams.ForEach(func(cat int) {
-		penalty.Update(postStreams.TotalWeight(cat))
-	})
+	penalty.Weight = post.WeightSum()
+	if penalty.Weight == 0 {
+		return 0.0
+	}
 
+	rows := post.NumRows()
+	for i := 0; i < rows; i++ {
+		if t := post.At(i); t != nil {
+			penalty.Update(t.Weight)
+		}
+	}
 	merit := c.SplitCriterion.Merit(pre, post)
 	return splits.NormMerit(merit / penalty.Value())
 }

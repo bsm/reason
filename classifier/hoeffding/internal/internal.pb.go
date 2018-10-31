@@ -38,7 +38,7 @@ func (m *Tree) Reset()         { *m = Tree{} }
 func (m *Tree) String() string { return proto.CompactTextString(m) }
 func (*Tree) ProtoMessage()    {}
 func (*Tree) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{0}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{0}
 }
 func (m *Tree) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Tree.Unmarshal(m, b)
@@ -79,7 +79,7 @@ func (m *Node) Reset()         { *m = Node{} }
 func (m *Node) String() string { return proto.CompactTextString(m) }
 func (*Node) ProtoMessage()    {}
 func (*Node) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{1}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{1}
 }
 func (m *Node) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Node.Unmarshal(m, b)
@@ -299,7 +299,7 @@ func (m *Node_ClassificationStats) Reset()         { *m = Node_ClassificationSta
 func (m *Node_ClassificationStats) String() string { return proto.CompactTextString(m) }
 func (*Node_ClassificationStats) ProtoMessage()    {}
 func (*Node_ClassificationStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{1, 0}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{1, 0}
 }
 func (m *Node_ClassificationStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Node_ClassificationStats.Unmarshal(m, b)
@@ -329,7 +329,7 @@ func (m *Node_RegressionStats) Reset()         { *m = Node_RegressionStats{} }
 func (m *Node_RegressionStats) String() string { return proto.CompactTextString(m) }
 func (*Node_RegressionStats) ProtoMessage()    {}
 func (*Node_RegressionStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{1, 1}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{1, 1}
 }
 func (m *Node_RegressionStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Node_RegressionStats.Unmarshal(m, b)
@@ -364,7 +364,7 @@ func (m *SplitNode) Reset()         { *m = SplitNode{} }
 func (m *SplitNode) String() string { return proto.CompactTextString(m) }
 func (*SplitNode) ProtoMessage()    {}
 func (*SplitNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{2}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{2}
 }
 func (m *SplitNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SplitNode.Unmarshal(m, b)
@@ -399,7 +399,7 @@ func (m *LeafNode) Reset()         { *m = LeafNode{} }
 func (m *LeafNode) String() string { return proto.CompactTextString(m) }
 func (*LeafNode) ProtoMessage()    {}
 func (*LeafNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{3}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{3}
 }
 func (m *LeafNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LeafNode.Unmarshal(m, b)
@@ -435,7 +435,7 @@ func (m *FeatureStats) Reset()         { *m = FeatureStats{} }
 func (m *FeatureStats) String() string { return proto.CompactTextString(m) }
 func (*FeatureStats) ProtoMessage()    {}
 func (*FeatureStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{4}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{4}
 }
 func (m *FeatureStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats.Unmarshal(m, b)
@@ -633,7 +633,7 @@ func (m *FeatureStats_ClassificationNumerical) Reset()         { *m = FeatureSta
 func (m *FeatureStats_ClassificationNumerical) String() string { return proto.CompactTextString(m) }
 func (*FeatureStats_ClassificationNumerical) ProtoMessage()    {}
 func (*FeatureStats_ClassificationNumerical) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{4, 0}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{4, 0}
 }
 func (m *FeatureStats_ClassificationNumerical) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats_ClassificationNumerical.Unmarshal(m, b)
@@ -664,7 +664,7 @@ func (m *FeatureStats_ClassificationCategorical) Reset() {
 func (m *FeatureStats_ClassificationCategorical) String() string { return proto.CompactTextString(m) }
 func (*FeatureStats_ClassificationCategorical) ProtoMessage()    {}
 func (*FeatureStats_ClassificationCategorical) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{4, 1}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{4, 1}
 }
 func (m *FeatureStats_ClassificationCategorical) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats_ClassificationCategorical.Unmarshal(m, b)
@@ -695,7 +695,7 @@ func (m *FeatureStats_RegressionNumerical) Reset()         { *m = FeatureStats_R
 func (m *FeatureStats_RegressionNumerical) String() string { return proto.CompactTextString(m) }
 func (*FeatureStats_RegressionNumerical) ProtoMessage()    {}
 func (*FeatureStats_RegressionNumerical) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{4, 2}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{4, 2}
 }
 func (m *FeatureStats_RegressionNumerical) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats_RegressionNumerical.Unmarshal(m, b)
@@ -730,7 +730,7 @@ func (m *FeatureStats_RegressionNumerical_Observation) String() string {
 }
 func (*FeatureStats_RegressionNumerical_Observation) ProtoMessage() {}
 func (*FeatureStats_RegressionNumerical_Observation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{4, 2, 0}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{4, 2, 0}
 }
 func (m *FeatureStats_RegressionNumerical_Observation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats_RegressionNumerical_Observation.Unmarshal(m, b)
@@ -759,7 +759,7 @@ func (m *FeatureStats_RegressionCategorical) Reset()         { *m = FeatureStats
 func (m *FeatureStats_RegressionCategorical) String() string { return proto.CompactTextString(m) }
 func (*FeatureStats_RegressionCategorical) ProtoMessage()    {}
 func (*FeatureStats_RegressionCategorical) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_b99d5c79526dcd59, []int{4, 3}
+	return fileDescriptor_internal_801f1ed85ab0dc26, []int{4, 3}
 }
 func (m *FeatureStats_RegressionCategorical) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FeatureStats_RegressionCategorical.Unmarshal(m, b)
@@ -796,10 +796,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("classifier/hoeffding/internal/internal.proto", fileDescriptor_internal_b99d5c79526dcd59)
+	proto.RegisterFile("classifier/hoeffding/internal/internal.proto", fileDescriptor_internal_801f1ed85ab0dc26)
 }
 
-var fileDescriptor_internal_b99d5c79526dcd59 = []byte{
+var fileDescriptor_internal_801f1ed85ab0dc26 = []byte{
 	// 897 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xcd, 0x6e, 0x1b, 0x37,
 	0x10, 0xd6, 0xae, 0x7e, 0x22, 0x8f, 0xdc, 0xda, 0xa5, 0xdb, 0x54, 0xd5, 0x41, 0x76, 0x95, 0xa2,

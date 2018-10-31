@@ -46,7 +46,7 @@ message FeatureStats {
   }
 
   message Categorical {
-    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+    blacksquaremedia.reason.util.NumStreams stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
 
   oneof kind {
@@ -58,7 +58,7 @@ message FeatureStats {
 // Node is a tree node
 message Node {
   // Observation stats for the node
-  blacksquaremedia.reason.util.Vector stats = 1;
+  blacksquaremedia.reason.util.NumStream stats = 1;
 
   // Nodes can be leaf or split nodes.
   oneof kind {

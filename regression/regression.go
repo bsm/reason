@@ -6,12 +6,13 @@ import (
 )
 
 // Predictions is a slice of predictions.
-type Predictions []util.NumStream
+type Predictions []*util.NumStream
 
 // Best returns the most accurate prediction.
-func (pp Predictions) Best() util.NumStream {
+func (pp Predictions) Best() *util.NumStream {
 	if n := len(pp); n != 0 {
-		return pp[n-1]
+		s := pp[n-1]
+		return s
 	}
-	return util.NewNumStream()
+	return nil
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/regression"
-	"github.com/bsm/reason/util"
 )
 
 // IsSufficient returns true when a node has sufficient stats.
@@ -16,7 +15,7 @@ func (n *Node) IsSufficient() bool {
 
 // Weight returns the weight observed on the node.
 func (n *Node) Weight() float64 {
-	return util.WrapNumStream(n.Stats).TotalWeight()
+	return n.Stats.Weight
 }
 
 // --------------------------------------------------------------------
@@ -131,7 +130,7 @@ func (n *LeafNode) Observe(m *core.Model, target *core.Feature, x core.Example, 
 	}
 
 	// Get example weight and update node stats
-	util.WrapNumStream(self.Stats).ObserveWeight(targetVal, weight)
+	self.Stats.ObserveWeight(targetVal, weight)
 
 	// Skip the remaining steps if this node is disabled
 	if n.IsDisabled {

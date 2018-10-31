@@ -47,20 +47,19 @@ func (t *Tree) Len() int {
 }
 
 // Add adds a new leaf node and returns the ref.
-func (t *Tree) Add(stats *util.Vector) int64 {
+func (t *Tree) Add(stats *util.NumStream) int64 {
 	if stats == nil {
-		stats = util.NewVector()
+		stats = util.NewNumStream()
 	}
 
-	wrap := util.WrapNumStream(stats)
-	leaf := &LeafNode{WeightAtLastEval: wrap.TotalWeight()}
+	leaf := &LeafNode{WeightAtLastEval: stats.Weight}
 	node := &Node{Kind: &Node_Leaf{Leaf: leaf}, Stats: stats}
 	t.Nodes = append(t.Nodes, node)
 	return int64(len(t.Nodes))
 }
 
 // Split splits an existing leaf node
-func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util.Matrix, pivot float64) {
+func (t *Tree) Split(leafRef int64, feature string, pre *util.NumStream, post *util.NumStreams, pivot float64) {
 	if orig := t.Get(leafRef); orig == nil || orig.GetLeaf() == nil {
 		return
 	}
@@ -72,11 +71,8 @@ func (t *Tree) Split(leafRef int64, feature string, pre *util.Vector, post *util
 
 	rows := post.NumRows()
 	for i := 0; i < rows; i++ {
-		if post.RowSum(i) > 0 {
-			// TODO: do we need to copy here?
-			row := append([]float64{}, post.Row(i)...)
-			vv := util.NewVectorFromSlice(row...)
-			split.SetChild(i, t.Add(vv))
+		if ns := post.At(i); ns != nil {
+			split.SetChild(i, t.Add(ns))
 		}
 	}
 
@@ -108,7 +104,7 @@ func (t *Tree) Traverse(x core.Example, nodeRef int64, parent *Node, parentIndex
 }
 
 // Prune prunes the leaves of a node recursively
-func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(util.NumStream, util.NumStream) bool) {
+func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(*util.NumStream, *util.NumStream) bool) {
 	// Get the node
 	node := t.Get(nodeRef)
 	if node == nil {
@@ -126,7 +122,7 @@ func (t *Tree) Prune(nodeRef int64, parent *Node, isObsolete func(util.NumStream
 	}
 
 	// Disable if leaf (with a parent) and obsolete
-	if parent != nil && isObsolete(util.WrapNumStream(node.Stats), util.WrapNumStream(parent.Stats)) {
+	if parent != nil && isObsolete(node.Stats, parent.Stats) {
 		if leaf := node.GetLeaf(); leaf != nil {
 			leaf.Disable()
 		}
@@ -146,10 +142,8 @@ func (t *Tree) WriteText(w io.Writer, nodeRef int64, indent, name string) (nw in
 		nn int64
 	)
 
-	stream := util.WrapNumStream(node.Stats)
-
 	// Print node stats
-	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", stream.TotalWeight(), stream.Mean(), stream.Variance())
+	n, err = fmt.Fprintf(w, indent+name+" [weight:%.0f mean:%.1f variance:%.1f]\n", node.Stats.Weight, node.Stats.Mean(), node.Stats.Variance())
 	nw += int64(n)
 	if err != nil {
 		return

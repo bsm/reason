@@ -14,13 +14,16 @@ var _ = Describe("Tree", func() {
 	var subject *internal.Tree
 
 	model := testdata.RegressionModel()
-	pre := util.NewVectorFromSlice(14, 557, 23377)
-	post := &util.Matrix{
-		Stride: 3,
-		Data: []float64{
-			5, 176, 6498,
-			4, 185, 8605,
-			5, 196, 8274,
+	pre := &util.NumStream{
+		Weight:     14,
+		Sum:        557,
+		SumSquares: 23377,
+	}
+	post := &util.NumStreams{
+		Data: []util.NumStream{
+			{Weight: 5, Sum: 176, SumSquares: 6498},
+			{Weight: 4, Sum: 185, SumSquares: 8605},
+			{Weight: 5, Sum: 196, SumSquares: 8274},
 		},
 	}
 
@@ -55,7 +58,8 @@ var _ = Describe("Tree", func() {
 		root := subject.Get(1)
 
 		node, nodeRef, parent, parentIndex := subject.Traverse(core.MapExample{"outlook": "overcast"}, 1, nil, -1, nil)
-		Expect(node.Stats.At(1)).To(Equal(185.0))
+		Expect(node.Stats.Weight).To(Equal(4.0))
+		Expect(node.Stats.Sum).To(Equal(185.0))
 		Expect(parent).To(Equal(root))
 		Expect(parentIndex).To(Equal(1))
 

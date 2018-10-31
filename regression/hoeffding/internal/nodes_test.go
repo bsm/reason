@@ -20,7 +20,7 @@ var _ = Describe("LeafNode", func() {
 		subject = new(internal.LeafNode)
 		wrapper = &internal.Node{
 			Kind:  &internal.Node_Leaf{Leaf: subject},
-			Stats: util.NewVector(),
+			Stats: util.NewNumStream(),
 		}
 
 		target := model.Feature("hours")
@@ -31,7 +31,7 @@ var _ = Describe("LeafNode", func() {
 
 	It("should observe", func() {
 		Expect(wrapper.Weight()).To(Equal(14.0))
-		Expect(util.WrapNumStream(wrapper.Stats).Mean()).To(BeNumerically("~", 39.8, 0.1))
+		Expect(wrapper.Stats.Mean()).To(BeNumerically("~", 39.8, 0.1))
 
 		Expect(subject.FeatureStats).To(HaveLen(4))
 		Expect(subject.FeatureStats).To(HaveKey("temp"))
@@ -49,16 +49,16 @@ var _ = Describe("LeafNode", func() {
 		Expect(cat.Merit).To(BeNumerically("~", 9.14, 0.01))
 		Expect(cat.Range).To(Equal(1.0))
 		Expect(cat.Pivot).To(Equal(0.0))
-		Expect(util.WrapNumStream(cat.PreSplit).TotalWeight()).To(Equal(14.0))
-		Expect(util.WrapNumStreams(cat.PostSplit).NumCategories()).To(Equal(3))
+		Expect(cat.PreSplit.Weight).To(Equal(14.0))
+		Expect(cat.PostSplit.NumCategories()).To(Equal(3))
 
 		num := subject.EvaluateSplit("humidity", crit, wrapper)
 		Expect(num.Feature).To(Equal("humidity"))
 		Expect(num.Merit).To(Equal(0.0))
 		Expect(num.Range).To(Equal(1.0))
 		Expect(num.Pivot).To(BeNumerically("~", 41.67, 0.01))
-		Expect(util.WrapNumStream(num.PreSplit).TotalWeight()).To(Equal(14.0))
-		Expect(util.WrapNumStreams(num.PostSplit).NumCategories()).To(Equal(2))
+		Expect(num.PreSplit.Weight).To(Equal(14.0))
+		Expect(num.PostSplit.NumCategories()).To(Equal(2))
 	})
 
 	It("should allow to disable/enable", func() {

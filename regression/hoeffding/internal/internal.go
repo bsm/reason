@@ -10,9 +10,9 @@ type SplitCandidate struct {
 	Pivot   float64 // the split pivot, for binary splits
 
 	// Pre-split stats
-	PreSplit *util.Vector
+	PreSplit *util.NumStream
 	// Post-split stats
-	PostSplit *util.Matrix
+	PostSplit *util.NumStreams
 }
 
 // SplitCandidates are a sortable collection of split candidates

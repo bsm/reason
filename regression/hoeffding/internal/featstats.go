@@ -28,25 +28,14 @@ func (s *FeatureStats) FetchNumerical() *FeatureStats_Numerical {
 
 // --------------------------------------------------------------------
 
-// NumCategories returns the number of categories.
-func (s *FeatureStats_Categorical) NumCategories() (n int) {
-	rows := s.NumRows()
-	for i := 0; i < rows; i++ {
-		if s.RowSum(i) > 0 {
-			n++
-		}
-	}
-	return
-}
-
 // PostSplit calculates a post-split distribution from previous observations.
-func (s *FeatureStats_Categorical) PostSplit() *util.Matrix {
-	return &s.Matrix
+func (s *FeatureStats_Categorical) PostSplit() *util.NumStreams {
+	return &s.NumStreams
 }
 
 // ObserveWeight adds an observation
 func (s *FeatureStats_Categorical) ObserveWeight(featCat core.Category, targetVal, weight float64) {
-	util.WrapNumStreams(&s.Matrix).ObserveWeight(int(featCat), targetVal, weight)
+	s.NumStreams.ObserveWeight(int(featCat), targetVal, weight)
 }
 
 // --------------------------------------------------------------------
@@ -73,14 +62,13 @@ func (s *FeatureStats_Numerical) PivotPoints() []float64 {
 }
 
 // PostSplit calculates a post-split distribution from previous observations
-func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.Matrix {
-	post := util.NewMatrix()
-	wrap := util.WrapNumStreams(post)
+func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.NumStreams {
+	post := util.NewNumStreams()
 	for _, o := range s.Observations {
 		if o.FeatureValue <= pivot {
-			wrap.ObserveWeight(0, o.TargetValue, o.Weight)
+			post.ObserveWeight(0, o.TargetValue, o.Weight)
 		} else {
-			wrap.ObserveWeight(1, o.TargetValue, o.Weight)
+			post.ObserveWeight(1, o.TargetValue, o.Weight)
 		}
 	}
 	return post

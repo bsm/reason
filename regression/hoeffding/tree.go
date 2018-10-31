@@ -8,8 +8,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/bsm/reason/util"
-
 	common "github.com/bsm/reason/common/hoeffding"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/regression"
@@ -91,7 +89,7 @@ func (t *Tree) Predict(dst regression.Predictions, x core.Example) regression.Pr
 	defer t.mu.RUnlock()
 
 	t.tree.Traverse(x, t.tree.Root, nil, -1, func(node *internal.Node) {
-		dst = append(dst, util.WrapNumStream(node.Stats))
+		dst = append(dst, node.Stats)
 	})
 	return dst
 }
@@ -104,7 +102,7 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 	node, nodeRef, parent, parentIndex := t.tree.Traverse(x, t.tree.Root, nil, -1, nil)
 	if node == nil && parentIndex > -1 {
 		if split := parent.GetSplit(); split != nil {
-			ref := t.tree.Add(util.NewVector())
+			ref := t.tree.Add(nil)
 			node = t.tree.Get(ref)
 			split.SetChild(parentIndex, ref)
 		}

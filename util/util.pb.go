@@ -29,7 +29,7 @@ func (m *Vector) Reset()         { *m = Vector{} }
 func (m *Vector) String() string { return proto.CompactTextString(m) }
 func (*Vector) ProtoMessage()    {}
 func (*Vector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_util_7242659cacb56efb, []int{0}
+	return fileDescriptor_util_1f14ee5c804a9981, []int{0}
 }
 func (m *Vector) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Vector.Unmarshal(m, b)
@@ -60,7 +60,7 @@ func (m *Matrix) Reset()         { *m = Matrix{} }
 func (m *Matrix) String() string { return proto.CompactTextString(m) }
 func (*Matrix) ProtoMessage()    {}
 func (*Matrix) Descriptor() ([]byte, []int) {
-	return fileDescriptor_util_7242659cacb56efb, []int{1}
+	return fileDescriptor_util_1f14ee5c804a9981, []int{1}
 }
 func (m *Matrix) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Matrix.Unmarshal(m, b)
@@ -95,7 +95,7 @@ func (m *NumStream) Reset()         { *m = NumStream{} }
 func (m *NumStream) String() string { return proto.CompactTextString(m) }
 func (*NumStream) ProtoMessage()    {}
 func (*NumStream) Descriptor() ([]byte, []int) {
-	return fileDescriptor_util_7242659cacb56efb, []int{2}
+	return fileDescriptor_util_1f14ee5c804a9981, []int{2}
 }
 func (m *NumStream) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NumStream.Unmarshal(m, b)
@@ -125,7 +125,7 @@ func (m *NumStreams) Reset()         { *m = NumStreams{} }
 func (m *NumStreams) String() string { return proto.CompactTextString(m) }
 func (*NumStreams) ProtoMessage()    {}
 func (*NumStreams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_util_7242659cacb56efb, []int{3}
+	return fileDescriptor_util_1f14ee5c804a9981, []int{3}
 }
 func (m *NumStreams) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NumStreams.Unmarshal(m, b)
@@ -152,9 +152,9 @@ func init() {
 	proto.RegisterType((*NumStreams)(nil), "blacksquaremedia.reason.util.NumStreams")
 }
 
-func init() { proto.RegisterFile("util/util.proto", fileDescriptor_util_7242659cacb56efb) }
+func init() { proto.RegisterFile("util/util.proto", fileDescriptor_util_1f14ee5c804a9981) }
 
-var fileDescriptor_util_7242659cacb56efb = []byte{
+var fileDescriptor_util_1f14ee5c804a9981 = []byte{
 	// 321 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0x4d, 0x4b, 0x3b, 0x31,
 	0x10, 0xc6, 0x37, 0x6d, 0xff, 0x0b, 0xff, 0x29, 0x62, 0xd9, 0x43, 0x09, 0x55, 0xb6, 0xa5, 0x17,
