@@ -3,7 +3,6 @@ package internal
 import (
 	"github.com/bsm/reason/classifier"
 	core "github.com/bsm/reason/core"
-	util "github.com/bsm/reason/util"
 )
 
 // NewTree inits a brand-new tree
@@ -12,7 +11,13 @@ func NewTree(model *core.Model, target string) *Tree {
 		Model:  model,
 		Target: target,
 	}
-	t.Root = t.AddLeaf(nil) // init root
+
+	switch t.DetectProblem() {
+	case classifier.Classification:
+		t.Root = t.AddLeaf(NewNodeStats_Classification())
+	case classifier.Regression:
+		t.Root = t.AddLeaf(NewNodeStats_Regression())
+	}
 	return t
 }
 
@@ -30,11 +35,7 @@ func (t *Tree) DetectProblem() classifier.Problem {
 }
 
 // AddLeaf adds a new node to registry and returns the reference.
-func (t *Tree) AddLeaf(stats *util.Vector) int64 {
-	if stats == nil {
-		stats = util.NewVector()
-	}
-
+func (t *Tree) AddLeaf(stats NodeStats) int64 {
 	leaf := &LeafNode{WeightAtLastEval: 0} // TODO: how to pass WeightAtLastEval
 	kind := &Node_Leaf{Leaf: leaf}
 	node := &Node{Kind: kind, Stats: stats}
@@ -70,32 +71,32 @@ func (t *Tree) GetLeaf(nref int64) *LeafNode {
 	return nil
 }
 
-// SplitLeaf splits an existing leaf node on feature.
-func (t *Tree) SplitLeaf(nref int64, feature string, pre *util.Vector, post *util.Matrix, pivot float64) {
-	// skip if node cannot be found
-	if leaf := t.GetLeaf(nref); leaf == nil {
-		return
-	}
+// // SplitLeaf splits an existing leaf node on feature.
+// func (t *Tree) SplitLeaf(nref int64, feature string, pre *util.Vector, post *util.Matrix, pivot float64) {
+// 	// skip if node cannot be found
+// 	if leaf := t.GetLeaf(nref); leaf == nil {
+// 		return
+// 	}
 
-	// prepare split node
-	split := &SplitNode{
-		Feature: feature,
-		Pivot:   pivot,
-	}
+// 	// prepare split node
+// 	split := &SplitNode{
+// 		Feature: feature,
+// 		Pivot:   pivot,
+// 	}
 
-	rows := post.NumRows()
-	for i := 0; i < rows; i++ {
-		row := post.Row(i)
-		// TODO: figure out split
-		// if hasStats(p, row) {
-		// 	leaf := t.AddLeaf(util.NewVectorFromSlice(row...))
-		// 	split.SetChild(i, leaf)
-		// }
-		_ = row
-	}
+// 	rows := post.NumRows()
+// 	for i := 0; i < rows; i++ {
+// 		row := post.Row(i)
+// 		// TODO: figure out split
+// 		// if hasStats(p, row) {
+// 		// 	leaf := t.AddLeaf(util.NewVectorFromSlice(row...))
+// 		// 	split.SetChild(i, leaf)
+// 		// }
+// 		_ = row
+// 	}
 
-	t.ReplaceNode(nref, &Node{
-		Kind:  &Node_Split{Split: split},
-		Stats: pre,
-	})
-}
+// 	t.ReplaceNode(nref, &Node{
+// 		Kind:  &Node_Split{Split: split},
+// 		Stats: pre,
+// 	})
+// }

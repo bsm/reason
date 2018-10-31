@@ -25,7 +25,7 @@ type Prediction struct {
 func (p *Prediction) Top() (core.Category, float64) {
 	n, w := p.TopW()
 	if w > 0 {
-		return n, w / p.Weight()
+		return n, w / p.WeightSum()
 	}
 	return n, 0.0
 }
@@ -44,7 +44,7 @@ func (p *Prediction) W(cat core.Category) float64 {
 // P returns the probability of the given category.
 func (p *Prediction) P(cat core.Category) float64 {
 	if w := p.W(cat); w > 0 {
-		return w / p.Weight()
+		return w / p.WeightSum()
 	}
 	return 0.0
 }

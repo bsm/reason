@@ -12,7 +12,7 @@ func (n *Node) IsSufficient() bool {
 
 // Weight returns the weight observed on the node.
 func (n *Node) Weight() float64 {
-	return n.Stats.Weight()
+	return n.Stats.WeightSum()
 }
 
 // --------------------------------------------------------------------

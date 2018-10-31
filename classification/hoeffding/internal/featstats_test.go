@@ -28,10 +28,7 @@ var _ = Describe("FeatureStats_Numerical", func() {
 	It("should observe", func() {
 		Expect(subject.Min.Data).To(Equal([]float64{1.3, 3.3, 5.1}))
 		Expect(subject.Max.Data).To(Equal([]float64{1.5, 4.9, 6.3}))
-
-		rows, cols := subject.Stats.Dims()
-		Expect(rows).To(Equal(3))
-		Expect(cols).To(Equal(3))
+		Expect(subject.Stats.NumRows()).To(Equal(3))
 	})
 
 	It("should calculate pivot points", func() {

@@ -40,8 +40,8 @@ func (vv *Vector) NNZ() int {
 	return n
 }
 
-// Weight returns the total of all weights of the vector.
-func (vv *Vector) Weight() float64 {
+// WeightSum returns the sum of all weights of the vector.
+func (vv *Vector) WeightSum() float64 {
 	sum := 0.0
 	for _, v := range vv.Data {
 		sum += v
@@ -91,8 +91,9 @@ func (vv *Vector) At(index int) float64 {
 	return 0.0
 }
 
-// Set sets a weight at index.
-func (vv *Vector) Set(index int, weight float64) {
+// Set sets a weight at index (auto-expanding).
+// Returns true if the vector has expanded.
+func (vv *Vector) Set(index int, weight float64) (expanded bool) {
 	if index < 0 {
 		return
 	}
@@ -101,14 +102,17 @@ func (vv *Vector) Set(index int, weight float64) {
 		data := make([]float64, n, 2*n)
 		copy(data, vv.Data)
 		vv.Data = data
+		expanded = true
 	} else if n > len(vv.Data) {
 		vv.Data = vv.Data[:n]
 	}
 	vv.Data[index] = weight
+	return
 }
 
 // Add increments a weight at index by delta.
-func (vv *Vector) Add(index int, delta float64) {
+// Returns true if the vector has expanded.
+func (vv *Vector) Add(index int, delta float64) (expanded bool) {
 	if index < 0 {
 		return
 	}
@@ -116,8 +120,9 @@ func (vv *Vector) Add(index int, delta float64) {
 	if index < len(vv.Data) {
 		vv.Data[index] += delta
 	} else {
-		vv.Set(index, delta)
+		expanded = vv.Set(index, delta)
 	}
+	return
 }
 
 // Mean returns the mean value of non-zero weights.
@@ -126,7 +131,7 @@ func (vv *Vector) Mean() float64 {
 	return mu
 }
 
-// Variance calculates the variance of non-zero weights.
+// Variance calculates the sample variance of non-zero weights.
 func (vv *Vector) Variance() float64 {
 	if n, _, mu := vv.csm(); n > 1 {
 		var ss, cs float64
@@ -165,7 +170,7 @@ func (vv *Vector) StdDev() float64 {
 
 // Normalize normalizes all values to the 0..1 range.
 func (vv *Vector) Normalize() {
-	sum := vv.Weight()
+	sum := vv.WeightSum()
 	if sum == 0 {
 		return
 	}

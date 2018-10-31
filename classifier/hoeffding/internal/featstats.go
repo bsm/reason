@@ -7,60 +7,53 @@ import (
 
 // ObserveWeight adds an observation.
 func (s *FeatureStats_ClassificationCategorical) ObserveWeight(featCat, targetCat core.Category, weight float64) {
-	s.Matrix.Add(int(featCat), int(targetCat), weight)
-}
-
-// PostSplit calculates a post-split distribution from previous observations.
-func (s *FeatureStats_ClassificationCategorical) PostSplit() *util.Matrix {
-	return &s.Matrix
-}
-
-// NumCategories returns the number of categories.
-func (s *FeatureStats_ClassificationCategorical) NumCategories() (n int) {
-	for i, rows := 0, s.NumRows(); i < rows; i++ {
-		if s.RowSum(i) > 0 {
-			n++
-		}
-	}
-	return
+	s.Stats.Add(int(featCat), int(targetCat), weight)
 }
 
 // --------------------------------------------------------------------
 
 // ObserveWeight adds an observation.
 func (s *FeatureStats_ClassificationNumerical) ObserveWeight(featVal float64, targetCat core.Category, weight float64) {
-	targetPos := int(targetCat)
-	if v := s.Min.At(targetPos); v == 0 || featVal < v {
-		s.Min.Set(targetPos, featVal)
-	}
-	if v := s.Max.At(targetPos); v == 0 || featVal > v {
-		s.Max.Set(targetPos, featVal)
-	}
-	streams := util.WrapNumStreams(&s.Stats)
-	streams.ObserveWeight(targetPos, featVal, weight)
+	s.Stats.ObserveWeight(int(targetCat), featVal, weight)
 }
 
 // PostSplit calculates a post-split distribution from previous observations
 func (s *FeatureStats_ClassificationNumerical) PostSplit(pivot float64) *util.Matrix {
 	post := util.NewMatrix()
-	wrap := util.WrapNumStreams(&s.Stats)
-	wrap.ForEach(func(cat int) {
-		if min := s.Min.At(cat); min > 0 && pivot < min {
-			post.Add(1, cat, wrap.TotalWeight(cat))
-		} else if max := s.Max.At(cat); max > 0 && pivot >= max {
-			post.Add(0, cat, wrap.TotalWeight(cat))
-		} else {
-			lt, eq, gt := wrap.Estimate(cat, pivot)
-			post.Add(0, cat, lt+eq)
-			post.Add(1, cat, gt)
+	rows := s.Stats.NumRows()
+	for i := 0; i < rows; i++ {
+		t := s.Stats.At(i)
+		if t == nil {
+			continue
 		}
-	})
+
+		if t.Min > 0 && pivot < t.Min {
+			post.Add(1, i, t.Weight)
+		} else if t.Max > 0 && pivot >= t.Max {
+			post.Add(0, i, t.Weight)
+		} else {
+			lt, eq, gt := t.Estimate(pivot)
+			post.Add(0, i, lt+eq)
+			post.Add(1, i, gt)
+		}
+	}
 	return post
 }
 
 // PivotPoints determines the optimum split points for the range of values.
 func (s *FeatureStats_ClassificationNumerical) PivotPoints() []float64 {
-	_, min := s.Min.Min()
-	_, max := s.Max.Max()
+	var min, max float64
+
+	rows := s.Stats.NumRows()
+	for i := 0; i < rows; i++ {
+		if t := s.Stats.At(i); t != nil {
+			if min == 0 || t.Min < min {
+				min = t.Min
+			}
+			if max == 0 || t.Max > max {
+				max = t.Max
+			}
+		}
+	}
 	return pivotPoints(min, max)
 }

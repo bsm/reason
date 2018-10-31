@@ -36,7 +36,7 @@ message FeatureStats {
   message Numerical {
     blacksquaremedia.reason.util.Vector min = 1 [(gogoproto.nullable) = false];
     blacksquaremedia.reason.util.Vector max = 2 [(gogoproto.nullable) = false];
-    blacksquaremedia.reason.util.Matrix stats = 3 [(gogoproto.nullable) = false];
+    blacksquaremedia.reason.util.NumStreams stats = 3 [(gogoproto.nullable) = false];
   }
 
   message Categorical {

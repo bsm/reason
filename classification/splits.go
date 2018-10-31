@@ -38,13 +38,13 @@ func (GiniImpurity) Merit(pre *util.Vector, post *util.Matrix) float64 {
 		return 0.0
 	}
 
-	total := post.Sum()
+	total := post.WeightSum()
 	if total == 0 {
 		return 0.0
 	}
 
 	merit := 0.0
-	rows, _ := post.Dims()
+	rows := post.NumRows()
 	for i := 0; i < rows; i++ {
 		if sum := post.RowSum(i); sum > 0 {
 			merit += sum / total * calcGiniSplit(post.Row(i), sum)
@@ -115,7 +115,7 @@ func (c InformationGain) Merit(pre *util.Vector, post *util.Matrix) float64 {
 	e1, e2 := pre.Entropy(), 0.0
 	for i := 0; i < rows; i++ {
 		vv := util.NewVectorFromSlice(post.Row(i)...)
-		if w := vv.Weight(); w > 0 {
+		if w := vv.WeightSum(); w > 0 {
 			e2 += w * vv.Entropy()
 		}
 	}

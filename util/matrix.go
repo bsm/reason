@@ -108,8 +108,8 @@ func (m *Matrix) ColSum(i int) float64 {
 	return sum
 }
 
-// Sum returns the sum of all weights.
-func (m *Matrix) Sum() float64 {
+// WeightSum returns the sum of all weights.
+func (m *Matrix) WeightSum() float64 {
 	sum := 0.0
 	for _, v := range m.Data {
 		sum += v

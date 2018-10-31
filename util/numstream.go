@@ -6,71 +6,56 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
-// NumStream accumulates stats over a numeric stream.
-type NumStream struct{ vv *Vector }
-
-// WrapNumStream inits a new stream observer from a vector.
-func WrapNumStream(vv *Vector) NumStream {
-	if vv == nil {
-		panic("reason: received nil vector")
-	}
-	return NumStream{vv: vv}
-}
-
 // NewNumStream inits a new stream observer.
-func NewNumStream() NumStream {
-	return WrapNumStream(NewVector())
+func NewNumStream() *NumStream {
+	return new(NumStream)
 }
 
 // Observe adds a new observation.
-func (s NumStream) Observe(value float64) {
+func (s *NumStream) Observe(value float64) {
 	s.ObserveWeight(value, 1.0)
 }
 
 // ObserveWeight adds a new observation with a weight.
-func (s NumStream) ObserveWeight(value, weight float64) {
+func (s *NumStream) ObserveWeight(value, weight float64) {
 	if math.IsNaN(value) || math.IsInf(value, 0) || weight <= 0 {
 		return
 	}
 
+	if s.Weight == 0 || value < s.Min {
+		s.Min = value
+	}
+	if s.Weight == 0 || value > s.Max {
+		s.Max = value
+	}
+
 	wv := weight * value
-	s.vv.Add(0, weight)
-	s.vv.Add(1, wv)
-	s.vv.Add(2, wv*value)
-}
+	s.Weight += weight
+	s.Sum += wv
+	s.SumSquares += wv * value
 
-// TotalWeight returns the total weight observed.
-func (s NumStream) TotalWeight() float64 {
-	return s.vv.At(0)
-}
-
-// Sum returns the weighted sum of all observations.
-func (s NumStream) Sum() float64 {
-	return s.vv.At(1)
 }
 
 // Mean returns a mean average
-func (s NumStream) Mean() float64 {
-	return s.Sum() / s.TotalWeight()
+func (s *NumStream) Mean() float64 {
+	return s.Sum / s.Weight
 }
 
 // Variance is the sample variance of the series
-func (s NumStream) Variance() float64 {
-	w := s.TotalWeight()
-	if w <= 1 {
+func (s *NumStream) Variance() float64 {
+	if s.Weight <= 1 {
 		return math.NaN()
 	}
-	z := s.Sum()
-	return (s.vv.At(2) - (z * z / w)) / (w - 1)
+	return (s.SumSquares - (s.Sum * s.Sum / s.Weight)) / (s.Weight - 1)
 }
 
 // StdDev is the sample standard deviation of the series
-func (s NumStream) StdDev() float64 {
+func (s *NumStream) StdDev() float64 {
 	return math.Sqrt(s.Variance())
 }
 
 // Prob calculates the gaussian probability density of a value
-func (s NumStream) Prob(value float64) float64 {
+func (s *NumStream) Prob(value float64) float64 {
 	if sig := s.StdDev(); !math.IsNaN(sig) {
 		return distuv.Normal{Mu: s.Mean(), Sigma: sig}.Prob(value)
 	}
@@ -78,20 +63,19 @@ func (s NumStream) Prob(value float64) float64 {
 }
 
 // Estimate estimates weight boundaries for a given value
-func (s NumStream) Estimate(value float64) (lessThan float64, equalTo float64, greaterThan float64) {
-	total := s.TotalWeight()
-	equalTo = s.Prob(value) * total
+func (s *NumStream) Estimate(value float64) (lessThan float64, equalTo float64, greaterThan float64) {
+	equalTo = s.Prob(value) * s.Weight
 
 	if sig := s.StdDev(); !math.IsNaN(sig) {
 		lessThan = distuv.Normal{
 			Mu:    s.Mean(),
 			Sigma: sig,
-		}.CDF(value)*total - equalTo
+		}.CDF(value)*s.Weight - equalTo
 	} else {
 		lessThan = math.NaN()
 	}
 
-	if greaterThan = total - equalTo - lessThan; greaterThan < 0 {
+	if greaterThan = s.Weight - equalTo - lessThan; greaterThan < 0 {
 		greaterThan = 0
 	}
 
@@ -100,116 +84,65 @@ func (s NumStream) Estimate(value float64) (lessThan float64, equalTo float64, g
 
 // --------------------------------------------------------------------
 
-// NumStreams accumulates stats of multiple numeric streams.
-type NumStreams struct{ mat *Matrix }
-
-// WrapNumStreams init stats with a matrix.
-func WrapNumStreams(mat *Matrix) NumStreams {
-	if mat == nil {
-		panic("reason: received nil matrix")
-	}
-	return NumStreams{mat: mat}
-}
-
-// NewNumStreams inits a new streams observer.
-func NewNumStreams() NumStreams {
-	return WrapNumStreams(NewMatrix())
+// NewNumStreams inits a new numeric streams distribution.
+func NewNumStreams() *NumStreams {
+	return new(NumStreams)
 }
 
 // Observe adds a new observation.
-func (s NumStreams) Observe(cat int, value float64) {
+func (s *NumStreams) Observe(cat int, value float64) {
 	s.ObserveWeight(cat, value, 1.0)
 }
 
 // ObserveWeight adds a new observation with a weight.
-func (s NumStreams) ObserveWeight(cat int, value, weight float64) {
-	if math.IsNaN(value) || math.IsInf(value, 0) || weight <= 0 {
+func (s *NumStreams) ObserveWeight(cat int, value, weight float64) {
+	if cat < 0 || math.IsNaN(value) || math.IsInf(value, 0) || weight <= 0 {
 		return
 	}
 
-	wv := weight * value
-	s.mat.Add(cat, 0, weight)
-	s.mat.Add(cat, 1, wv)
-	s.mat.Add(cat, 2, wv*value)
-}
-
-// ForEach iterates over each category.
-func (s NumStreams) ForEach(iter func(int)) {
-	rows := s.NumRows()
-	for i := 0; i < rows; i++ {
-		if s.mat.At(i, 0) != 0 {
-			iter(i)
-		}
+	if n := cat + 1; n > cap(s.Data) {
+		data := make([]NumStream, n, 2*n)
+		copy(data, s.Data)
+		s.Data = data
+	} else if n > len(s.Data) {
+		s.Data = s.Data[:n]
 	}
+	s.Data[cat].ObserveWeight(value, weight)
 }
 
 // NumRows returns the number of rows, including blanks.
-func (s NumStreams) NumRows() int {
-	return s.mat.NumRows()
+func (s *NumStreams) NumRows() int {
+	return len(s.Data)
 }
 
 // NumCategories returns the number of categories.
-func (s NumStreams) NumCategories() int {
+func (s *NumStreams) NumCategories() int {
 	n := 0
-	s.ForEach(func(_ int) { n++ })
+	for _, t := range s.Data {
+		if t.Weight > 0 {
+			n++
+		}
+	}
 	return n
 }
 
-// TotalWeight returns the total weight observed for cat.
-func (s NumStreams) TotalWeight(cat int) float64 {
-	return s.mat.At(cat, 0)
-}
-
-// Sum returns the weighted sum of all observations of cat.
-func (s NumStreams) Sum(cat int) float64 {
-	return s.mat.At(cat, 1)
-}
-
-// Mean returns a mean average of ovserved cat values.
-func (s NumStreams) Mean(cat int) float64 {
-	return s.Sum(cat) / s.TotalWeight(cat)
-}
-
-// Variance is the sample variance of the cat series.
-func (s NumStreams) Variance(cat int) float64 {
-	w := s.TotalWeight(cat)
-	if w <= 1 {
-		return math.NaN()
+// WeightSum returns the total weight observed.
+func (s *NumStreams) WeightSum() float64 {
+	sum := 0.0
+	for _, t := range s.Data {
+		sum += t.Weight
 	}
-	z := s.Sum(cat)
-	return (s.mat.At(cat, 2) - (z * z / w)) / (w - 1)
+	return sum
 }
 
-// StdDev is the sample standard deviation of the cat series.
-func (s NumStreams) StdDev(cat int) float64 {
-	return math.Sqrt(s.Variance(cat))
-}
-
-// Prob calculates the gaussian probability density of a value for cat.
-func (s NumStreams) Prob(cat int, value float64) float64 {
-	if sig := s.StdDev(cat); !math.IsNaN(sig) {
-		return distuv.Normal{Mu: s.Mean(cat), Sigma: sig}.Prob(value)
+// At returns the stream at the given cat (or nil).
+// Please note that a copy of the stream is returned. Mutating the
+// value will not affect the distribution.
+func (s *NumStreams) At(cat int) *NumStream {
+	if cat > -1 && cat < len(s.Data) {
+		if t := s.Data[cat]; t.Weight > 0 {
+			return &t
+		}
 	}
-	return math.NaN()
-}
-
-// Estimate estimates weight boundaries for a given cat value.
-func (s NumStreams) Estimate(cat int, value float64) (lessThan float64, equalTo float64, greaterThan float64) {
-	total := s.TotalWeight(cat)
-	equalTo = s.Prob(cat, value) * total
-
-	if sig := s.StdDev(cat); !math.IsNaN(sig) {
-		lessThan = distuv.Normal{
-			Mu:    s.Mean(cat),
-			Sigma: sig,
-		}.CDF(value)*total - equalTo
-	} else {
-		lessThan = math.NaN()
-	}
-
-	if greaterThan = total - equalTo - lessThan; greaterThan < 0 {
-		greaterThan = 0
-	}
-
-	return
+	return nil
 }

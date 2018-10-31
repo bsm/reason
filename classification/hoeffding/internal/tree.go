@@ -52,7 +52,7 @@ func (t *Tree) Add(stats *util.Vector) int64 {
 		stats = new(util.Vector)
 	}
 
-	leaf := &LeafNode{WeightAtLastEval: stats.Weight()}
+	leaf := &LeafNode{WeightAtLastEval: stats.WeightSum()}
 	kind := &Node_Leaf{Leaf: leaf}
 	node := &Node{Kind: kind, Stats: stats}
 	t.Nodes = append(t.Nodes, node)

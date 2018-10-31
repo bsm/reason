@@ -14,12 +14,13 @@ type SplitCriterion interface {
 	// Supports returns true if a classifier Goal is supported.
 	Supports(classifier.Problem) bool
 
-	// Range returns the range of the split merit
-	Range(pre *util.Vector) float64
+	// ClassificationMerit applies to classifications only and
+	// calculates the merit of splitting distribution pre and post split.
+	ClassificationMerit(pre *util.Vector, post *util.Matrix) float64
 
-	// Merit calculates the merit of splitting for a given
-	// distribution before and after the split
-	Merit(pre *util.Vector, post *util.Matrix) float64
+	// RegressionMerit applies to regresssions only and
+	// calculates the merit of splitting distribution pre and post split.
+	RegressionMerit(pre *util.NumStream, post *util.NumStreams) float64
 }
 
 // DefaultSplitCriterion returns the default split criterion for the given problem.
@@ -51,16 +52,13 @@ func (GiniImpurity) Supports(p classifier.Problem) bool {
 	return p == classifier.Classification
 }
 
-// Range implements SplitCriterion
-func (GiniImpurity) Range(_ *util.Vector) float64 { return 1.0 }
-
-// Merit implements SplitCriterion
-func (GiniImpurity) Merit(_ *util.Vector, post *util.Matrix) float64 {
+// ClassificationMerit implements SplitCriterion
+func (GiniImpurity) ClassificationMerit(_ *util.Vector, post *util.Matrix) float64 {
 	if post == nil {
 		return 0.0
 	}
 
-	total := post.Sum()
+	total := post.WeightSum()
 	if total == 0 {
 		return 0.0
 	}
@@ -75,6 +73,11 @@ func (GiniImpurity) Merit(_ *util.Vector, post *util.Matrix) float64 {
 	return normSplitMerit(merit)
 }
 
+// RegressionMerit implements SplitCriterion.
+func (GiniImpurity) RegressionMerit(_ *util.NumStream, _ *util.NumStreams) float64 {
+	return 0.0 // N/A
+}
+
 func calcGiniSplit(row []float64, sum float64) float64 {
 	res := 1.0
 	for _, v := range row {
@@ -83,6 +86,8 @@ func calcGiniSplit(row []float64, sum float64) float64 {
 	}
 	return res
 }
+
+// --------------------------------------------------------------------
 
 // InformationGain determines split merit through information gain.
 type InformationGain struct {
@@ -96,18 +101,8 @@ func (InformationGain) Supports(p classifier.Problem) bool {
 	return p == classifier.Classification
 }
 
-// Range implements SplitCriterion
-func (InformationGain) Range(pre *util.Vector) float64 {
-	if pre != nil {
-		if sz := pre.NNZ(); sz > 2 {
-			return math.Log2(float64(sz))
-		}
-	}
-	return math.Log2(2.0)
-}
-
-// Merit implements SplitCriterion
-func (c InformationGain) Merit(pre *util.Vector, post *util.Matrix) float64 {
+// ClassificationMerit implements SplitCriterion
+func (c InformationGain) ClassificationMerit(pre *util.Vector, post *util.Matrix) float64 {
 	if pre == nil || post == nil {
 		return 0.0
 	}
@@ -142,11 +137,16 @@ func (c InformationGain) Merit(pre *util.Vector, post *util.Matrix) float64 {
 	e1, e2 := pre.Entropy(), 0.0
 	for i := 0; i < rows; i++ {
 		vv := util.NewVectorFromSlice(post.Row(i)...)
-		if w := vv.Weight(); w > 0 {
+		if w := vv.WeightSum(); w > 0 {
 			e2 += w * vv.Entropy()
 		}
 	}
 	return normSplitMerit(e1 - e2/total)
+}
+
+// RegressionMerit implements SplitCriterion.
+func (InformationGain) RegressionMerit(_ *util.NumStream, _ *util.NumStreams) float64 {
+	return 0.0 // N/A
 }
 
 // --------------------------------------------------------------------
@@ -163,41 +163,43 @@ func (VarianceReduction) Supports(p classifier.Problem) bool {
 	return p == classifier.Regression
 }
 
-// Range implements SplitCriterion
-func (VarianceReduction) Range(_ *util.Vector) float64 { return 1.0 }
+// ClassificationMerit implements SplitCriterion.
+func (VarianceReduction) ClassificationMerit(_ *util.Vector, _ *util.Matrix) float64 {
+	return 0.0 // N/A
+}
 
-// Merit implements SplitCriterion
-func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
-	if pre == nil {
+// RegressionMerit implements SplitCriterion.
+func (c VarianceReduction) RegressionMerit(pre *util.NumStream, post *util.NumStreams) float64 {
+	if pre == nil || post == nil {
 		return 0.0
 	}
 
-	postWeight := 0.0
-	postCount := 0
-	postStreams := util.WrapNumStreams(post)
-	postStreams.ForEach(func(cat int) {
-		if w := postStreams.TotalWeight(cat); w >= c.MinWeight {
-			postWeight += w
-			postCount++
+	relevantW := 0.0
+	relevantN := 0
+	rows := post.NumRows()
+	for i := 0; i < rows; i++ {
+		if s := post.At(i); s != nil && s.Weight > c.MinWeight {
+			relevantW += s.Weight
+			relevantN++
 		}
-	})
-	if postCount < 2 || postWeight == 0 {
+	}
+	if relevantN < 2 || relevantW <= 0 {
 		return 0.0
 	}
 
-	preStream := util.WrapNumStream(pre)
-	preVar := preStream.Variance()
+	preVar := pre.Variance()
 	if math.IsNaN(preVar) {
 		return 0.0
 	}
 
 	postVar := 0.0
-	postStreams.ForEach(func(cat int) {
-		if w, v := postStreams.TotalWeight(cat), postStreams.Variance(cat); w >= c.MinWeight && !math.IsNaN(v) {
-			postVar += w * v / postWeight
+	for i := 0; i < rows; i++ {
+		if s := post.At(i); s != nil && s.Weight > c.MinWeight {
+			if v := s.Variance(); !math.IsNaN(v) {
+				postVar += s.Weight * v / relevantW
+			}
 		}
-	})
-
+	}
 	return normSplitMerit(preVar - postVar)
 }
 
@@ -208,35 +210,46 @@ func (c VarianceReduction) Merit(pre *util.Vector, post *util.Matrix) float64 {
 // values over attributes that have a smaller number of values.
 type GainRatio struct{ SplitCriterion }
 
-// Merit implements SplitCriterion
-func (c GainRatio) Merit(pre *util.Vector, post *util.Matrix) float64 {
-	merit := c.SplitCriterion.Merit(pre, post)
+// ClassificationMerit implements SplitCriterion.
+func (c GainRatio) ClassificationMerit(pre *util.Vector, post *util.Matrix) float64 {
+	merit := c.SplitCriterion.ClassificationMerit(pre, post)
 	if merit == 0 {
-		return merit
+		return 0.0
 	}
 
-	total := 0.0
-	if c.Supports(classifier.Classification) {
-		total = post.Sum()
-	} else if c.Supports(classifier.Regression) {
-		total = post.ColSum(0)
-	}
-	if total == 0 {
-		return merit
+	weightSum := post.WeightSum()
+	if weightSum == 0 {
+		return 0.0
 	}
 
-	rows := post.NumRows()
 	frac := 0.0
+	rows := post.NumRows()
 	for i := 0; i < rows; i++ {
-		weight := 0.0
-		if c.Supports(classifier.Classification) {
-			weight = post.RowSum(i)
-		} else if c.Supports(classifier.Regression) {
-			weight = post.At(i, 0)
+		if w := post.RowSum(i); w > 0 {
+			rat := w / weightSum
+			frac -= rat * math.Log2(rat)
 		}
+	}
+	return normSplitMerit(merit / frac)
+}
 
-		if weight > 0 {
-			rat := weight / total
+// RegressionMerit implements SplitCriterion.
+func (c GainRatio) RegressionMerit(pre *util.NumStream, post *util.NumStreams) float64 {
+	merit := c.SplitCriterion.RegressionMerit(pre, post)
+	if merit == 0 {
+		return 0.0
+	}
+
+	weightSum := post.WeightSum()
+	if weightSum == 0 {
+		return 0.0
+	}
+
+	frac := 0.0
+	rows := post.NumRows()
+	for i := 0; i < rows; i++ {
+		if t := post.At(i); t != nil {
+			rat := t.Weight / weightSum
 			frac -= rat * math.Log2(rat)
 		}
 	}

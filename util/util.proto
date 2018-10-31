@@ -13,8 +13,7 @@ option go_package = "github.com/bsm/reason/util";
 option java_package = "com.blacksquaremedia.reason";
 option java_outer_classname = "UtilProtos";
 
-// Vector represents a vector of weights.
-// The minimum value of each weight is 0, which indicates "not set".
+// Vector is an auto-expanding a vector data type.
 message Vector {
   repeated double data = 1 [packed=true];
 }
@@ -23,4 +22,19 @@ message Vector {
 message Matrix {
   uint32 stride = 1;
   repeated double data = 2 [packed=true];
+}
+
+// NumStream allows to extract statistical information from
+// a stream of numbers in a single-pass.
+message NumStream {
+  double weight = 1;
+  double sum = 2;
+  double sum_squares = 3;
+  double min = 4;
+  double max = 5;
+}
+
+// NumStreams is an auto-expanding NumStream distribution.
+message NumStreams {
+  repeated NumStream data = 1 [(gogoproto.nullable)=false];
 }

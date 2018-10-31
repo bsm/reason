@@ -30,50 +30,27 @@ message Tree {
   repeated Node nodes = 4;
 }
 
-// FeatureStats instances maintain stats based on
-// observation of a particular feature.
-message FeatureStats {
-  message ClassificationNumerical {
-    blacksquaremedia.reason.util.Vector min = 1 [(gogoproto.nullable) = false];
-    blacksquaremedia.reason.util.Vector max = 2 [(gogoproto.nullable) = false];
-    blacksquaremedia.reason.util.Matrix stats = 3 [(gogoproto.nullable) = false];
-  }
-  message ClassificationCategorical {
-    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
-  }
-
-  message RegressionNumerical {
-    double min = 1; // the minimum observed value
-    double max = 2; // the maximum observed value
-
-    message Observation {
-      double feature_value = 1; // the value of the predictor feature
-      double target_value = 2;  // the value of the target feature
-      double weight = 3; // the weight of the observation
-    }
-    repeated Observation observations = 3 [(gogoproto.nullable) = false];
-  }
-  message RegressionCategorical {
-    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
-  }
-
-  oneof kind {
-    ClassificationNumerical cls_num = 1;
-    ClassificationCategorical cls_cat = 2;
-    RegressionNumerical reg_num = 3;
-    RegressionCategorical reg_cat = 4;
-  }
-}
-
 // Node is a tree node
 message Node {
-  // Observation stats for the node
-  blacksquaremedia.reason.util.Vector stats = 1;
+  // Stats for classifications.
+  message ClassificationStats {
+    blacksquaremedia.reason.util.Vector stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+  }
+  // Stats for regressions.
+  message RegressionStats {
+    blacksquaremedia.reason.util.NumStream stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+  }
 
   // Nodes can be leaf or split nodes.
   oneof kind {
-    LeafNode leaf = 2;
-    SplitNode split = 3;
+    LeafNode leaf = 1;
+    SplitNode split = 2;
+  }
+
+  // Observation stats for the node
+  oneof stats {
+    ClassificationStats classification = 3;
+    RegressionStats regression = 4;
   }
 }
 
@@ -99,4 +76,37 @@ message LeafNode {
 
   // Status indicator.
   bool is_disabled = 3;
+}
+
+// FeatureStats instances maintain stats based on
+// observation of a particular feature.
+message FeatureStats {
+  message ClassificationNumerical {
+    blacksquaremedia.reason.util.NumStreams stats = 1 [(gogoproto.nullable) = false];
+  }
+  message ClassificationCategorical {
+    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.nullable) = false];
+  }
+
+  message RegressionNumerical {
+    double min = 1; // the minimum observed value
+    double max = 2; // the maximum observed value
+
+    message Observation {
+      double feature_value = 1; // the value of the predictor feature
+      double target_value = 2;  // the value of the target feature
+      double weight = 3; // the weight of the observation
+    }
+    repeated Observation observations = 3 [(gogoproto.nullable) = false];
+  }
+  message RegressionCategorical {
+    blacksquaremedia.reason.util.NumStreams stats = 1 [(gogoproto.nullable) = false];
+  }
+
+  oneof kind {
+    ClassificationNumerical cn = 1 [(gogoproto.customname)="CN"];
+    ClassificationCategorical cc = 2 [(gogoproto.customname)="CC"];
+    RegressionNumerical rn = 3 [(gogoproto.customname)="RN"];
+    RegressionCategorical rc = 4 [(gogoproto.customname)="RC"];
+  }
 }

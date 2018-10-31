@@ -49,7 +49,7 @@ var _ = Describe("LeafNode", func() {
 		Expect(cat.Merit).To(BeNumerically("~", 0.247, 0.001))
 		Expect(cat.Range).To(Equal(1.0))
 		Expect(cat.Pivot).To(Equal(0.0))
-		Expect(cat.PreSplit.Weight()).To(Equal(14.0))
+		Expect(cat.PreSplit.WeightSum()).To(Equal(14.0))
 		Expect(cat.PostSplit.NumRows()).To(Equal(3))
 	})
 

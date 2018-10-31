@@ -69,9 +69,9 @@ var _ = Describe("Vector", func() {
 		Expect(subject).To(Equal(&util.Vector{}))
 	})
 
-	It("should calculate total weight", func() {
-		Expect(subject.Weight()).To(Equal(18.0))
-		Expect(blank.Weight()).To(Equal(0.0))
+	It("should calculate weight sum", func() {
+		Expect(subject.WeightSum()).To(Equal(18.0))
+		Expect(blank.WeightSum()).To(Equal(0.0))
 	})
 
 	It("should calculate min", func() {

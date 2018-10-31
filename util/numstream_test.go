@@ -10,7 +10,7 @@ import (
 )
 
 var _ = Describe("NumStream", func() {
-	var subject, weight1, blank util.NumStream
+	var subject, weight1, blank *util.NumStream
 
 	BeforeEach(func() {
 		subject = util.NewNumStream()
@@ -24,16 +24,26 @@ var _ = Describe("NumStream", func() {
 		blank = util.NewNumStream()
 	})
 
-	It("should return total weight", func() {
-		Expect(subject.TotalWeight()).To(Equal(9.0))
-		subject.ObserveWeight(2.2, 2.0)
-		Expect(subject.TotalWeight()).To(Equal(11.0))
-		Expect(blank.TotalWeight()).To(Equal(0.0))
+	It("should observe", func() {
+		Expect(subject).To(Equal(&util.NumStream{
+			Weight:     9,
+			Sum:        49.5,
+			SumSquares: 344.84999999999997,
+			Min:        1.1,
+			Max:        9.9,
+		}))
 	})
 
-	It("should return value sum", func() {
-		Expect(subject.Sum()).To(Equal(49.5))
-		Expect(blank.Sum()).To(Equal(0.0))
+	It("should calculate total weight", func() {
+		Expect(subject.Weight).To(Equal(9.0))
+		subject.ObserveWeight(2.2, 2.0)
+		Expect(subject.Weight).To(Equal(11.0))
+		Expect(blank.Weight).To(Equal(0.0))
+	})
+
+	It("should calculate value sum", func() {
+		Expect(subject.Sum).To(Equal(49.5))
+		Expect(blank.Sum).To(Equal(0.0))
 	})
 
 	It("should calc mean", func() {
@@ -91,7 +101,7 @@ var _ = Describe("NumStream", func() {
 })
 
 var _ = Describe("NumStreams", func() {
-	var subject util.NumStreams
+	var subject *util.NumStreams
 
 	BeforeEach(func() {
 		subject = util.NewNumStreams()
@@ -99,19 +109,25 @@ var _ = Describe("NumStreams", func() {
 			subject.Observe(0, v)
 		}
 		for _, v := range []float64{5.5, 6.6, 7.7, 8.8, 9.9} {
-			subject.Observe(1, v)
+			subject.Observe(2, v)
 		}
 	})
 
-	It("should return total weight", func() {
-		Expect(subject.TotalWeight(-1)).To(Equal(0.0))
-		Expect(subject.TotalWeight(0)).To(Equal(4.0))
-		Expect(subject.TotalWeight(1)).To(Equal(5.0))
-		Expect(subject.TotalWeight(2)).To(Equal(0.0))
+	It("should return stats by category", func() {
+		Expect(subject.At(-1)).To(BeNil())
+		Expect(subject.At(1)).To(BeNil())
+		Expect(subject.At(3)).To(BeNil())
+
+		Expect(subject.At(0).Weight).To(Equal(4.0))
+		Expect(subject.At(2).Weight).To(Equal(5.0))
+	})
+
+	It("should calculate weight sum", func() {
+		Expect(subject.WeightSum()).To(Equal(9.0))
 	})
 
 	It("should count the number of rows", func() {
-		Expect(subject.NumRows()).To(Equal(2))
+		Expect(subject.NumRows()).To(Equal(3))
 		subject.Observe(7, 3.3)
 		Expect(subject.NumRows()).To(Equal(8))
 	})
@@ -120,26 +136,5 @@ var _ = Describe("NumStreams", func() {
 		Expect(subject.NumCategories()).To(Equal(2))
 		subject.Observe(7, 3.3)
 		Expect(subject.NumCategories()).To(Equal(3))
-	})
-
-	It("should return value sum", func() {
-		Expect(subject.Sum(-1)).To(Equal(0.0))
-		Expect(subject.Sum(0)).To(Equal(11.0))
-		Expect(subject.Sum(1)).To(Equal(38.5))
-		Expect(subject.Sum(2)).To(Equal(0.0))
-	})
-
-	It("should calc mean", func() {
-		Expect(math.IsNaN(subject.Mean(-1))).To(BeTrue())
-		Expect(subject.Mean(0)).To(Equal(2.75))
-		Expect(subject.Mean(1)).To(Equal(7.7))
-		Expect(math.IsNaN(subject.Mean(2))).To(BeTrue())
-	})
-
-	It("should calc variance", func() {
-		Expect(math.IsNaN(subject.Variance(-1))).To(BeTrue())
-		Expect(subject.Variance(0)).To(BeNumerically("~", 2.017, 0.001))
-		Expect(subject.Variance(1)).To(BeNumerically("~", 3.025, 0.001))
-		Expect(math.IsNaN(subject.Variance(2))).To(BeTrue())
 	})
 })
