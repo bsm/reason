@@ -17,7 +17,7 @@ option java_outer_classname = "FTRLProtos";
 // Optimizer wraps the optimizer data.
 message Optimizer {
   // The underlying model.
-  blacksquaremedia.reason.core.Model model = 1;
+  core.Model model = 1;
 
   // The target feature.
   string target = 2;

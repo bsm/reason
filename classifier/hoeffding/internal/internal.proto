@@ -18,7 +18,7 @@ option java_outer_classname = "HoeffdingProtos";
 // Tree wraps the tree data.
 message Tree {
   // The underlying model.
-  blacksquaremedia.reason.core.Model model = 1;
+  core.Model model = 1;
 
   // The target feature.
   string target = 2;
@@ -34,11 +34,11 @@ message Tree {
 message Node {
   // Stats for classifications.
   message ClassificationStats {
-    blacksquaremedia.reason.util.Vector stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+    util.Vector stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
   // Stats for regressions.
   message RegressionStats {
-    blacksquaremedia.reason.util.NumStream stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+    util.NumStream stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
 
   // Nodes can be leaf or split nodes.
@@ -82,10 +82,10 @@ message LeafNode {
 // observation of a particular feature.
 message FeatureStats {
   message ClassificationNumerical {
-    blacksquaremedia.reason.util.NumStreams stats = 1 [(gogoproto.nullable) = false];
+    util.NumStreams stats = 1 [(gogoproto.nullable) = false];
   }
   message ClassificationCategorical {
-    blacksquaremedia.reason.util.Matrix stats = 1 [(gogoproto.nullable) = false];
+    util.Matrix stats = 1 [(gogoproto.nullable) = false];
   }
 
   message RegressionNumerical {
@@ -100,7 +100,7 @@ message FeatureStats {
     repeated Observation observations = 3 [(gogoproto.nullable) = false];
   }
   message RegressionCategorical {
-    blacksquaremedia.reason.util.NumStreams stats = 1 [(gogoproto.nullable) = false];
+    util.NumStreams stats = 1 [(gogoproto.nullable) = false];
   }
 
   oneof kind {

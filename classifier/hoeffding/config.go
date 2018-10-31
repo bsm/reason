@@ -1,6 +1,6 @@
 package hoeffding
 
-import "github.com/bsm/reason/classifier"
+import "github.com/bsm/reason/core"
 
 // Config configures behaviour
 type Config struct {
@@ -42,7 +42,7 @@ type Config struct {
 	EnableTracing bool
 }
 
-func (c *Config) norm(p classifier.Problem) {
+func (c *Config) norm(target *core.Feature) {
 	if c.GracePeriod <= 0 {
 		c.GracePeriod = 200
 	}
@@ -59,6 +59,6 @@ func (c *Config) norm(p classifier.Problem) {
 		c.TieThreshold = 0.05
 	}
 	if c.SplitCriterion == nil {
-		c.SplitCriterion = DefaultSplitCriterion(p)
+		c.SplitCriterion = DefaultSplitCriterion(target)
 	}
 }

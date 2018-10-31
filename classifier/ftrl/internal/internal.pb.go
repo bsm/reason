@@ -37,7 +37,7 @@ func (m *Optimizer) Reset()         { *m = Optimizer{} }
 func (m *Optimizer) String() string { return proto.CompactTextString(m) }
 func (*Optimizer) ProtoMessage()    {}
 func (*Optimizer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_internal_c334f8801be273ca, []int{0}
+	return fileDescriptor_internal_218515868e85808d, []int{0}
 }
 func (m *Optimizer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Optimizer.Unmarshal(m, b)
@@ -62,10 +62,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("classifier/ftrl/internal/internal.proto", fileDescriptor_internal_c334f8801be273ca)
+	proto.RegisterFile("classifier/ftrl/internal/internal.proto", fileDescriptor_internal_218515868e85808d)
 }
 
-var fileDescriptor_internal_c334f8801be273ca = []byte{
+var fileDescriptor_internal_218515868e85808d = []byte{
 	// 279 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x90, 0x31, 0x4b, 0x03, 0x31,
 	0x1c, 0xc5, 0x1b, 0x5b, 0x2b, 0x8d, 0x83, 0x90, 0x41, 0x8e, 0x0e, 0xc7, 0xa1, 0x60, 0x6f, 0x31,

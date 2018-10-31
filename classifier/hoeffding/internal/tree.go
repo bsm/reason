@@ -5,7 +5,6 @@ import (
 	fmt "fmt"
 	"io"
 
-	"github.com/bsm/reason/classifier"
 	core "github.com/bsm/reason/core"
 	"github.com/bsm/reason/internal/iocount"
 	"github.com/bsm/reason/internal/protoio"
@@ -20,11 +19,6 @@ func NewTree(model *core.Model, target string) *Tree {
 	}
 	t.Root = t.AddLeaf(nil, 0)
 	return t
-}
-
-// DetectProblem detects the classifier problem type.
-func (t *Tree) DetectProblem() classifier.Problem {
-	return classifier.ProblemFromTarget(t.Model.Feature(t.Target))
 }
 
 // AddLeaf adds a new node to registry and returns the reference.

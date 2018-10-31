@@ -3,7 +3,6 @@ package internal_test
 import (
 	"bytes"
 
-	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
 	"github.com/bsm/reason/testdata"
 	"github.com/gogo/protobuf/proto"
@@ -40,10 +39,6 @@ var _ = Describe("Tree", func() {
 
 	It("should init", func() {
 		Expect(subject.NumNodes()).To(Equal(1))
-	})
-
-	It("should detect problem types", func() {
-		Expect(subject.DetectProblem()).To(Equal(classifier.Classification))
 	})
 
 	It("should add leaf nodes", func() {

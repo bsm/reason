@@ -5,7 +5,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
 	"github.com/bsm/reason/core"
 )
@@ -20,9 +19,8 @@ type TreeInfo struct {
 
 // Tree is an implementation of a Hoeffding tree.
 type Tree struct {
-	tree    *internal.Tree
-	target  *core.Feature
-	problem classifier.Problem
+	tree   *internal.Tree
+	target *core.Feature
 
 	config  Config
 	cycles  int
@@ -51,22 +49,16 @@ func newTree(t *internal.Tree, c *Config) (*Tree, error) {
 		return nil, fmt.Errorf("hoeffding: unknown feature %q", t.Target)
 	}
 
-	problem := classifier.ProblemFromTarget(target)
-	if !problem.IsValid() {
-		return nil, fmt.Errorf("hoeffding: unsupported feature %q", t.Target)
-	}
-
 	var config Config
 	if c != nil {
 		config = *c
 	}
-	config.norm(problem)
+	config.norm(target)
 
 	return &Tree{
-		tree:    t,
-		target:  target,
-		problem: problem,
-		config:  config,
+		tree:   t,
+		target: target,
+		config: config,
 	}, nil
 }
 
@@ -102,7 +94,7 @@ func (t *Tree) TrainWeight(x core.Example, weight float64) {
 	node, nref, parent, ppos := t.tree.Traverse(x, t.tree.Root, nil, -1)
 	if node == nil && ppos > -1 {
 		if split := parent.GetSplit(); split != nil {
-			lref := t.tree.AddLeaf(t.problem, nil)
+			lref := t.tree.AddLeaf(nil, 0)
 			node = t.tree.GetNode(lref)
 			split.SetChild(ppos, lref)
 		}

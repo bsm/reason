@@ -2,17 +2,17 @@ package hoeffding
 
 import (
 	"math"
-	"strconv"
 
-	"github.com/bsm/reason/classifier"
+	"github.com/bsm/reason/core"
+
 	"github.com/bsm/reason/util"
 )
 
 // SplitCriterion calculates the merit of an attribute split
 // for classifications.
 type SplitCriterion interface {
-	// Supports returns true if a classifier Goal is supported.
-	Supports(classifier.Problem) bool
+	// Supports returns true if the target feature is supported.
+	Supports(target *core.Feature) bool
 
 	// ClassificationMerit applies to classifications only and
 	// calculates the merit of splitting distribution pre and post split.
@@ -23,16 +23,13 @@ type SplitCriterion interface {
 	RegressionMerit(pre *util.NumStream, post *util.NumStreams) float64
 }
 
-// DefaultSplitCriterion returns the default split criterion for the given problem.
-func DefaultSplitCriterion(p classifier.Problem) SplitCriterion {
-	switch p {
-	case classifier.Classification:
-		return InformationGain{MinBranchFraction: 0.1}
-	case classifier.Regression:
+// DefaultSplitCriterion returns the default split criterion for the given target.
+func DefaultSplitCriterion(target *core.Feature) SplitCriterion {
+	switch target.Kind {
+	case core.Feature_NUMERICAL:
 		return VarianceReduction{MinWeight: 4.0}
-	default:
-		panic("reason: invalid problem " + strconv.FormatUint(uint64(p), 10))
 	}
+	return InformationGain{MinBranchFraction: 0.1}
 }
 
 func normSplitMerit(m float64) float64 {
@@ -48,8 +45,8 @@ func normSplitMerit(m float64) float64 {
 type GiniImpurity struct{}
 
 // Supports implements SplitCriterion
-func (GiniImpurity) Supports(p classifier.Problem) bool {
-	return p == classifier.Classification
+func (GiniImpurity) Supports(target *core.Feature) bool {
+	return target != nil && target.Kind == core.Feature_CATEGORICAL
 }
 
 // ClassificationMerit implements SplitCriterion
@@ -97,8 +94,8 @@ type InformationGain struct {
 }
 
 // Supports implements SplitCriterion
-func (InformationGain) Supports(p classifier.Problem) bool {
-	return p == classifier.Classification
+func (InformationGain) Supports(target *core.Feature) bool {
+	return target != nil && target.Kind == core.Feature_CATEGORICAL
 }
 
 // ClassificationMerit implements SplitCriterion
@@ -159,8 +156,8 @@ type VarianceReduction struct {
 }
 
 // Supports implements SplitCriterion
-func (VarianceReduction) Supports(p classifier.Problem) bool {
-	return p == classifier.Regression
+func (VarianceReduction) Supports(target *core.Feature) bool {
+	return target != nil && target.Kind == core.Feature_NUMERICAL
 }
 
 // ClassificationMerit implements SplitCriterion.
