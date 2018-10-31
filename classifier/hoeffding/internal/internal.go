@@ -40,31 +40,3 @@ func pivotPoints(min, max float64) []float64 {
 	}
 	return pp
 }
-
-/*
-
-func wrapVector(p classifier.Problem, vv *util.Vector) {
-
-}
-
-type clsVector struct{ vv *util.Vector }
-
-
-func problemWeight(p classifier.Problem, stats *util.Vector) float64 {
-
-}
-
-func hasStats(p classifier.Problem, row []float64) bool {
-	switch p {
-	case classifier.Classification:
-		for _, w := range row {
-			if w > 0 {
-				return true
-			}
-		}
-	case classifier.Regression:
-		return len(row) == 3 && row[0] > 0
-	}
-	return false
-}
-*/

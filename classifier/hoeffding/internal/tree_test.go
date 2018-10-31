@@ -1,9 +1,12 @@
 package internal_test
 
 import (
+	"bytes"
+
 	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
 	"github.com/bsm/reason/testdata"
+	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -17,19 +20,37 @@ var _ = Describe("Tree", func() {
 		subject = internal.NewTree(model, "play")
 	})
 
+	It("should marshal to writer", func() {
+		buf := new(bytes.Buffer)
+		Expect(subject.WriteTo(buf)).To(Equal(int64(198)))
+
+		t := new(internal.Tree)
+		Expect(proto.Unmarshal(buf.Bytes(), t)).To(Succeed())
+		Expect(t).To(Equal(subject))
+	})
+
+	It("should unmarshal from reader", func() {
+		data, err := proto.Marshal(subject)
+		Expect(err).NotTo(HaveOccurred())
+
+		t := new(internal.Tree)
+		Expect(t.ReadFrom(bytes.NewReader(data))).To(Equal(int64(len(data))))
+		Expect(t).To(Equal(subject))
+	})
+
 	It("should init", func() {
 		Expect(subject.NumNodes()).To(Equal(1))
 	})
 
-	It("should detect classifier problems", func() {
+	It("should detect problem types", func() {
 		Expect(subject.DetectProblem()).To(Equal(classifier.Classification))
 	})
 
-	PIt("should add leaf nodes", func() {
-		ref := subject.AddLeaf(nil)
-		Expect(ref).To(Equal(int64(2)))
+	It("should add leaf nodes", func() {
+		nref := subject.AddLeaf(nil, 7)
+		Expect(nref).To(Equal(int64(2)))
 		Expect(subject.NumNodes()).To(Equal(2))
-		Expect(subject.GetLeaf(ref)).To(Equal(&internal.LeafNode{
+		Expect(subject.GetLeaf(nref)).To(Equal(&internal.LeafNode{
 			WeightAtLastEval: 7,
 		}))
 	})

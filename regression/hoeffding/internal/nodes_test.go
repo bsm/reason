@@ -11,7 +11,6 @@ import (
 
 var _ = Describe("LeafNode", func() {
 	model := testdata.RegressionModel()
-	examples := testdata.RegressionData()
 
 	var wrapper *internal.Node
 	var subject *internal.LeafNode
@@ -24,7 +23,7 @@ var _ = Describe("LeafNode", func() {
 		}
 
 		target := model.Feature("hours")
-		for _, x := range examples {
+		for _, x := range testdata.DataSet {
 			subject.Observe(model, target, x, 1.0, wrapper)
 		}
 	})
@@ -52,8 +51,8 @@ var _ = Describe("LeafNode", func() {
 		Expect(cat.PreSplit.Weight).To(Equal(14.0))
 		Expect(cat.PostSplit.NumCategories()).To(Equal(3))
 
-		num := subject.EvaluateSplit("humidity", crit, wrapper)
-		Expect(num.Feature).To(Equal("humidity"))
+		num := subject.EvaluateSplit("humidex", crit, wrapper)
+		Expect(num.Feature).To(Equal("humidex"))
 		Expect(num.Merit).To(Equal(0.0))
 		Expect(num.Range).To(Equal(1.0))
 		Expect(num.Pivot).To(BeNumerically("~", 41.67, 0.01))

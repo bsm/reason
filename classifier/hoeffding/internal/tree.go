@@ -1,8 +1,15 @@
 package internal
 
 import (
+	"bufio"
+	fmt "fmt"
+	"io"
+
 	"github.com/bsm/reason/classifier"
 	core "github.com/bsm/reason/core"
+	"github.com/bsm/reason/internal/iocount"
+	"github.com/bsm/reason/internal/protoio"
+	"github.com/gogo/protobuf/proto"
 )
 
 // NewTree inits a brand-new tree
@@ -11,34 +18,19 @@ func NewTree(model *core.Model, target string) *Tree {
 		Model:  model,
 		Target: target,
 	}
-
-	switch t.DetectProblem() {
-	case classifier.Classification:
-		t.Root = t.AddLeaf(NewNodeStats_Classification())
-	case classifier.Regression:
-		t.Root = t.AddLeaf(NewNodeStats_Regression())
-	}
+	t.Root = t.AddLeaf(nil, 0)
 	return t
 }
 
 // DetectProblem detects the classifier problem type.
 func (t *Tree) DetectProblem() classifier.Problem {
-	if feat := t.Model.Feature(t.Target); feat != nil {
-		switch feat.Kind {
-		case core.Feature_CATEGORICAL:
-			return classifier.Classification
-		case core.Feature_NUMERICAL:
-			return classifier.Regression
-		}
-	}
-	return 0
+	return classifier.ProblemFromTarget(t.Model.Feature(t.Target))
 }
 
 // AddLeaf adds a new node to registry and returns the reference.
-func (t *Tree) AddLeaf(stats NodeStats) int64 {
-	leaf := &LeafNode{WeightAtLastEval: 0} // TODO: how to pass WeightAtLastEval
-	kind := &Node_Leaf{Leaf: leaf}
-	node := &Node{Kind: kind, Stats: stats}
+func (t *Tree) AddLeaf(stats isNode_Stats, weightAtLastEval float64) int64 {
+	leaf := &LeafNode{WeightAtLastEval: weightAtLastEval}
+	node := &Node{Kind: &Node_Leaf{Leaf: leaf}, Stats: stats}
 	t.Nodes = append(t.Nodes, node)
 	return int64(len(t.Nodes))
 }
@@ -71,32 +63,104 @@ func (t *Tree) GetLeaf(nref int64) *LeafNode {
 	return nil
 }
 
-// // SplitLeaf splits an existing leaf node on feature.
-// func (t *Tree) SplitLeaf(nref int64, feature string, pre *util.Vector, post *util.Matrix, pivot float64) {
-// 	// skip if node cannot be found
-// 	if leaf := t.GetLeaf(nref); leaf == nil {
-// 		return
-// 	}
+// Traverse traverses the tree with an example x starting at a given nref.
+func (t *Tree) Traverse(x core.Example, nref int64, parent *Node, ppos int) (*Node, int64, *Node, int) {
+	node := t.GetNode(nref)
+	if node == nil {
+		return node, nref, parent, ppos
+	}
 
-// 	// prepare split node
-// 	split := &SplitNode{
-// 		Feature: feature,
-// 		Pivot:   pivot,
-// 	}
+	if split := node.GetSplit(); split != nil {
+		feature := t.Model.Feature(split.Feature)
 
-// 	rows := post.NumRows()
-// 	for i := 0; i < rows; i++ {
-// 		row := post.Row(i)
-// 		// TODO: figure out split
-// 		// if hasStats(p, row) {
-// 		// 	leaf := t.AddLeaf(util.NewVectorFromSlice(row...))
-// 		// 	split.SetChild(i, leaf)
-// 		// }
-// 		_ = row
-// 	}
+		if npos := int(split.childPos(feature, x)); npos > -1 {
+			if cnref := split.GetChild(npos); cnref > 0 {
+				return t.Traverse(x, cnref, node, npos)
+			}
+			return nil, nref, node, npos
+		}
+	}
+	return node, nref, parent, ppos
+}
 
-// 	t.ReplaceNode(nref, &Node{
-// 		Kind:  &Node_Split{Split: split},
-// 		Stats: pre,
-// 	})
-// }
+// ReadFrom reads a tree from a Reader.
+func (t *Tree) ReadFrom(r io.Reader) (int64, error) {
+	rc := &iocount.Reader{R: r}
+	rp := &protoio.Reader{Reader: bufio.NewReader(rc)}
+
+	for {
+		tag, wire, err := rp.ReadField()
+		if err == io.EOF {
+			return rc.N, nil
+		} else if err != nil {
+			return rc.N, err
+		}
+
+		switch tag {
+		case 1: // model
+			if wire != proto.WireBytes {
+				return rc.N, proto.ErrInternalBadWireType
+			}
+
+			model := new(core.Model)
+			if err := rp.ReadMessage(model); err != nil {
+				return rc.N, err
+			}
+			t.Model = model
+		case 2: // target
+			if wire != proto.WireBytes {
+				return rc.N, proto.ErrInternalBadWireType
+			}
+
+			str, err := rp.ReadString()
+			if err != nil {
+				return rc.N, err
+			}
+			t.Target = str
+		case 3: // root
+			if wire != proto.WireVarint {
+				return rc.N, proto.ErrInternalBadWireType
+			}
+
+			u, err := rp.ReadVarint()
+			if err != nil {
+				return rc.N, err
+			}
+			t.Root = int64(u)
+		case 4: // nodes
+			if wire != proto.WireBytes {
+				return rc.N, proto.ErrInternalBadWireType
+			}
+
+			node := new(Node)
+			if err := rp.ReadMessage(node); err != nil {
+				return rc.N, err
+			}
+			t.Nodes = append(t.Nodes, node)
+		default:
+			return rc.N, fmt.Errorf("hoeffding: unexpected field tag %d", tag)
+		}
+	}
+}
+
+// WriteTo writes a tree to a Writer.
+func (t *Tree) WriteTo(w io.Writer) (int64, error) {
+	wc := &iocount.Writer{W: w}
+	wp := &protoio.Writer{Writer: bufio.NewWriter(wc)}
+
+	if err := wp.WriteMessageField(1, t.Model); err != nil {
+		return wc.N, err
+	}
+	if err := wp.WriteStringField(2, t.Target); err != nil {
+		return wc.N, err
+	}
+	if err := wp.WriteVarintField(3, uint64(t.Root)); err != nil {
+		return wc.N, err
+	}
+	for _, node := range t.Nodes {
+		if err := wp.WriteMessageField(4, node); err != nil {
+			return wc.N, err
+		}
+	}
+	return wc.N, wp.Flush()
+}

@@ -11,7 +11,6 @@ import (
 
 var _ = Describe("LeafNode", func() {
 	model := testdata.ClassificationModel()
-	examples := testdata.ClassificationData()
 
 	var wrapper *internal.Node
 	var subject *internal.LeafNode
@@ -24,7 +23,7 @@ var _ = Describe("LeafNode", func() {
 		}
 
 		target := model.Feature("play")
-		for _, x := range examples {
+		for _, x := range testdata.DataSet {
 			subject.Observe(model, target, x, 1.0, wrapper)
 		}
 	})

@@ -1,11 +1,8 @@
 package hoeffding
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"math"
-	"sort"
 	"sync"
 
 	"github.com/bsm/reason/classifier"
@@ -27,15 +24,15 @@ type Tree struct {
 	target  *core.Feature
 	problem classifier.Problem
 
-	config Config
-	cycles int
+	config  Config
+	cycles  int
+	scratch []*internal.Node
 
-	tn []*internal.Node
 	mu sync.RWMutex
 }
 
-// Load loads a new tree from a reader.
-func Load(r io.Reader, config *Config) (*Tree, error) {
+// LoadFrom loads a new tree from a reader.
+func LoadFrom(r io.Reader, config *Config) (*Tree, error) {
 	tt := new(internal.Tree)
 	if _, err := tt.ReadFrom(r); err != nil {
 		return nil, err
@@ -49,70 +46,65 @@ func New(model *core.Model, target string, config *Config) (*Tree, error) {
 }
 
 func newTree(t *internal.Tree, c *Config) (*Tree, error) {
+	target := t.Model.Feature(t.Target)
+	if target == nil {
+		return nil, fmt.Errorf("hoeffding: unknown feature %q", t.Target)
+	}
+
+	problem := classifier.ProblemFromTarget(target)
+	if !problem.IsValid() {
+		return nil, fmt.Errorf("hoeffding: unsupported feature %q", t.Target)
+	}
+
 	var config Config
 	if c != nil {
 		config = *c
 	}
-	config.Norm()
-
-	target := t.Model.Feature(t.Target)
-	if target == nil {
-		return nil, fmt.Errorf("hoeffding: unknown feature %q", t.Target)
-	} else if !target.Kind.IsCategorical() {
-		return nil, fmt.Errorf("hoeffding: feature %q is not categorical", t.Target)
-	}
+	config.norm(problem)
 
 	return &Tree{
-		tree:   t,
-		target: target,
-		config: config,
+		tree:    t,
+		target:  target,
+		problem: problem,
+		config:  config,
 	}, nil
 }
 
 // Info returns information about the tree
 func (t *Tree) Info() *TreeInfo {
-	info := new(TreeInfo)
+	acc := new(TreeInfo)
 
 	t.mu.RLock()
-	t.tree.Accumulate(t.tree.Root, 1, info)
+	t.recursiveInfo(t.tree.Root, 1, acc)
 	t.mu.RUnlock()
 
-	return info
+	return acc
 }
 
-// Prune manually prunes the tree to limit it to maxLearningNodes.
-func (t *Tree) Prune(maxLearningNodes int) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.prune(maxLearningNodes)
-}
-
-// Predict traverses the tree for the given example x and appends a prediction
-// for every branch to dst, returning it in the end.
-// The predictions will therefore increase in accuracy with the most accurate
-// one being the last element of the returned slice.
-func (t *Tree) Predict(dst classification.Predictions, x core.Example) classification.Predictions {
+// WriteTo implements io.WriterTo
+func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	t.tree.Traverse(x, t.tree.Root, nil, -1, func(node *internal.Node) {
-		dst = append(dst, classification.Prediction{Vector: *node.Stats})
-	})
-	return dst
+	return t.tree.WriteTo(w)
 }
 
-// Train passes an example x with a weight (usually 1.0) to the tree for training.
-func (t *Tree) Train(x core.Example, weight float64) {
+// Train trains the tree with an example x.
+func (t *Tree) Train(x core.Example) {
+	t.TrainWeight(x, 1.0)
+}
+
+// TrainWeight trains the tree with an example x and a custom weight.
+func (t *Tree) TrainWeight(x core.Example, weight float64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	node, nodeRef, parent, parentIndex := t.tree.Traverse(x, t.tree.Root, nil, -1, nil)
-	if node == nil && parentIndex > -1 {
+	node, nref, parent, ppos := t.tree.Traverse(x, t.tree.Root, nil, -1)
+	if node == nil && ppos > -1 {
 		if split := parent.GetSplit(); split != nil {
-			ref := t.tree.Add(nil)
-			node = t.tree.Get(ref)
-			split.SetChild(parentIndex, ref)
+			lref := t.tree.AddLeaf(t.problem, nil)
+			node = t.tree.GetNode(lref)
+			split.SetChild(ppos, lref)
 		}
 	}
 	if node == nil {
@@ -121,7 +113,7 @@ func (t *Tree) Train(x core.Example, weight float64) {
 
 	if leaf := node.GetLeaf(); leaf != nil {
 		// Observe an example
-		leaf.Observe(t.tree.Model, t.target, x, weight, node)
+		leaf.ObserveExample(t.tree.Model, t.target, x, weight, node)
 
 		// Pre-prune, if enabled
 		if t.config.PrunePeriod > 0 {
@@ -133,7 +125,7 @@ func (t *Tree) Train(x core.Example, weight float64) {
 		// Check if a split should be attempted
 		nodeWeight := node.Weight()
 		if leaf.IsDisabled || int(nodeWeight-leaf.WeightAtLastEval) < t.config.GracePeriod {
-			return
+			return nil
 		}
 
 		// Store new weight
@@ -141,136 +133,46 @@ func (t *Tree) Train(x core.Example, weight float64) {
 
 		// Check if we have sufficient stats to perform the split
 		if !node.IsSufficient() {
-			return
+			return nil
 		}
 
 		// Try to split
-		if t.attemptSplit(leaf, node, nodeRef, nodeWeight) {
+		info := t.attemptSplit(leaf, node, nodeRef, nodeWeight)
+		if info.Success {
 			if parent == nil {
 				t.tree.Root = nodeRef
 			} else if split := parent.GetSplit(); split != nil {
 				split.SetChild(parentIndex, nodeRef)
 			}
 		}
-		return
+		return info
 	}
 
 	return nil
 }
 
-// WriteTo implements io.WriterTo
-func (t *Tree) WriteTo(w io.Writer) (int64, error) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	return t.tree.WriteTo(w)
-}
-
-// WriteText writes text-based tree output to a writer
-func (t *Tree) WriteText(w io.Writer) (int64, error) {
-	buf := bufio.NewWriter(w)
-
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	nn, err := t.tree.WriteText(w, t.tree.Root, "", "ROOT")
-	if err != nil {
-		return nn, err
-	}
-	return nn, buf.Flush()
-}
-
-// WriteDOT writes a graph in dot notation to a writer
-func (t *Tree) WriteDOT(w io.Writer) (int64, error) {
-	buf := bufio.NewWriter(w)
-	nw := int64(0)
-
-	n, err := buf.WriteString(`digraph ht {
-  edge [fontsize=10];
-  node [fontsize=10,shape=box];
-
-`)
-	nw += int64(n)
-	if err != nil {
-		return nw, err
-	}
-
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	nn, err := t.tree.WriteDOT(buf, t.tree.Root, "N", "")
-	nw += nn
-	if err != nil {
-		return nw, err
-	}
-
-	n, err = buf.WriteString("}\n")
-	nw += int64(n)
-	if err != nil {
-		return nw, err
-	}
-	return nw, buf.Flush()
-}
-
-func (t *Tree) prune(maxLearningNodes int) {
-	if maxLearningNodes < 0 {
+func (t *Tree) recursiveInfo(nref int64, depth int, acc *TreeInfo) {
+	node := t.tree.GetNode(nref)
+	if node == nil {
 		return
 	}
 
-	t.tn = t.tree.FilterLeaves(t.tn[:0])
-	if len(t.tn) <= maxLearningNodes {
-		return
+	acc.NumNodes++
+	if depth > acc.MaxDepth {
+		acc.MaxDepth = depth
 	}
 
-	// Sort leaves by weight (highest first)
-	sort.Slice(t.tn, func(i, j int) bool {
-		return t.tn[i].Weight() >= t.tn[j].Weight()
-	})
-
-	// Update node status
-	for i, node := range t.tn {
-		if leaf := node.GetLeaf(); leaf != nil {
-			if i < maxLearningNodes {
-				leaf.Enable()
-			} else {
-				leaf.Disable()
+	if split := node.GetSplit(); split != nil {
+		for _, cnref := range split.Children {
+			if cnref != 0 {
+				t.recursiveInfo(cnref, depth+1, acc)
 			}
 		}
-	}
-}
-
-func (t *Tree) attemptSplit(leaf *internal.LeafNode, node *internal.Node, nodeRef int64, weight float64) bool {
-	// init candidates, including a null result
-	candidates := make(internal.SplitCandidates, 1, len(leaf.FeatureStats)+1)
-
-	// calculate a split candiate from each of the leaf stats
-	for name := range leaf.FeatureStats {
-		if c := leaf.EvaluateSplit(name, t.config.SplitCriterion, node); c != nil {
-			candidates = append(candidates, *c)
+	} else if leaf := node.GetLeaf(); leaf != nil {
+		if leaf.IsDisabled {
+			acc.NumDisabled++
+		} else {
+			acc.NumLearning++
 		}
 	}
-
-	// sort candidates by merit, select first
-	sort.Stable(sort.Reverse(candidates))
-	best := candidates[0]
-
-	// calculate the gain between merits of the best and the second-best split
-	meritGain := best.Merit
-	if len(candidates) > 1 {
-		meritGain -= candidates[1].Merit
-	}
-
-	// proceed for there is a merit gain
-	if meritGain > 0 {
-		// calculate confidence interval + hoeffding bound
-		interval := math.Log(1.0 / t.config.SplitConfidence)
-		bound := math.Sqrt(best.Range * best.Range * interval * 0.5 / weight)
-
-		// determine split
-		if meritGain > bound || bound < t.config.TieThreshold {
-			t.tree.Split(nodeRef, best.Feature, best.PreSplit, best.PostSplit, best.Pivot)
-			return true
-		}
-	}
-	return false
 }

@@ -10,7 +10,6 @@ import (
 const (
 	Classification Problem = iota + 1
 	Regression
-	problemTerminator
 )
 
 type Problem uint8
@@ -24,6 +23,17 @@ func ParseProblem(s string) (Problem, error) {
 		return Regression, nil
 	}
 	return 0, fmt.Errorf("reason: unable to parse problem %q", s)
+}
+
+// ProblemFromTarget detects the problem from the target feature.
+func ProblemFromTarget(feat *core.Feature) Problem {
+	switch feat.Kind {
+	case core.Feature_CATEGORICAL:
+		return Classification
+	case core.Feature_NUMERICAL:
+		return Regression
+	}
+	return 0
 }
 
 // IsValid returns true if the problem is valid and known.
