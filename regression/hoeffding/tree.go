@@ -99,7 +99,7 @@ func (t *Tree) Train(x core.Example, weight float64) *common.SplitAttemptInfo {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	node, nodeRef, parent, parentIndex := t.tree.Traverse(x, t.tree.Root, nil, -1)
+	node, nodeRef, parent, parentIndex := t.tree.Traverse(x, t.tree.Root, nil, -1, nil)
 	if node == nil && parentIndex > -1 {
 		if split := parent.GetSplit(); split != nil {
 			ref := t.tree.Add(nil)

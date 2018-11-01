@@ -2,7 +2,6 @@ package internal
 
 import (
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/internal/hoeffding"
 	"github.com/bsm/reason/util"
 )
 
@@ -40,35 +39,22 @@ func (s *FeatureStats_Categorical) ObserveWeight(featCat core.Category, targetVa
 
 // --------------------------------------------------------------------
 
-// ObserveWeight adds an observation.
-func (s *FeatureStats_Numerical) ObserveWeight(featVal, targetVal, weight float64) {
-	if len(s.Observations) == 0 || featVal < s.Min {
-		s.Min = featVal
+// // ObserveWeight adds an observation.
+func (s *FeatureStats_Numerical) ObserveWeight(featVal, weight float64) {
+	if s.Histogram.Cap == 0 {
+		s.Histogram.Cap = 10
 	}
-	if len(s.Observations) == 0 || featVal > s.Max {
-		s.Max = featVal
-	}
-
-	s.Observations = append(s.Observations, FeatureStats_Numerical_Observation{
-		FeatureValue: featVal,
-		TargetValue:  targetVal,
-		Weight:       weight,
-	})
-}
-
-// PivotPoints determines the optimum split points for the range of values.
-func (s *FeatureStats_Numerical) PivotPoints() []float64 {
-	return hoeffding.PivotPoints(s.Min, s.Max)
+	s.Histogram.ObserveWeight(featVal, weight)
 }
 
 // PostSplit calculates a post-split distribution from previous observations
 func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.NumStreams {
 	post := util.NewNumStreams()
-	for _, o := range s.Observations {
-		if o.FeatureValue <= pivot {
-			post.ObserveWeight(0, o.TargetValue, o.Weight)
+	for _, bin := range s.Bins {
+		if bin.Value <= pivot {
+			post.ObserveWeight(0, bin.Value, bin.Weight)
 		} else {
-			post.ObserveWeight(1, o.TargetValue, o.Weight)
+			post.ObserveWeight(1, bin.Value, bin.Weight)
 		}
 	}
 	return post
