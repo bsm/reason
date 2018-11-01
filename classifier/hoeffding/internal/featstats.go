@@ -7,61 +7,69 @@ import (
 
 func (s *FeatureStats) ObserveExample(target, predictor *core.Feature, x core.Example, weight float64) {
 	switch target.Kind {
-	case core.Feature_CATEGORICAL: // classification
-		tcat := target.Category(x)
-		if !core.IsCat(tcat) {
-			return
-		}
-
-		switch predictor.Kind {
-		case core.Feature_CATEGORICAL:
-			pcat := predictor.Category(x)
-			if !core.IsCat(pcat) {
-				return
+	case core.Feature_CATEGORICAL:
+		if tcat := target.Category(x); core.IsCat(tcat) {
+			switch predictor.Kind {
+			case core.Feature_CATEGORICAL:
+				if pcat := predictor.Category(x); core.IsCat(pcat) {
+					s.observeCC(tcat, pcat, weight)
+				}
+			case core.Feature_NUMERICAL:
+				if pnum := predictor.Number(x); core.IsNum(pnum) {
+					s.observeCN(tcat, pnum, weight)
+				}
 			}
-
-			acc := s.GetCC()
-			if acc == nil {
-				acc = new(FeatureStats_ClassificationCategorical)
-				s.Kind = &FeatureStats_CC{CC: acc}
-			}
-			acc.Stats.Add(int(pcat), int(tcat), weight)
-		case core.Feature_NUMERICAL:
-			pnum := predictor.Number(x)
-			if !core.IsNum(pnum) {
-				return
-			}
-
-			acc := s.GetCN()
-			if acc == nil {
-				acc = new(FeatureStats_ClassificationNumerical)
-				s.Kind = &FeatureStats_CN{CN: acc}
-			}
-			acc.Stats.ObserveWeight(int(tcat), pnum, weight)
 		}
 	case core.Feature_NUMERICAL:
-		tnum := target.Number(x)
-		if !core.IsNum(tnum) {
-			return
-		}
-
-		switch predictor.Kind {
-		case core.Feature_CATEGORICAL:
-			pcat := predictor.Category(x)
-			if !core.IsCat(pcat) {
-				return
+		if tnum := target.Number(x); core.IsNum(tnum) {
+			switch predictor.Kind {
+			case core.Feature_CATEGORICAL:
+				if pcat := predictor.Category(x); core.IsCat(pcat) {
+					s.observeRC(tnum, pcat, weight)
+				}
+			case core.Feature_NUMERICAL:
+				if pnum := predictor.Number(x); core.IsNum(pnum) {
+					s.observeRN(tnum, pnum, weight)
+				}
 			}
-
-			acc := s.GetRC()
-			if acc == nil {
-				acc = new(FeatureStats_RegressionCategorical)
-				s.Kind = &FeatureStats_RC{RC: acc}
-			}
-			acc.Stats.ObserveWeight(int(pcat), tnum, weight)
-		case core.Feature_NUMERICAL:
-			panic("TODO")
 		}
 	}
+}
+
+func (s *FeatureStats) observeCC(tcat, pcat core.Category, weight float64) {
+	acc := s.GetCC()
+	if acc == nil {
+		acc = new(FeatureStats_ClassificationCategorical)
+		s.Kind = &FeatureStats_CC{CC: acc}
+	}
+	acc.Stats.Add(int(pcat), int(tcat), weight)
+}
+
+func (s *FeatureStats) observeCN(tcat core.Category, pnum, weight float64) {
+	acc := s.GetCN()
+	if acc == nil {
+		acc = new(FeatureStats_ClassificationNumerical)
+		s.Kind = &FeatureStats_CN{CN: acc}
+	}
+	acc.Stats.ObserveWeight(int(tcat), pnum, weight)
+}
+
+func (s *FeatureStats) observeRC(tnum float64, pcat core.Category, weight float64) {
+	acc := s.GetRC()
+	if acc == nil {
+		acc = new(FeatureStats_RegressionCategorical)
+		s.Kind = &FeatureStats_RC{RC: acc}
+	}
+	acc.Stats.ObserveWeight(int(pcat), tnum, weight)
+}
+
+func (s *FeatureStats) observeRN(tnum, pnum, weight float64) {
+	acc := s.GetRN()
+	if acc == nil {
+		acc = new(FeatureStats_RegressionNumerical)
+		s.Kind = &FeatureStats_RN{RN: acc}
+	}
+	panic("TODO: ")
 }
 
 // --------------------------------------------------------------------
