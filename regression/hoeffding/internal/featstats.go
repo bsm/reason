@@ -40,22 +40,21 @@ func (s *FeatureStats_Categorical) ObserveWeight(featCat core.Category, targetVa
 // --------------------------------------------------------------------
 
 // // ObserveWeight adds an observation.
-func (s *FeatureStats_Numerical) ObserveWeight(featVal, weight float64) {
-	if s.Histogram.Cap == 0 {
-		s.Histogram.Cap = 10
-	}
-	s.Histogram.ObserveWeight(featVal, weight)
+func (s *FeatureStats_Numerical) ObserveWeight(featVal, targetVal, weight float64) {
+	s.NumStreamBuckets.ObserveWeight(targetVal, featVal, weight)
 }
 
 // PostSplit calculates a post-split distribution from previous observations
 func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.NumStreams {
-	post := util.NewNumStreams()
-	for _, bin := range s.Bins {
-		if bin.Value <= pivot {
-			post.ObserveWeight(0, bin.Value, bin.Weight)
-		} else {
-			post.ObserveWeight(1, bin.Value, bin.Weight)
+	split := make([]util.NumStream, 2)
+	for _, bucket := range s.Buckets {
+		pos := 0
+		if bucket.Threshold > pivot {
+			pos = 1
 		}
+		split[pos].Weight += bucket.Weight
+		split[pos].Sum += bucket.Sum
+		split[pos].SumSquares += bucket.SumSquares
 	}
-	return post
+	return &util.NumStreams{Data: split}
 }

@@ -39,6 +39,18 @@ message NumStreams {
   repeated NumStream data = 1 [(gogoproto.nullable)=false];
 }
 
+// NumStreamBuckets maintain NumStream information
+// in fixed-size buckets.
+message NumStreamBuckets {
+  message Bucket {
+    double threshold = 1;
+    NumStream stream = 2 [(gogoproto.nullable)=false, (gogoproto.embed)=true];
+  }
+
+  uint32 max_buckets = 1;
+  repeated Bucket buckets = 2 [(gogoproto.nullable)=false];
+}
+
 // Histogram is a probabilistic, fixed-size data structure, able to
 // accommodate massive data streams while predicting distributions
 // and quantiles much more accurately than a sample-based approach.
@@ -53,10 +65,4 @@ message Histogram {
   double min = 3;
   double max = 4;
   repeated Bin bins = 5 [(gogoproto.nullable)=false];
-}
-
-// Histograms is an auto-expanding Histogram distribution.
-message Histograms {
-  uint32 cap = 1;
-  repeated Histogram data = 2 [(gogoproto.nullable)=false];
 }

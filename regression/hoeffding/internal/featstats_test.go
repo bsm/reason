@@ -11,26 +11,26 @@ var _ = Describe("FeatureStats_Numerical", func() {
 
 	BeforeEach(func() {
 		subject = new(internal.FeatureStats_Numerical)
-		subject.ObserveWeight(1.2, 1.0)
-		subject.ObserveWeight(4.2, 1.0)
-		subject.ObserveWeight(8.4, 1.0)
+		subject.ObserveWeight(2.2, 1.2, 1.0)
+		subject.ObserveWeight(2.4, 4.2, 1.0)
+		subject.ObserveWeight(2.6, 8.4, 1.0)
 	})
 
 	It("should observe", func() {
-		Expect(subject.Weight).To(Equal(3.0))
-		Expect(subject.Bins).To(HaveLen(3))
+		Expect(subject.WeightSum()).To(Equal(3.0))
+		Expect(subject.Buckets).To(HaveLen(3))
 	})
 
 	It("should calculate post-splits", func() {
 		s1 := subject.PostSplit(2.4)
 		Expect(s1.NumCategories()).To(Equal(2))
-		Expect(s1.At(0).Sum).To(BeNumerically("~", 1.2, 0.001))
-		Expect(s1.At(1).Sum).To(BeNumerically("~", 12.6, 0.001))
+		Expect(s1.At(0).Mean()).To(BeNumerically("~", 2.2, 0.001))
+		Expect(s1.At(1).Mean()).To(BeNumerically("~", 2.5, 0.001))
 
 		s2 := subject.PostSplit(4.8)
 		Expect(s2.NumCategories()).To(Equal(2))
-		Expect(s2.At(0).Sum).To(BeNumerically("~", 5.4, 0.001))
-		Expect(s2.At(1).Sum).To(BeNumerically("~", 8.4, 0.001))
+		Expect(s2.At(0).Mean()).To(BeNumerically("~", 2.3, 0.001))
+		Expect(s2.At(1).Mean()).To(BeNumerically("~", 2.6, 0.001))
 	})
 })
 

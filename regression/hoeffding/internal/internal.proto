@@ -34,7 +34,7 @@ message Tree {
 // observation of a particular feature.
 message FeatureStats {
   message Numerical {
-    util.Histogram stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+    util.NumStreamBuckets stats = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
   }
 
   message Categorical {

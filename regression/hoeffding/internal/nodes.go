@@ -90,15 +90,15 @@ func (n *LeafNode) EvaluateSplit(feature string, crit regression.SplitCriterion,
 		s := kind.Numerical
 		r := crit.Range(self.Stats)
 
-		for _, bin := range s.Bins {
-			post := s.PostSplit(bin.Value)
+		for _, b := range s.Buckets {
+			post := s.PostSplit(b.Threshold)
 			merit := crit.Merit(self.Stats, post)
 			if c == nil || merit > c.Merit {
 				c = &SplitCandidate{
 					Feature:   feature,
 					Merit:     merit,
 					Range:     r,
-					Pivot:     bin.Value,
+					Pivot:     b.Threshold,
 					PreSplit:  self.Stats,
 					PostSplit: post,
 				}
@@ -163,7 +163,7 @@ func (n *LeafNode) Observe(m *core.Model, target *core.Feature, x core.Example, 
 			}
 		case core.Feature_NUMERICAL:
 			if num := feat.Number(x); core.IsNum(num) {
-				stats.FetchNumerical().ObserveWeight(num, weight)
+				stats.FetchNumerical().ObserveWeight(num, targetVal, weight)
 			}
 		}
 	}

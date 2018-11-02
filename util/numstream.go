@@ -2,6 +2,7 @@ package util
 
 import (
 	"math"
+	"sort"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -90,24 +91,24 @@ func NewNumStreams() *NumStreams {
 }
 
 // Observe adds a new observation.
-func (s *NumStreams) Observe(cat int, value float64) {
-	s.ObserveWeight(cat, value, 1.0)
+func (s *NumStreams) Observe(target int, prediction float64) {
+	s.ObserveWeight(target, prediction, 1.0)
 }
 
 // ObserveWeight adds a new observation with a weight.
-func (s *NumStreams) ObserveWeight(cat int, value, weight float64) {
-	if cat < 0 || math.IsNaN(value) || math.IsInf(value, 0) || weight <= 0 {
+func (s *NumStreams) ObserveWeight(target int, prediction, weight float64) {
+	if target < 0 || math.IsNaN(prediction) || math.IsInf(prediction, 0) || weight <= 0 {
 		return
 	}
 
-	if n := cat + 1; n > cap(s.Data) {
+	if n := target + 1; n > cap(s.Data) {
 		data := make([]NumStream, n, 2*n)
 		copy(data, s.Data)
 		s.Data = data
 	} else if n > len(s.Data) {
 		s.Data = s.Data[:n]
 	}
-	s.Data[cat].ObserveWeight(value, weight)
+	s.Data[target].ObserveWeight(prediction, weight)
 }
 
 // NumRows returns the number of rows, including blanks.
@@ -135,14 +136,88 @@ func (s *NumStreams) WeightSum() float64 {
 	return sum
 }
 
-// At returns the stream at the given cat (or nil).
+// At returns the stream at the given target (or nil).
 // Please note that a copy of the stream is returned. Mutating the
 // value will not affect the distribution.
-func (s *NumStreams) At(cat int) *NumStream {
-	if cat > -1 && cat < len(s.Data) {
-		if t := s.Data[cat]; t.Weight > 0 {
+func (s *NumStreams) At(target int) *NumStream {
+	if target > -1 && target < len(s.Data) {
+		if t := s.Data[target]; t.Weight > 0 {
 			return &t
 		}
 	}
 	return nil
+}
+
+// --------------------------------------------------------------------
+
+// NewNumStreamBuckets inits new bucketed stream distribution.
+func NewNumStreamBuckets(maxBuckets uint32) *NumStreamBuckets {
+	return &NumStreamBuckets{MaxBuckets: maxBuckets}
+}
+
+// Observe adds a new observation.
+func (s *NumStreamBuckets) Observe(target, prediction float64) {
+	s.ObserveWeight(target, prediction, 1.0)
+}
+
+// ObserveWeight adds a new observation with a weight.
+func (s *NumStreamBuckets) ObserveWeight(target, prediction, weight float64) {
+	if math.IsNaN(target) || math.IsInf(target, 0) || math.IsNaN(prediction) || math.IsInf(prediction, 0) || weight <= 0 {
+		return
+	}
+
+	// ensure buckets are set
+	if s.MaxBuckets == 0 {
+		s.MaxBuckets = 12
+	}
+
+	// upsert bucket
+	slot := s.findSlot(target)
+	if slot < len(s.Buckets) {
+		if s.Buckets[slot].Threshold != target {
+			s.Buckets = append(s.Buckets, NumStreamBuckets_Bucket{})
+			copy(s.Buckets[slot+1:], s.Buckets[slot:])
+			s.Buckets[slot] = NumStreamBuckets_Bucket{Threshold: target}
+		}
+	} else {
+		s.Buckets = append(s.Buckets, NumStreamBuckets_Bucket{Threshold: target})
+	}
+	s.Buckets[slot].ObserveWeight(prediction, weight)
+
+	// prune buckets
+	for uint32(len(s.Buckets)) > s.MaxBuckets {
+		delta := math.MaxFloat64
+		slot := 0
+		for i := 0; i < len(s.Buckets)-1; i++ {
+			if x := s.Buckets[i+1].Threshold - s.Buckets[i].Threshold; x < delta {
+				slot, delta = i, x
+			}
+		}
+
+		b1, b2 := s.Buckets[slot], s.Buckets[slot+1]
+		weightSum := b1.Weight + b2.Weight
+		threshold := (b1.Threshold*b1.Weight + b2.Threshold*b2.Weight) / weightSum
+		s.Buckets[slot+1] = NumStreamBuckets_Bucket{
+			Threshold: threshold,
+			NumStream: NumStream{
+				Weight:     weightSum,
+				Sum:        b1.Sum + b2.Sum,
+				SumSquares: b1.SumSquares + b2.SumSquares,
+			},
+		}
+		s.Buckets = s.Buckets[:slot+copy(s.Buckets[slot:], s.Buckets[slot+1:])]
+	}
+}
+
+// WeightSum returns the total weight observed.
+func (s *NumStreamBuckets) WeightSum() float64 {
+	sum := 0.0
+	for _, b := range s.Buckets {
+		sum += b.Weight
+	}
+	return sum
+}
+
+func (s *NumStreamBuckets) findSlot(v float64) int {
+	return sort.Search(len(s.Buckets), func(i int) bool { return s.Buckets[i].Threshold >= v })
 }
