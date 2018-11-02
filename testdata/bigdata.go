@@ -25,52 +25,55 @@ var BigClassificationModel = core.NewModel(
 )
 
 var BigRegressionModel = core.NewModel(
-	core.NewCategoricalFeatureHashBuckets("c1", 1000),
-	core.NewCategoricalFeatureHashBuckets("c2", 100),
-	core.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"}),
-	core.NewCategoricalFeatureHashBuckets("c4", 1000),
+	core.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c2", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c4", []string{"v1", "v2", "v3", "v4", "v5"}),
+	core.NewCategoricalFeature("c5", []string{"v1", "v2", "v3", "v4", "v5"}),
 	core.NewNumericalFeature("n1"),
+	core.NewNumericalFeature("n2"),
+	core.NewNumericalFeature("n3"),
+	core.NewNumericalFeature("n4"),
+	core.NewNumericalFeature("n5"),
 	core.NewNumericalFeature("target"),
 )
 
-var (
-	bigClassificationFieldIndices = map[string]int{"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 10}
-	bigRegressionFieldIndices     = map[string]int{"c1": 0, "c2": 1, "c3": 2, "c4": 3, "n1": 4, "target": 5}
-)
-
 type BigDataStream struct {
-	file  *os.File
-	recs  *csv.Reader
-	model *core.Model
-	fix   map[string]int
+	file    *os.File
+	recs    *csv.Reader
+	model   *core.Model
+	mapping map[string]int
 
 	x   core.MapExample
 	err error
 }
 
 func OpenClassification(root string) (*BigDataStream, *core.Model, error) {
-	return open(filepath.Join(root, "bigcls.csv"), BigClassificationModel, bigClassificationFieldIndices)
+	return open(root, BigClassificationModel, map[string]int{
+		"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 10,
+	})
 }
 
 func OpenRegression(root string) (*BigDataStream, *core.Model, error) {
-	return open(filepath.Join(root, "bigreg.csv"), BigRegressionModel, bigRegressionFieldIndices)
+	return open(root, BigRegressionModel, map[string]int{
+		"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 11,
+	})
 }
 
-func open(fname string, model *core.Model, fix map[string]int) (*BigDataStream, *core.Model, error) {
-	f, err := os.Open(fname)
+func open(root string, model *core.Model, mapping map[string]int) (*BigDataStream, *core.Model, error) {
+	f, err := os.Open(filepath.Join(root, "bigdata.csv"))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	recs := csv.NewReader(f)
-	recs.FieldsPerRecord = len(model.Features)
+	recs.FieldsPerRecord = len(model.Features) + 1
 
 	return &BigDataStream{
-		file:  f,
-		recs:  recs,
-		model: model,
-		fix:   fix,
-		x:     make(core.MapExample, recs.FieldsPerRecord),
+		file:    f,
+		recs:    recs,
+		model:   model,
+		mapping: mapping,
 	}, model, nil
 }
 
@@ -79,25 +82,24 @@ func (s *BigDataStream) Next() bool {
 		return false
 	}
 
-	fields, err := s.recs.Read()
+	row, err := s.recs.Read()
 	if err != nil {
 		s.err = err
 		return false
 	}
 
-	// init example
-	s.x = make(core.MapExample, len(s.x))
-
 	// read predictors
+	s.x = make(core.MapExample, s.recs.FieldsPerRecord)
 	for name, feat := range s.model.Features {
-		str := fields[s.fix[name]]
-		if str == "?" {
+		if str := row[s.mapping[name]]; str == "" {
 			continue
 		} else if feat.Kind.IsCategorical() {
 			s.x[name] = str
-		} else if s.x[name], err = strconv.ParseFloat(str, 64); err != nil {
-			s.err = err
-			return false
+		} else if feat.Kind.IsNumerical() {
+			if s.x[name], err = strconv.ParseFloat(str, 64); err != nil {
+				s.err = err
+				return false
+			}
 		}
 	}
 	return true

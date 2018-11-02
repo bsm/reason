@@ -38,57 +38,47 @@ var _ = Describe("Tree", func() {
 			Config: common.Config{GracePeriod: 50},
 		}
 
-		t1, _, examples := train(3000)
-		Expect(t1.Info()).To(Equal(&common.TreeInfo{NumNodes: 626, NumLearning: 625, MaxDepth: 2}))
-		Expect(t1.Predict(nil, examples[4001]).Best().Mean()).To(BeNumerically("~", 0.260, 0.001))
+		t1, _, examples := train(5000)
+		Expect(t1.Info()).To(Equal(&common.TreeInfo{NumNodes: 3, NumLearning: 2, NumDisabled: 0, MaxDepth: 2}))
+		Expect(t1.Predict(nil, examples[6001]).Best().Mean()).To(BeNumerically("~", 1.976, 0.001))
 
 		b1 := new(bytes.Buffer)
 		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
 
 		t2, err := hoeffding.Load(b1, c)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(t2.Info()).To(Equal(&common.TreeInfo{NumNodes: 626, NumLearning: 625, MaxDepth: 2}))
-		Expect(t2.Predict(nil, examples[4001]).Best().Mean()).To(BeNumerically("~", 0.260, 0.001))
+		Expect(t2.Info()).To(Equal(&common.TreeInfo{NumNodes: 3, NumLearning: 2, NumDisabled: 0, MaxDepth: 2}))
+		Expect(t2.Predict(nil, examples[6001]).Best().Mean()).To(BeNumerically("~", 1.976, 0.001))
 	})
 
 	It("should prune", func() {
-		t, _, _ := train(3000)
-		Expect(t.Info()).To(Equal(&common.TreeInfo{
-			NumNodes:    626,
-			NumLearning: 625,
-			NumDisabled: 0,
-			MaxDepth:    2,
-		}))
+		t, _, _ := train(10000)
+		Expect(t.Info()).To(Equal(&common.TreeInfo{NumNodes: 9, NumLearning: 5, NumDisabled: 0, MaxDepth: 5}))
 
-		t.Prune(10)
-		Expect(t.Info()).To(Equal(&common.TreeInfo{
-			NumNodes:    626,
-			NumLearning: 10,
-			NumDisabled: 615,
-			MaxDepth:    2,
-		}))
+		t.Prune(3)
+		Expect(t.Info()).To(Equal(&common.TreeInfo{NumNodes: 9, NumLearning: 3, NumDisabled: 2, MaxDepth: 5}))
 	})
 
 	It("should write TXT", func() {
-		t, _, _ := train(3000)
+		t, _, _ := train(10000)
 
 		b := new(bytes.Buffer)
 		Expect(t.WriteText(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
-		Expect(s).To(ContainSubstring(`ROOT [weight:3000 mean:0.5 variance:0.6]`))
-		Expect(s).To(ContainSubstring("\tc1 = #4 [weight:4 mean:0.6 variance:0.0]"))
+		Expect(s).To(ContainSubstring(`ROOT [weight:3400 mean:3.3 variance:1.2]`))
+		Expect(s).To(ContainSubstring("\tn5 <= 1.68 [weight:3362 mean:2.9 variance:1.8]"))
 	})
 
 	It("should write DOT", func() {
-		t, _, _ := train(3000)
+		t, _, _ := train(10000)
 
 		b := new(bytes.Buffer)
 		Expect(t.WriteDOT(b)).To(Equal(int64(b.Len())))
 
 		s := b.String()
-		Expect(s).To(ContainSubstring(`N [label="weight: 3000"];`))
-		Expect(s).To(ContainSubstring(`N_4 [label="c1 = #4\nweight: 4"];`))
+		Expect(s).To(ContainSubstring(`N [label="weight: 3400"];`))
+		Expect(s).To(ContainSubstring(`N_0_0 [label="n5 <= 1.68\nweight: 3362"];`))
 	})
 
 	DescribeTable("should train & predict",
@@ -111,22 +101,22 @@ var _ = Describe("Tree", func() {
 			NumLearning: 1,
 			MaxDepth:    1,
 		}, &testdata.RegressionScore{
-			R2:   0.002,
-			RMSE: 0.854,
+			R2:   0.005,
+			RMSE: 1.095,
 		}),
 		Entry("5,000", 5000, &common.TreeInfo{
-			NumNodes:    764,
-			NumLearning: 763,
+			NumNodes:    3,
+			NumLearning: 2,
 			MaxDepth:    2,
 		}, &testdata.RegressionScore{
 			R2:   0.186,
 			RMSE: 0.960,
 		}),
 		Entry("10,000", 10000, &common.TreeInfo{
-			NumNodes:    905,
-			NumLearning: 903,
+			NumNodes:    9,
+			NumLearning: 5,
 			NumDisabled: 0,
-			MaxDepth:    3,
+			MaxDepth:    5,
 		}, &testdata.RegressionScore{
 			R2:   0.618,
 			RMSE: 0.616,
