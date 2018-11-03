@@ -4,7 +4,9 @@ import (
 	"bytes"
 
 	"github.com/bsm/reason/classifier/hoeffding/internal"
+	core "github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
+	"github.com/bsm/reason/util"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,6 +16,14 @@ var _ = Describe("Tree", func() {
 	var subject *internal.Tree
 
 	model := testdata.ClassificationModel()
+	postSplit := internal.PostSplit{Classification: &util.Matrix{
+		Stride: 2,
+		Data: []float64{
+			2, 3, // rainy: 2 yes, 3 no
+			4, 0, // overcast: 4 yes, 0 no
+			3, 2, // sunny: 3 yes, 2 no
+		},
+	}}
 
 	BeforeEach(func() {
 		subject = internal.NewTree(model, "play")
@@ -50,55 +60,48 @@ var _ = Describe("Tree", func() {
 		}))
 	})
 
-	// It("should split nodes", func() {
-	// 	subject.Split(1, "outlook", pre, post, 0)
-	// 	Expect(subject.Len()).To(Equal(4))
+	It("should split nodes", func() {
+		Expect(subject.Nodes).To(HaveLen(1))
+		subject.SplitNode(1, "outlook", postSplit, 0)
+		Expect(subject.Nodes).To(HaveLen(4))
 
-	// 	split := subject.Get(1).GetSplit()
-	// 	Expect(split).NotTo(BeNil())
-	// 	Expect(split.Children).To(HaveLen(3))
-	// })
+		split := subject.GetSplit(1)
+		Expect(split).NotTo(BeNil())
+		Expect(split.Children).To(Equal([]int64{2, 3, 4}))
 
-	// It("should traverse", func() {
-	// 	subject.Split(1, "outlook", pre, post, 0)
-	// 	root := subject.Get(1)
+		// rainy
+		Expect(subject.GetNode(2).GetClassification()).To(Equal(&internal.Node_ClassificationStats{
+			Vector: util.Vector{Data: []float64{2, 3}},
+		}))
 
-	// 	node, nodeRef, parent, parentIndex := subject.Traverse(core.MapExample{"outlook": "overcast"}, 1, nil, -1, nil)
-	// 	Expect(node.Stats).To(Equal(util.NewVectorFromSlice(4, 0)))
-	// 	Expect(parent).To(Equal(root))
-	// 	Expect(parentIndex).To(Equal(1))
+		// overcast
+		Expect(subject.GetNode(3).GetClassification()).To(Equal(&internal.Node_ClassificationStats{
+			Vector: util.Vector{Data: []float64{4, 0}},
+		}))
 
-	// 	var traversed []*internal.Node
-	// 	subject.Traverse(core.MapExample{"outlook": "overcast"}, 1, nil, -1, func(n *internal.Node) {
-	// 		traversed = append(traversed, n)
-	// 	})
-	// 	Expect(traversed).To(HaveLen(2))
-	// 	Expect(traversed[0].Weight()).To(Equal(14.0))
-	// 	Expect(traversed[1].Weight()).To(Equal(4.0))
+		// sunny
+		Expect(subject.GetNode(4).GetClassification()).To(Equal(&internal.Node_ClassificationStats{
+			Vector: util.Vector{Data: []float64{3, 2}},
+		}))
+	})
 
-	// 	node, nodeRef, parent, parentIndex = subject.Traverse(core.MapExample{"outlook": "overcast"}, 99, nil, -1, nil)
-	// 	Expect(node).To(BeNil())
-	// 	Expect(nodeRef).To(Equal(int64(99)))
-	// 	Expect(parent).To(BeNil())
-	// 	Expect(parentIndex).To(Equal(-1))
-	// })
+	It("should traverse", func() {
+		subject.SplitNode(1, "outlook", postSplit, 0)
+		root := subject.GetNode(1)
+		example := core.MapExample{"outlook": "overcast"}
 
-	// It("should filter leaves", func() {
-	// 	subject.Split(1, "outlook", pre, post, 0)
-	// 	Expect(subject.FilterLeaves(nil)).To(HaveLen(3))
-	// })
+		// valid nref
+		node, nref, parent, ppos := subject.Traverse(example, 1, nil, -1)
+		Expect(node.GetClassification().WeightSum()).To(Equal(4.0))
+		Expect(nref).To(Equal(int64(3)))
+		Expect(parent).To(Equal(root))
+		Expect(ppos).To(Equal(1)) // 0: rainy, 1: overcast, 2: sunny
 
-	// It("should accumulate info", func() {
-	// 	subject.Split(1, "outlook", pre, post, 0)
-
-	// 	info := new(hoeffding.TreeInfo)
-	// 	subject.Accumulate(1, 1, info)
-	// 	Expect(info).To(Equal(&hoeffding.TreeInfo{
-	// 		NumNodes:    4,
-	// 		NumLearning: 3,
-	// 		NumDisabled: 0,
-	// 		MaxDepth:    2,
-	// 	}))
-	// })
-
+		// invalid nref
+		node, nref, parent, ppos = subject.Traverse(example, 99, nil, -1)
+		Expect(node).To(BeNil())
+		Expect(nref).To(Equal(int64(99)))
+		Expect(parent).To(BeNil())
+		Expect(ppos).To(Equal(-1))
+	})
 })

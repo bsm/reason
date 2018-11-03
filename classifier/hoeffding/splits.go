@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/bsm/reason/core"
-
 	"github.com/bsm/reason/util"
 )
 

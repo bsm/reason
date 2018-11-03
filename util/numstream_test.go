@@ -76,6 +76,30 @@ var _ = Describe("NumStream", func() {
 		Expect(math.IsNaN(blank.Prob(5.5))).To(BeTrue())
 	})
 
+	It("should calculate probability density", func() {
+		o1 := new(util.NumStream)
+		o1.Observe(11)
+		subject.Merge(o1)
+		Expect(subject).To(Equal(&util.NumStream{
+			Weight:     10,
+			Sum:        60.5,
+			SumSquares: 465.84999999999997,
+			Min:        1.1,
+			Max:        11,
+		}))
+
+		o2 := new(util.NumStream)
+		o2.Observe(0.1)
+		subject.Merge(o2)
+		Expect(subject).To(Equal(&util.NumStream{
+			Weight:     11,
+			Sum:        60.6,
+			SumSquares: 465.85999999999996,
+			Min:        0.1,
+			Max:        11,
+		}))
+	})
+
 	DescribeTable("should estimate",
 		func(v, xlt, xeq, xgt float64) {
 			lt, eq, gt := subject.Estimate(v)

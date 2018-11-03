@@ -68,45 +68,36 @@ message SplitNode {
 
 // LeafNode instances are the leaves within the tree.
 message LeafNode {
-  // Observation stats, but feature.
-  map<string, FeatureStats> feature_stats = 1;
+  // Stats maintain information based on
+  // observation of a particular feature.
+  message Stats {
+    message ClassificationNumerical {
+      util.NumStreams stats = 1 [(gogoproto.nullable) = false];
+    }
+    message ClassificationCategorical {
+      util.Matrix stats = 1 [(gogoproto.nullable) = false];
+    }
+    message RegressionNumerical {
+      util.NumStreamBuckets stats = 1 [(gogoproto.nullable) = false];
+    }
+    message RegressionCategorical {
+      util.NumStreams stats = 1 [(gogoproto.nullable) = false];
+    }
+
+    oneof kind {
+      ClassificationNumerical cn = 1 [(gogoproto.customname)="CN"];
+      ClassificationCategorical cc = 2 [(gogoproto.customname)="CC"];
+      RegressionNumerical rn = 3 [(gogoproto.customname)="RN"];
+      RegressionCategorical rc = 4 [(gogoproto.customname)="RC"];
+    }
+  }
+
+  // Observation stats, by feature.
+  map<string, Stats> feature_stats = 1;
 
   // Weight at the time of the last split evaluation.
   double weight_at_last_eval = 2;
 
   // Status indicator.
   bool is_disabled = 3;
-}
-
-// FeatureStats instances maintain stats based on
-// observation of a particular feature.
-message FeatureStats {
-  message ClassificationNumerical {
-    util.NumStreams stats = 1 [(gogoproto.nullable) = false];
-  }
-  message ClassificationCategorical {
-    util.Matrix stats = 1 [(gogoproto.nullable) = false];
-  }
-
-  message RegressionNumerical {
-    double min = 1; // the minimum observed value
-    double max = 2; // the maximum observed value
-
-    message Observation {
-      double feature_value = 1; // the value of the predictor feature
-      double target_value = 2;  // the value of the target feature
-      double weight = 3; // the weight of the observation
-    }
-    repeated Observation observations = 3 [(gogoproto.nullable) = false];
-  }
-  message RegressionCategorical {
-    util.NumStreams stats = 1 [(gogoproto.nullable) = false];
-  }
-
-  oneof kind {
-    ClassificationNumerical cn = 1 [(gogoproto.customname)="CN"];
-    ClassificationCategorical cc = 2 [(gogoproto.customname)="CC"];
-    RegressionNumerical rn = 3 [(gogoproto.customname)="RN"];
-    RegressionCategorical rc = 4 [(gogoproto.customname)="RC"];
-  }
 }

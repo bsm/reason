@@ -52,9 +52,7 @@ func (s *FeatureStats_Numerical) PostSplit(pivot float64) *util.NumStreams {
 		if bucket.Threshold > pivot {
 			pos = 1
 		}
-		split[pos].Weight += bucket.Weight
-		split[pos].Sum += bucket.Sum
-		split[pos].SumSquares += bucket.SumSquares
+		split[pos].Merge(&bucket.NumStream)
 	}
 	return &util.NumStreams{Data: split}
 }

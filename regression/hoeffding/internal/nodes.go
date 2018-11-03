@@ -90,15 +90,16 @@ func (n *LeafNode) EvaluateSplit(feature string, crit regression.SplitCriterion,
 		s := kind.Numerical
 		r := crit.Range(self.Stats)
 
-		for _, b := range s.Buckets {
-			post := s.PostSplit(b.Threshold)
+		for i := 0; i < len(s.Buckets)-1; i++ {
+			pivot := s.Buckets[i].Threshold
+			post := s.PostSplit(pivot)
 			merit := crit.Merit(self.Stats, post)
 			if c == nil || merit > c.Merit {
 				c = &SplitCandidate{
 					Feature:   feature,
 					Merit:     merit,
 					Range:     r,
-					Pivot:     b.Threshold,
+					Pivot:     pivot,
 					PreSplit:  self.Stats,
 					PostSplit: post,
 				}

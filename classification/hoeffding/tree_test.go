@@ -96,22 +96,20 @@ var _ = Describe("Tree", func() {
 			tree, model, examples := train(n)
 			Expect(tree.Info()).To(Equal(expInfo))
 
-			accuracy := mlmetrics.NewAccuracy()
-			confusion := mlmetrics.NewConfusionMatrix()
-			logLoss := mlmetrics.NewLogLoss()
-
+			m1 := mlmetrics.NewConfusionMatrix()
+			m2 := mlmetrics.NewLogLoss()
 			for _, x := range examples[n:] {
-				predicted, probability := tree.Predict(nil, x).Best().Top()
+				pred := tree.Predict(nil, x).Best()
+				predicted, _ := pred.Top()
 				actual := model.Feature("target").Category(x)
 
-				accuracy.Observe(int(actual), int(predicted))
-				confusion.Observe(int(actual), int(predicted))
-				logLoss.Observe(probability)
+				m1.Observe(int(actual), int(predicted))
+				m2.Observe(pred.P(actual))
 			}
 
-			Expect(accuracy.Rate() * 100).To(BeNumerically("~", exp.Accuracy, 0.1))
-			Expect(confusion.Kappa()).To(BeNumerically("~", exp.Kappa, 0.001))
-			Expect(logLoss.Score()).To(BeNumerically("~", exp.LogLoss, 0.001))
+			Expect(m1.Accuracy()).To(BeNumerically("~", exp.Accuracy, 0.001))
+			Expect(m1.Kappa()).To(BeNumerically("~", exp.Kappa, 0.001))
+			Expect(m2.Score()).To(BeNumerically("~", exp.LogLoss, 0.001))
 		},
 
 		Entry("1,000", 1000, &common.TreeInfo{
@@ -119,28 +117,27 @@ var _ = Describe("Tree", func() {
 			NumLearning: 5,
 			MaxDepth:    2,
 		}, &testdata.ClassificationScore{
-			Accuracy: 71.1,
+			Accuracy: 0.711,
 			Kappa:    0.348,
-			LogLoss:  0.349,
+			LogLoss:  0.561,
 		}),
 		Entry("10,000", 10000, &common.TreeInfo{
 			NumNodes:    38,
 			NumLearning: 30,
 			MaxDepth:    4,
 		}, &testdata.ClassificationScore{
-			Accuracy: 80.3,
+			Accuracy: 0.803,
 			Kappa:    0.594,
-			LogLoss:  0.230,
+			LogLoss:  0.449,
 		}),
 		Entry("20,000", 20000, &common.TreeInfo{
 			NumNodes:    65,
 			NumLearning: 48,
 			MaxDepth:    4,
 		}, &testdata.ClassificationScore{
-			Accuracy: 85.0,
+			Accuracy: 0.850,
 			Kappa:    0.690,
-			LogLoss:  0.183,
+			LogLoss:  0.372,
 		}),
 	)
-
 })

@@ -57,6 +57,38 @@ func (t *Tree) GetLeaf(nref int64) *LeafNode {
 	return nil
 }
 
+// GetSplit retrieves a split node by ref from registry.
+func (t *Tree) GetSplit(nref int64) *SplitNode {
+	if node := t.GetNode(nref); node != nil {
+		return node.GetSplit()
+	}
+	return nil
+}
+
+// SplitNode splits the nref node by feature name.
+// Returns true if successful.
+func (t *Tree) SplitNode(nref int64, feature string, postSplit PostSplit, pivot float64) bool {
+	node := t.GetNode(nref)
+	if node == nil {
+		return false
+	}
+
+	leaf := node.GetLeaf()
+	if leaf == nil {
+		return false
+	}
+
+	split := &SplitNode{
+		Feature: feature,
+		Pivot:   pivot,
+	}
+	postSplit.forEach(func(pos int, stats isNode_Stats, weight float64) {
+		split.SetChild(pos, t.AddLeaf(stats, weight))
+	})
+	node.Kind = &Node_Split{Split: split}
+	return true
+}
+
 // Traverse traverses the tree with an example x starting at a given nref.
 func (t *Tree) Traverse(x core.Example, nref int64, parent *Node, ppos int) (*Node, int64, *Node, int) {
 	node := t.GetNode(nref)

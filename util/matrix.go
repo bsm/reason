@@ -74,6 +74,27 @@ func (m *Matrix) Row(i int) []float64 {
 	return m.Data[min:max]
 }
 
+// IsRowZero returns true if all fields in row i are 0.
+func (m *Matrix) IsRowZero(i int) bool {
+	if i < 0 {
+		return true
+	}
+
+	stride := int(m.Stride)
+	min := i * stride
+	max := min + stride
+	if max > len(m.Data) {
+		return true
+	}
+
+	for i := min; i < max; i++ {
+		if m.Data[i] != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // RowSum returns the sum of all weights in row i.
 func (m *Matrix) RowSum(i int) float64 {
 	if i < 0 {

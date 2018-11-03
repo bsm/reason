@@ -61,6 +61,18 @@ var _ = Describe("Matrix", func() {
 		Expect(subject.Row(2)).To(BeNil())
 	})
 
+	It("should identify zero-rows", func() {
+		Expect(subject.IsRowZero(-1)).To(BeTrue())
+		Expect(subject.IsRowZero(0)).To(BeFalse())
+		Expect(subject.IsRowZero(1)).To(BeFalse())
+		Expect(subject.IsRowZero(2)).To(BeTrue())
+
+		subject.Set(2, 2, 4.0)
+		Expect(subject.IsRowZero(2)).To(BeFalse())
+		subject.Set(2, 2, 0.0)
+		Expect(subject.IsRowZero(2)).To(BeTrue())
+	})
+
 	It("should calculate row sums", func() {
 		Expect(subject.RowSum(-1)).To(Equal(0.0))
 		Expect(subject.RowSum(0)).To(Equal(10.0))

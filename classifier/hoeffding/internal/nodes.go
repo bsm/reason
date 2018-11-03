@@ -4,6 +4,7 @@ import (
 	core "github.com/bsm/reason/core"
 )
 
+// GetChild retrieves the child nref at pos.
 func (n *SplitNode) GetChild(pos int) int64 {
 	if pos < len(n.Children) {
 		return n.Children[pos]
@@ -11,6 +12,7 @@ func (n *SplitNode) GetChild(pos int) int64 {
 	return 0
 }
 
+// SetChild sets references the child at pos to nref.
 func (n *SplitNode) SetChild(pos int, nref int64) {
 	if sz := pos + 1; sz > cap(n.Children) {
 		children := make([]int64, sz, 2*sz)
@@ -52,7 +54,7 @@ func (n *LeafNode) ObserveExample(m *core.Model, target *core.Feature, x core.Ex
 
 	// Ensure we have stats
 	if n.FeatureStats == nil {
-		n.FeatureStats = make(map[string]*FeatureStats, len(m.Features)-1)
+		n.FeatureStats = make(map[string]*LeafNode_Stats, len(m.Features)-1)
 	}
 
 	// Update each predictor feature's stats with a target-value, predictor-value
@@ -64,10 +66,10 @@ func (n *LeafNode) ObserveExample(m *core.Model, target *core.Feature, x core.Ex
 
 		stats := n.FeatureStats[predictor.Name]
 		if stats == nil {
-			stats = new(FeatureStats)
+			stats = new(LeafNode_Stats)
 			n.FeatureStats[predictor.Name] = stats
 		}
-		stats.ObserveExample(target, predictor, x, weight)
+		stats.Update(target, predictor, x, weight)
 	}
 }
 
@@ -92,7 +94,6 @@ func (n *Node) incrementStats(target *core.Feature, x core.Example, weight float
 				stats = new(Node_RegressionStats)
 				n.Stats = &Node_Regression{Regression: stats}
 			}
-
 			stats.ObserveWeight(num, weight)
 			return true
 		}

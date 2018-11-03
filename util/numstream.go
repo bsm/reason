@@ -34,7 +34,6 @@ func (s *NumStream) ObserveWeight(value, weight float64) {
 	s.Weight += weight
 	s.Sum += wv
 	s.SumSquares += wv * value
-
 }
 
 // Mean returns a mean average
@@ -81,6 +80,19 @@ func (s *NumStream) Estimate(value float64) (lessThan float64, equalTo float64, 
 	}
 
 	return
+}
+
+// Merge merges the information from t into s.
+func (s *NumStream) Merge(t *NumStream) {
+	s.Weight += t.Weight
+	s.Sum += t.Sum
+	s.SumSquares += t.SumSquares
+	if t.Min < s.Min {
+		s.Min = t.Min
+	}
+	if t.Max > s.Max {
+		s.Max = t.Max
+	}
 }
 
 // --------------------------------------------------------------------

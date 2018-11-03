@@ -3,6 +3,7 @@ package internal_test
 import (
 	"github.com/bsm/reason/classifier/hoeffding/internal"
 	"github.com/bsm/reason/testdata"
+	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -38,16 +39,26 @@ var _ = Describe("LeafNode", func() {
 			subject.ObserveExample(model, target, x, 1.0, node)
 		}
 		Expect(subject.FeatureStats).To(HaveLen(4))
-		Expect(node.GetClassification().Data).To(Equal([]float64{9, 5}))
+		Expect(node.GetClassification()).To(Equal(&internal.Node_ClassificationStats{
+			Vector: util.Vector{Data: []float64{9, 5}},
+		}))
 	})
 
-	PIt("should observe examples (regression)", func() {
+	It("should observe examples (regression)", func() {
 		model := testdata.RegressionModel()
 		target := model.Feature("hours")
 		for _, x := range testdata.DataSet {
 			subject.ObserveExample(model, target, x, 1.0, node)
 		}
 		Expect(subject.FeatureStats).To(HaveLen(4))
-		Expect(node.GetRegression()).To(Equal("TODO"))
+		Expect(node.GetRegression()).To(Equal(&internal.Node_RegressionStats{
+			NumStream: util.NumStream{
+				Min:        23,
+				Max:        52,
+				Weight:     14,
+				Sum:        557,
+				SumSquares: 23377,
+			},
+		}))
 	})
 })
