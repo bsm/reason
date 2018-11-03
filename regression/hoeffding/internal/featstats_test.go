@@ -11,9 +11,9 @@ var _ = Describe("FeatureStats_Numerical", func() {
 
 	BeforeEach(func() {
 		subject = new(internal.FeatureStats_Numerical)
-		subject.ObserveWeight(2.2, 1.2, 1.0)
-		subject.ObserveWeight(2.4, 4.2, 1.0)
-		subject.ObserveWeight(2.6, 8.4, 1.0)
+		subject.ObserveWeight(1.2, 2.2, 1.0)
+		subject.ObserveWeight(4.2, 2.4, 1.0)
+		subject.ObserveWeight(8.4, 2.6, 1.0)
 	})
 
 	It("should observe", func() {

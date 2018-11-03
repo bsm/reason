@@ -53,9 +53,9 @@ var _ = Describe("LeafNode", func() {
 
 		num := subject.EvaluateSplit("humidex", crit, wrapper)
 		Expect(num.Feature).To(Equal("humidex"))
-		Expect(num.Merit).To(BeNumerically("~", 0.71, 0.01))
+		Expect(num.Merit).To(BeNumerically("~", 22.92, 0.01))
 		Expect(num.Range).To(Equal(1.0))
-		Expect(num.Pivot).To(BeNumerically("~", 35.0, 0.001))
+		Expect(num.Pivot).To(BeNumerically("~", 40.0, 0.001))
 		Expect(num.PreSplit.Weight).To(Equal(14.0))
 		Expect(num.PostSplit.NumCategories()).To(Equal(2))
 	})

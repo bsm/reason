@@ -39,9 +39,9 @@ func (s *FeatureStats_Categorical) ObserveWeight(featCat core.Category, targetVa
 
 // --------------------------------------------------------------------
 
-// // ObserveWeight adds an observation.
+// ObserveWeight adds an observation.
 func (s *FeatureStats_Numerical) ObserveWeight(featVal, targetVal, weight float64) {
-	s.NumStreamBuckets.ObserveWeight(targetVal, featVal, weight)
+	s.NumStreamBuckets.ObserveWeight(featVal, targetVal, weight)
 }
 
 // PostSplit calculates a post-split distribution from previous observations
