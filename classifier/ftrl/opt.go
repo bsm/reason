@@ -74,8 +74,13 @@ func (o *Optimizer) Predict(x core.Example) float64 {
 	return o.predict(x, nil)
 }
 
-// Trains trains the optimizer with an example and a weight.
-func (o *Optimizer) Train(x core.Example, weight float64) {
+// Train trains the optimizer with an example.
+func (o *Optimizer) Train(x core.Example) {
+	o.TrainWeight(x, 1.0)
+}
+
+// TrainWeight trains the optimizer with an example and a weight.
+func (o *Optimizer) TrainWeight(x core.Example, weight float64) {
 	if weight <= 0 {
 		return
 	}

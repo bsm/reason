@@ -27,7 +27,7 @@ func BenchmarkOptimizer_Train(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		tree.Train(examples[i%N], 1.0)
+		tree.Train(examples[i%N])
 	}
 }
 
@@ -54,7 +54,7 @@ func BenchmarkOptimizer_Train_parallel(b *testing.B) {
 		i := 0
 		for pb.Next() {
 			i++
-			tree.Train(examples[i%N], 1.0)
+			tree.Train(examples[i%N])
 		}
 	})
 }

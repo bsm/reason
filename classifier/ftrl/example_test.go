@@ -42,7 +42,7 @@ func Example() {
 	// Train
 	for epoch := 0; epoch < 2000; epoch++ {
 		for _, x := range examples {
-			opt.Train(x, 1.0)
+			opt.Train(x)
 		}
 	}
 

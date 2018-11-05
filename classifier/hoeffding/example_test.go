@@ -112,7 +112,7 @@ func Example_regression() {
 		"windy":    "false",
 	})
 
-	// Print mean value with weight
+	// Print value with weight
 	fmt.Printf("value: %.2f, weight: %.0f\n", prediction.Number(), prediction.Weight())
 
 	// Output:

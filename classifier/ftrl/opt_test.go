@@ -26,7 +26,7 @@ var _ = Describe("Optimizer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		for _, x := range examples[:n] {
-			opt.Train(x, 1.0)
+			opt.Train(x)
 		}
 		return opt, model, examples
 	}
