@@ -29,10 +29,10 @@ var _ = Describe("Optimizer", func() {
 
 	It("should write and read", func() {
 		buf := new(bytes.Buffer)
-		Expect(subject.WriteTo(buf)).To(Equal(int64(330)))
+		Expect(subject.WriteTo(buf)).To(Equal(int64(370)))
 
 		dup := new(internal.Optimizer)
-		Expect(dup.ReadFrom(buf)).To(Equal(int64(330)))
+		Expect(dup.ReadFrom(buf)).To(Equal(int64(370)))
 		Expect(dup).To(Equal(subject))
 	})
 })

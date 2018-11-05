@@ -97,30 +97,6 @@ var _ = Describe("LeafNode_Stats_ClassificationNumerical", func() {
 	})
 })
 
-var _ = Describe("LeafNode_Stats_ClassificationCategorical", func() {
-	var subject *internal.LeafNode_Stats_ClassificationCategorical
-
-	BeforeEach(func() {
-		subject = new(internal.LeafNode_Stats_ClassificationCategorical)
-		subject.Stats.Add(0, 1, 1.0)
-		subject.Stats.Add(0, 0, 1.0)
-		subject.Stats.Add(0, 1, 1.0)
-		subject.Stats.Add(1, 1, 1.0)
-		subject.Stats.Add(1, 0, 1.0)
-		subject.Stats.Add(1, 2, 1.0)
-		subject.Stats.Add(2, 2, 1.0)
-		subject.Stats.Add(2, 2, 1.0)
-	})
-
-	It("should calculate post-splits", func() {
-		s := subject.PostSplit(0).Classification
-		Expect(s.NumRows()).To(Equal(3))
-		Expect(s.Row(0)).To(Equal([]float64{1, 2, 0}))
-		Expect(s.Row(1)).To(Equal([]float64{1, 1, 1}))
-		Expect(s.Row(2)).To(Equal([]float64{0, 0, 2}))
-	})
-})
-
 var _ = Describe("LeafNode_Stats_RegressionNumerical", func() {
 	var subject *internal.LeafNode_Stats_RegressionNumerical
 
@@ -155,33 +131,5 @@ var _ = Describe("LeafNode_Stats_RegressionNumerical", func() {
 		Expect(s3.NumRows()).To(Equal(2))
 		Expect(s3.At(0).Mean()).To(BeNumerically("~", 3.7, 0.1))
 		Expect(s3.At(1).Mean()).To(BeNumerically("~", 5.8, 0.1))
-	})
-})
-
-var _ = Describe("LeafNode_Stats_RegressionCategorical", func() {
-	var subject *internal.LeafNode_Stats_RegressionCategorical
-
-	BeforeEach(func() {
-		subject = new(internal.LeafNode_Stats_RegressionCategorical)
-		subject.Stats.Observe(0, 1.4)
-		subject.Stats.Observe(0, 1.3)
-		subject.Stats.Observe(0, 1.5)
-		subject.Stats.Observe(1, 4.1)
-		subject.Stats.Observe(1, 3.7)
-		subject.Stats.Observe(1, 4.9)
-		subject.Stats.Observe(1, 4.0)
-		subject.Stats.Observe(1, 3.3)
-		subject.Stats.Observe(2, 6.3)
-		subject.Stats.Observe(2, 5.8)
-		subject.Stats.Observe(2, 5.1)
-		subject.Stats.Observe(2, 5.3)
-	})
-
-	It("should calculate post-splits", func() {
-		s := subject.PostSplit(0).Regression
-		Expect(s.NumRows()).To(Equal(3))
-		Expect(s.At(0).Mean()).To(BeNumerically("~", 1.4, 0.1))
-		Expect(s.At(1).Mean()).To(BeNumerically("~", 4.0, 0.1))
-		Expect(s.At(2).Mean()).To(BeNumerically("~", 5.6, 0.1))
 	})
 })

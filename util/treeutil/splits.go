@@ -1,4 +1,4 @@
-package hoeffding
+package treeutil
 
 import (
 	"math"
@@ -13,11 +13,19 @@ type SplitCriterion interface {
 	// Supports returns true if the target feature is supported.
 	Supports(target *core.Feature) bool
 
+	// ClassificationRange applies to classifications only and
+	// determines the split range.
+	ClassificationRange(pre *util.Vector) float64
+
 	// ClassificationMerit applies to classifications only and
 	// calculates the merit of splitting distribution pre and post split.
 	ClassificationMerit(pre *util.Vector, post *util.Matrix) float64
 
-	// RegressionMerit applies to regresssions only and
+	// RegressionRange applies to regressions only and
+	// determines the split range.
+	RegressionRange(pre *util.NumStream) float64
+
+	// RegressionMerit applies to regressions only and
 	// calculates the merit of splitting distribution pre and post split.
 	RegressionMerit(pre *util.NumStream, post *util.NumStreams) float64
 }
@@ -43,12 +51,17 @@ func normSplitMerit(m float64) float64 {
 // GiniImpurity determines split merit using Gini impurity
 type GiniImpurity struct{}
 
-// Supports implements SplitCriterion
+// Supports implements SplitCriterion.
 func (GiniImpurity) Supports(target *core.Feature) bool {
 	return target != nil && target.Kind == core.Feature_CATEGORICAL
 }
 
-// ClassificationMerit implements SplitCriterion
+// ClassificationRange implements SplitCriterion.
+func (GiniImpurity) ClassificationRange(_ *util.Vector) float64 {
+	return 1.0
+}
+
+// ClassificationMerit implements SplitCriterion.
 func (GiniImpurity) ClassificationMerit(_ *util.Vector, post *util.Matrix) float64 {
 	if post == nil {
 		return 0.0
@@ -67,6 +80,11 @@ func (GiniImpurity) ClassificationMerit(_ *util.Vector, post *util.Matrix) float
 		}
 	}
 	return normSplitMerit(merit)
+}
+
+// RegressionRange implements SplitCriterion.
+func (GiniImpurity) RegressionRange(_ *util.NumStream) float64 {
+	return 0.0 // N/A
 }
 
 // RegressionMerit implements SplitCriterion.
@@ -92,12 +110,22 @@ type InformationGain struct {
 	MinBranchFraction float64
 }
 
-// Supports implements SplitCriterion
+// Supports implements SplitCriterion.
 func (InformationGain) Supports(target *core.Feature) bool {
 	return target != nil && target.Kind == core.Feature_CATEGORICAL
 }
 
-// ClassificationMerit implements SplitCriterion
+// ClassificationRange implements SplitCriterion.
+func (InformationGain) ClassificationRange(pre *util.Vector) float64 {
+	if pre != nil {
+		if sz := pre.NNZ(); sz > 2 {
+			return math.Log2(float64(sz))
+		}
+	}
+	return 1.0
+}
+
+// ClassificationMerit implements SplitCriterion.
 func (c InformationGain) ClassificationMerit(pre *util.Vector, post *util.Matrix) float64 {
 	if pre == nil || post == nil {
 		return 0.0
@@ -140,6 +168,11 @@ func (c InformationGain) ClassificationMerit(pre *util.Vector, post *util.Matrix
 	return normSplitMerit(e1 - e2/total)
 }
 
+// RegressionRange implements SplitCriterion.
+func (InformationGain) RegressionRange(_ *util.NumStream) float64 {
+	return 0.0 // N/A
+}
+
 // RegressionMerit implements SplitCriterion.
 func (InformationGain) RegressionMerit(_ *util.NumStream, _ *util.NumStreams) float64 {
 	return 0.0 // N/A
@@ -154,14 +187,24 @@ type VarianceReduction struct {
 	MinWeight float64
 }
 
-// Supports implements SplitCriterion
+// Supports implements SplitCriterion.
 func (VarianceReduction) Supports(target *core.Feature) bool {
 	return target != nil && target.Kind == core.Feature_NUMERICAL
+}
+
+// ClassificationRange implements SplitCriterion.
+func (VarianceReduction) ClassificationRange(_ *util.Vector) float64 {
+	return 0.0 // N/A
 }
 
 // ClassificationMerit implements SplitCriterion.
 func (VarianceReduction) ClassificationMerit(_ *util.Vector, _ *util.Matrix) float64 {
 	return 0.0 // N/A
+}
+
+// RegressionRange implements SplitCriterion.
+func (VarianceReduction) RegressionRange(pre *util.NumStream) float64 {
+	return 1.0
 }
 
 // RegressionMerit implements SplitCriterion.

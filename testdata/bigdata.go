@@ -38,6 +38,7 @@ var BigRegressionModel = core.NewModel(
 	core.NewNumericalFeature("target"),
 )
 
+// BigDataStream is a stream of test events.
 type BigDataStream struct {
 	file    *os.File
 	recs    *csv.Reader
@@ -48,13 +49,24 @@ type BigDataStream struct {
 	err error
 }
 
-func OpenClassification(root string) (*BigDataStream, *core.Model, error) {
+// OpenBigData opens a bigdata stream.
+func OpenBigData(kind, root string) (*BigDataStream, *core.Model, error) {
+	switch kind {
+	case "classification":
+		return bigDataClassification(root)
+	case "regression":
+		return bigDataRegression(root)
+	}
+	panic("no such kind: " + kind)
+}
+
+func bigDataClassification(root string) (*BigDataStream, *core.Model, error) {
 	return open(root, BigClassificationModel, map[string]int{
 		"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 10,
 	})
 }
 
-func OpenRegression(root string) (*BigDataStream, *core.Model, error) {
+func bigDataRegression(root string) (*BigDataStream, *core.Model, error) {
 	return open(root, BigRegressionModel, map[string]int{
 		"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 11,
 	})

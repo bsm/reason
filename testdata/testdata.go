@@ -32,6 +32,7 @@ func ClassificationModel() *core.Model {
 		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
 		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
 		core.NewCategoricalFeature("humidity", []string{"high", "normal"}),
+		core.NewNumericalFeature("humidex"),
 		core.NewCategoricalFeature("windy", []string{"true", "false"}),
 	)
 }
@@ -47,6 +48,7 @@ func RegressionModel() *core.Model {
 		core.NewNumericalFeature("hours"),
 		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
 		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
+		core.NewCategoricalFeature("humidity", []string{"high", "normal"}),
 		core.NewNumericalFeature("humidex"),
 		core.NewCategoricalFeature("windy", []string{"true", "false"}),
 	)

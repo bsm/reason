@@ -1,10 +1,14 @@
 package hoeffding
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"math"
+	"sort"
 	"sync"
 
+	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
 	"github.com/bsm/reason/core"
 )
@@ -54,6 +58,10 @@ func newTree(t *internal.Tree, c *Config) (*Tree, error) {
 		config = *c
 	}
 	config.norm(target)
+
+	if !config.SplitCriterion.Supports(target) {
+		return nil, fmt.Errorf("hoeffding: split criterion is incompatible with target %q", t.Target)
+	}
 
 	return &Tree{
 		tree:   t,
@@ -115,32 +123,132 @@ func (t *Tree) TrainWeight(x core.Example, weight float64) {
 		}
 
 		// Check if a split should be attempted
-		nodeWeight := node.Weight()
-		if leaf.IsDisabled || int(nodeWeight-leaf.WeightAtLastEval) < t.config.GracePeriod {
-			return nil
+		weight := node.Weight()
+		if leaf.IsDisabled || int(weight-leaf.WeightAtLastEval) < t.config.GracePeriod {
+			return
 		}
 
 		// Store new weight
-		leaf.WeightAtLastEval = nodeWeight
+		leaf.WeightAtLastEval = weight
 
 		// Check if we have sufficient stats to perform the split
 		if !node.IsSufficient() {
-			return nil
+			return
 		}
 
 		// Try to split
-		info := t.attemptSplit(leaf, node, nodeRef, nodeWeight)
-		if info.Success {
+		if success := t.attemptSplit(leaf, node, nref, weight); success {
 			if parent == nil {
-				t.tree.Root = nodeRef
+				t.tree.Root = nref
 			} else if split := parent.GetSplit(); split != nil {
-				split.SetChild(parentIndex, nodeRef)
+				split.SetChild(ppos, nref)
 			}
 		}
-		return info
+	}
+}
+
+// PredictCategory performs a classification and returns a prediction.
+func (t *Tree) PredictCategory(x core.Example) classifier.MultiCategoryClassification {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	if t.target.Kind != core.Feature_CATEGORICAL {
+		return noClassificationResult{}
 	}
 
-	return nil
+	node, _, parent, _ := t.tree.Traverse(x, t.tree.Root, nil, -1)
+	if node == nil {
+		node = parent
+	}
+
+	stats := node.GetClassification()
+	if stats == nil {
+		return noClassificationResult{}
+	}
+
+	weight := stats.WeightSum()
+	if weight <= 0 {
+		return noClassificationResult{}
+	}
+
+	cat, _ := stats.Max()
+	return classificationResult{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
+}
+
+// PredictValue performs a regression and returns a prediction.
+func (t *Tree) PredictValue(x core.Example) classifier.Regression {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	if t.target.Kind != core.Feature_NUMERICAL {
+		return noRegressionResult{}
+	}
+
+	node, _, parent, _ := t.tree.Traverse(x, t.tree.Root, nil, -1)
+	if node == nil {
+		node = parent
+	}
+
+	stats := node.GetRegression()
+	if stats == nil {
+		return noRegressionResult{}
+	}
+
+	return regressionResult{ns: &stats.NumStream}
+}
+
+// Prune manually prunes the tree to limit it to maxLearningNodes.
+func (t *Tree) Prune(maxLearningNodes int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.prune(maxLearningNodes)
+}
+
+// WriteText writes text-based tree output to a writer
+func (t *Tree) WriteText(w io.Writer) (int64, error) {
+	buf := bufio.NewWriter(w)
+
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	nn, err := t.tree.WriteText(w, t.tree.Root, "", "ROOT")
+	if err != nil {
+		return nn, err
+	}
+	return nn, buf.Flush()
+}
+
+// WriteDOT writes a graph in dot notation to a writer
+func (t *Tree) WriteDOT(w io.Writer) (int64, error) {
+	buf := bufio.NewWriter(w)
+	nw := int64(0)
+
+	n, err := buf.WriteString(`digraph ht {
+  edge [fontsize=10];
+  node [fontsize=10,shape=box];
+
+`)
+	nw += int64(n)
+	if err != nil {
+		return nw, err
+	}
+
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	nn, err := t.tree.WriteDOT(buf, t.tree.Root, "N", "")
+	nw += nn
+	if err != nil {
+		return nw, err
+	}
+
+	n, err = buf.WriteString("}\n")
+	nw += int64(n)
+	if err != nil {
+		return nw, err
+	}
+	return nw, buf.Flush()
 }
 
 func (t *Tree) recursiveInfo(nref int64, depth int, acc *TreeInfo) {
@@ -165,6 +273,76 @@ func (t *Tree) recursiveInfo(nref int64, depth int, acc *TreeInfo) {
 			acc.NumDisabled++
 		} else {
 			acc.NumLearning++
+		}
+	}
+}
+
+func (t *Tree) attemptSplit(leaf *internal.LeafNode, node *internal.Node, nref int64, weight float64) bool {
+	// Init candidates, including a null result
+	candidates := make(internal.SplitCandidates, 1, len(leaf.FeatureStats)+1)
+
+	// Calculate a split candiate from each of the leaf stats
+	for name := range leaf.FeatureStats {
+		if c := leaf.EvaluateSplit(name, t.config.SplitCriterion, node); c != nil {
+			candidates = append(candidates, *c)
+		}
+	}
+
+	// Sort candidates by merit, select first
+	sort.Stable(sort.Reverse(candidates))
+	best := candidates[0]
+
+	// Calculate the gain between merits of the best and the second-best split
+	meritGain := best.Merit
+	if len(candidates) > 1 {
+		meritGain -= candidates[1].Merit
+	}
+
+	// Give up if there is no merit gain
+	if meritGain <= 0 {
+		return false
+	}
+
+	// Calculate confidence interval + hoeffding bound
+	confiv := math.Log(1.0 / t.config.SplitConfidence)
+	hbound := math.Sqrt(best.Range * best.Range * confiv * 0.5 / weight)
+	if meritGain <= hbound && hbound >= t.config.TieThreshold {
+		return false
+	}
+
+	// Split node
+	t.tree.SplitNode(nref, best.Feature, best.PostSplit, best.Pivot)
+	return true
+}
+
+func (t *Tree) prune(maxLearningNodes int) {
+	if maxLearningNodes < 0 {
+		return
+	}
+
+	t.scratch = t.scratch[:0]
+	for _, node := range t.tree.Nodes {
+		if _, ok := node.GetKind().(*internal.Node_Leaf); ok {
+			t.scratch = append(t.scratch, node)
+		}
+	}
+	if len(t.scratch) <= maxLearningNodes {
+		return
+	}
+
+	// Sort leaves by weight (highest first)
+	sort.Slice(t.scratch, func(i, j int) bool {
+		return t.scratch[i].Weight() >= t.scratch[j].Weight()
+	})
+
+	// Update node status
+	for i, node := range t.scratch {
+		if leaf := node.GetLeaf(); leaf != nil {
+			if i < maxLearningNodes {
+				leaf.Enable()
+			} else {
+				leaf.Disable()
+			}
 		}
 	}
 }

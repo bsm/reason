@@ -2,6 +2,7 @@ package internal
 
 import (
 	core "github.com/bsm/reason/core"
+	"github.com/bsm/reason/util/treeutil"
 )
 
 // GetChild retrieves the child nref at pos.
@@ -40,6 +41,20 @@ func (n *SplitNode) childPos(feat *core.Feature, x core.Example) int {
 
 // --------------------------------------------------------------------
 
+// Enable enables the node.
+func (n *LeafNode) Enable() {
+	if n.IsDisabled {
+		n.IsDisabled = false
+		n.FeatureStats = make(map[string]*LeafNode_Stats)
+	}
+}
+
+// Disable disables the node.
+func (n *LeafNode) Disable() {
+	n.IsDisabled = true
+	n.FeatureStats = nil
+}
+
 // ObserveExample observes an example and updates internal stats.
 func (n *LeafNode) ObserveExample(m *core.Model, target *core.Feature, x core.Example, weight float64, me *Node) {
 	// Observe example, update node stats
@@ -73,7 +88,70 @@ func (n *LeafNode) ObserveExample(m *core.Model, target *core.Feature, x core.Ex
 	}
 }
 
+// EvaluateSplit evaluates a split for a fiven feature.
+// Returns nil if a split is not possible.
+func (n *LeafNode) EvaluateSplit(feature string, crit treeutil.SplitCriterion, node *Node) *SplitCandidate {
+	if n.IsDisabled {
+		return nil
+	}
+
+	if n.FeatureStats == nil {
+		return nil
+	}
+
+	stats, ok := n.FeatureStats[feature]
+	if !ok {
+		return nil
+	}
+
+	var sc *SplitCandidate
+	switch kind := stats.GetKind().(type) {
+	case *LeafNode_Stats_CN:
+		if nstat := node.GetClassification(); nstat != nil {
+			sc = kind.CN.evaluateSplit(crit, &nstat.Vector)
+		}
+	case *LeafNode_Stats_CC:
+		if nstat := node.GetClassification(); nstat != nil {
+			sc = kind.CC.evaluateSplit(crit, &nstat.Vector)
+		}
+	case *LeafNode_Stats_RN:
+		if nstat := node.GetRegression(); nstat != nil {
+			sc = kind.RN.evaluateSplit(crit, &nstat.NumStream)
+		}
+	case *LeafNode_Stats_RC:
+		if nstat := node.GetRegression(); nstat != nil {
+			sc = kind.RC.evaluateSplit(crit, &nstat.NumStream)
+		}
+	}
+	if sc != nil {
+		sc.Feature = feature
+	}
+	return sc
+}
+
 // --------------------------------------------------------------------
+
+// Weight returns the weight observed at the node.
+func (n *Node) Weight() float64 {
+	switch kind := n.GetStats().(type) {
+	case *Node_Classification:
+		return kind.Classification.WeightSum()
+	case *Node_Regression:
+		return kind.Regression.Weight
+	}
+	return 0.0
+}
+
+// IsSufficient returns true when a node has sufficient stats.
+func (n *Node) IsSufficient() bool {
+	switch kind := n.GetStats().(type) {
+	case *Node_Classification:
+		return kind.Classification.NNZ() > 1
+	case *Node_Regression:
+		return kind.Regression.Weight > 1
+	}
+	return false
+}
 
 func (n *Node) incrementStats(target *core.Feature, x core.Example, weight float64) (success bool) {
 	switch target.Kind {

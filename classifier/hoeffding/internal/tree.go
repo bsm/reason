@@ -190,3 +190,109 @@ func (t *Tree) WriteTo(w io.Writer) (int64, error) {
 	}
 	return wc.N, wp.Flush()
 }
+
+// WriteText appends node information to a text document.
+func (t *Tree) WriteText(w io.Writer, nref int64, indent, name string) (written int64, err error) {
+	// Get the node
+	node := t.GetNode(nref)
+	if node == nil {
+		return
+	}
+
+	var (
+		nn int
+		sz int64
+	)
+
+	// Print node stats
+	nn, err = fmt.Fprintf(w, indent+name+" [weight:%.0f]\n", node.Weight())
+	written += int64(nn)
+	if err != nil {
+		return
+	}
+
+	// Recurse if a split node
+	if split := node.GetSplit(); split != nil {
+		feat := t.Model.Feature(split.Feature)
+		if feat == nil {
+			return
+		}
+
+		subIndent := indent + "\t"
+		for i, childRef := range split.Children {
+			if childRef == 0 {
+				continue
+			}
+
+			sz, err = t.WriteText(w, childRef, subIndent, nodeCondition(feat, i, split.Pivot))
+			written += sz
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// WriteDOT appends node information to a DOT document.
+func (t *Tree) WriteDOT(w io.Writer, nref int64, name, label string) (written int64, err error) {
+	// Get the node
+	node := t.GetNode(nref)
+	if node == nil {
+		return
+	}
+
+	var (
+		nn int
+		sz int64
+	)
+
+	// Write node data
+	nn, err = fmt.Fprintf(w, `  %s [label="%sweight: %.0f"];`+"\n", name, label, node.Weight())
+	written += int64(nn)
+	if err != nil {
+		return
+	}
+
+	// Recurse if a split node
+	if split := node.GetSplit(); split != nil {
+		feat := t.Model.Feature(split.Feature)
+		if feat == nil {
+			return
+		}
+
+		for i, childRef := range split.Children {
+			if childRef == 0 {
+				continue
+			}
+
+			subName := fmt.Sprintf("%s_%d", name, i)
+			nn, err = fmt.Fprintf(w, "  %s -> %s;\n", name, subName)
+			written += int64(nn)
+			if err != nil {
+				return
+			}
+
+			sz, err = t.WriteDOT(w, childRef, subName, nodeCondition(feat, i, split.Pivot)+`\n`)
+			written += sz
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// nodeCondition
+func nodeCondition(feat *core.Feature, pos int, pivot float64) string {
+	if feat.Kind.IsNumerical() {
+		if pos == 0 {
+			return fmt.Sprintf(`%s <= %.2f`, feat.Name, pivot)
+		} else {
+			return fmt.Sprintf(`%s > %.2f`, feat.Name, pivot)
+		}
+	}
+
+	cat := core.Category(pos)
+	return fmt.Sprintf(`%s = %s`, feat.Name, feat.ValueOf(cat))
+}

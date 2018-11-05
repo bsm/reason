@@ -1,4 +1,4 @@
-package regression_test
+package treeutil_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "regression")
+	RunSpecs(t, "util/treeutil")
 }

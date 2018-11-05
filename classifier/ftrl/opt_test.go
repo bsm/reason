@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Optimizer", func() {
 	train := func(n int) (*ftrl.Optimizer, *core.Model, []core.Example) {
-		stream, model, err := testdata.OpenClassification("../../testdata")
+		stream, model, err := testdata.OpenBigData("classification", "../../testdata")
 		Expect(err).NotTo(HaveOccurred())
 		defer stream.Close()
 

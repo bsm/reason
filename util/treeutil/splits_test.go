@@ -1,8 +1,8 @@
-package hoeffding_test
+package treeutil_test
 
 import (
-	"github.com/bsm/reason/classifier/hoeffding"
 	"github.com/bsm/reason/util"
+	"github.com/bsm/reason/util/treeutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -52,10 +52,13 @@ var _ = Describe("SplitCriterion", func() {
 	}}
 
 	Describe("GiniImpurity", func() {
-		var subject = hoeffding.GiniImpurity{}
-		var _ hoeffding.SplitCriterion = subject
+		var subject = treeutil.GiniImpurity{}
+		var _ treeutil.SplitCriterion = subject
 
 		It("should evaluate split (classification)", func() {
+			Expect(subject.ClassificationRange(nil)).To(Equal(1.0))
+			Expect(subject.ClassificationRange(clspre)).To(Equal(1.0))
+
 			Expect(subject.ClassificationMerit(nil, nil)).To(Equal(0.0))
 			Expect(subject.ClassificationMerit(clspre, clspost1)).To(BeNumerically("~", 0.338, 0.001))
 			Expect(subject.ClassificationMerit(clspre, clspost2)).To(BeNumerically("~", 0.311, 0.001))
@@ -63,6 +66,9 @@ var _ = Describe("SplitCriterion", func() {
 		})
 
 		It("should evaluate split (regression)", func() {
+			Expect(subject.RegressionRange(nil)).To(Equal(0.0))
+			Expect(subject.RegressionRange(regpre)).To(Equal(0.0))
+
 			Expect(subject.RegressionMerit(nil, nil)).To(Equal(0.0))
 			Expect(subject.RegressionMerit(regpre, regpost1)).To(Equal(0.0))
 			Expect(subject.RegressionMerit(regpre, regpost2)).To(Equal(0.0))
@@ -70,23 +76,30 @@ var _ = Describe("SplitCriterion", func() {
 	})
 
 	Describe("InformationGain", func() {
-		var subject = hoeffding.InformationGain{MinBranchFraction: 0.1}
-		var _ hoeffding.SplitCriterion = subject
+		var subject = treeutil.InformationGain{MinBranchFraction: 0.1}
+		var _ treeutil.SplitCriterion = subject
 
 		It("should evaluate split (classification)", func() {
+			Expect(subject.ClassificationRange(nil)).To(Equal(1.0))
+			Expect(subject.ClassificationRange(clspre)).To(Equal(1.0))
+			Expect(subject.ClassificationRange(util.NewVectorFromSlice(1, 2, 3))).To(BeNumerically("~", 1.585, 0.001))
+
 			Expect(subject.ClassificationMerit(nil, nil)).To(Equal(0.0))
 			Expect(subject.ClassificationMerit(clspre, clspost1)).To(BeNumerically("~", 0.280, 0.001))
 			Expect(subject.ClassificationMerit(clspre, clspost2)).To(BeNumerically("~", 0.336, 0.001))
 			Expect(subject.ClassificationMerit(clspre, clspost3)).To(Equal(0.0))
 
-			x := hoeffding.InformationGain{MinBranchFraction: 0.3}
+			x := treeutil.InformationGain{MinBranchFraction: 0.3}
 			Expect(x.ClassificationMerit(clspre, clspost1)).To(BeNumerically("~", 0.280, 0.001))
 
-			x = hoeffding.InformationGain{MinBranchFraction: 0.35}
+			x = treeutil.InformationGain{MinBranchFraction: 0.35}
 			Expect(x.ClassificationMerit(clspre, clspost1)).To(Equal(0.0))
 		})
 
 		It("should evaluate split (regression)", func() {
+			Expect(subject.RegressionRange(nil)).To(Equal(0.0))
+			Expect(subject.RegressionRange(regpre)).To(Equal(0.0))
+
 			Expect(subject.RegressionMerit(nil, nil)).To(Equal(0.0))
 			Expect(subject.RegressionMerit(regpre, regpost1)).To(Equal(0.0))
 			Expect(subject.RegressionMerit(regpre, regpost2)).To(Equal(0.0))
@@ -94,10 +107,13 @@ var _ = Describe("SplitCriterion", func() {
 	})
 
 	Describe("VarianceReduction", func() {
-		var subject = hoeffding.VarianceReduction{MinWeight: 1.0}
-		var _ hoeffding.SplitCriterion = subject
+		var subject = treeutil.VarianceReduction{MinWeight: 1.0}
+		var _ treeutil.SplitCriterion = subject
 
 		It("should evaluate split (classification)", func() {
+			Expect(subject.ClassificationRange(nil)).To(Equal(0.0))
+			Expect(subject.ClassificationRange(clspre)).To(Equal(0.0))
+
 			Expect(subject.ClassificationMerit(nil, nil)).To(Equal(0.0))
 			Expect(subject.ClassificationMerit(clspre, clspost1)).To(Equal(0.0))
 			Expect(subject.ClassificationMerit(clspre, clspost2)).To(Equal(0.0))
@@ -105,20 +121,23 @@ var _ = Describe("SplitCriterion", func() {
 		})
 
 		It("should evaluate split (regression)", func() {
+			Expect(subject.RegressionRange(nil)).To(Equal(1.0))
+			Expect(subject.RegressionRange(regpre)).To(Equal(1.0))
+
 			Expect(subject.RegressionMerit(nil, nil)).To(Equal(0.0))
 			Expect(subject.RegressionMerit(regpre, regpost1)).To(BeNumerically("~", 7.808, 0.001))
 
-			c := hoeffding.VarianceReduction{MinWeight: 4.0}
+			c := treeutil.VarianceReduction{MinWeight: 4.0}
 			Expect(c.RegressionMerit(regpre, regpost1)).To(Equal(0.0))
 		})
 	})
 
 	Describe("GainRatio", func() {
-		var subject hoeffding.GainRatio
-		var _ hoeffding.SplitCriterion = subject
+		var subject treeutil.GainRatio
+		var _ treeutil.SplitCriterion = subject
 
 		It("should reduce merit of 'super-attributes' (classification)", func() {
-			parent := hoeffding.InformationGain{MinBranchFraction: 0.1}
+			parent := treeutil.InformationGain{MinBranchFraction: 0.1}
 			subject.SplitCriterion = parent
 
 			Expect(parent.ClassificationMerit(clspre, clspost1)).To(BeNumerically("~", 0.280, 0.001))
@@ -132,7 +151,7 @@ var _ = Describe("SplitCriterion", func() {
 		})
 
 		It("should reduce merit of 'super-attributes' (regression)", func() {
-			parent := hoeffding.VarianceReduction{MinWeight: 4.0}
+			parent := treeutil.VarianceReduction{MinWeight: 1.0}
 			subject.SplitCriterion = parent
 
 			Expect(parent.RegressionMerit(regpre, regpost1)).To(BeNumerically("~", 7.808, 0.001))

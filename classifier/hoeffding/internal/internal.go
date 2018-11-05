@@ -1,6 +1,8 @@
 package internal
 
-import "github.com/bsm/reason/util"
+import (
+	"github.com/bsm/reason/util"
+)
 
 // SplitCandidate is a candidate for a split decision
 type SplitCandidate struct {
@@ -36,8 +38,9 @@ func (p PostSplit) forEach(iter func(int, isNode_Stats, float64)) {
 				iter(pos, &Node_Classification{Classification: ns}, w)
 			}
 		}
-	} else if streams := p.Regression; streams != nil {
-		numRows := mat.NumRows()
+	}
+	if streams := p.Regression; streams != nil {
+		numRows := streams.NumRows()
 		for pos := 0; pos < numRows; pos++ {
 			if s := streams.At(pos); s != nil {
 				ns := new(Node_RegressionStats)

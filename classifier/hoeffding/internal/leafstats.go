@@ -3,38 +3,8 @@ package internal
 import (
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/util"
+	"github.com/bsm/reason/util/treeutil"
 )
-
-/*
-// ForEach interates over the stats distribution
-func (s *LeafNode_Stats) ForEach(iter func(int, isNode_Stats)) {
-	switch wrap := s.GetKind().(type) {
-	case *LeafNode_Stats_CC:
-		stats := wrap.CC.Stats
-		nrows := stats.NumRows()
-		for pos := 0; pos < nrows; pos++ {
-			if stats.RowSum(pos) > 0 {
-				ns := new(Node_ClassificationStats)
-				ns.Vector.Data = stats.Row(pos)
-				iter(pos, &Node_Classification{Classification: ns})
-			}
-		}
-	case *LeafNode_Stats_CN:
-		stats := wrap.CN.Stats
-		nrows := stats.NumRows()
-		for pos := 0; pos < nrows; pos++ {
-			if info := stats.At(pos); info != nil {
-				ns := new(Node_RegressionStats)
-				ns.NumStream
-				ns.Vector.Data = stats.Row(pos)
-				iter(pos, &Node_Classification{Classification: ns})
-			}
-		}
-	case *LeafNode_Stats_RC:
-	case *LeafNode_Stats_RN:
-	}
-}
-*/
 
 // Update updates stats by observing an example.
 func (s *LeafNode_Stats) Update(target, predictor *core.Feature, x core.Example, weight float64) {
@@ -44,11 +14,11 @@ func (s *LeafNode_Stats) Update(target, predictor *core.Feature, x core.Example,
 			switch predictor.Kind {
 			case core.Feature_CATEGORICAL:
 				if pcat := predictor.Category(x); core.IsCat(pcat) {
-					s.observeCC(tcat, pcat, weight)
+					s.updateCC(tcat, pcat, weight)
 				}
 			case core.Feature_NUMERICAL:
 				if pval := predictor.Number(x); core.IsNum(pval) {
-					s.observeCN(tcat, pval, weight)
+					s.updateCN(tcat, pval, weight)
 				}
 			}
 		}
@@ -57,18 +27,18 @@ func (s *LeafNode_Stats) Update(target, predictor *core.Feature, x core.Example,
 			switch predictor.Kind {
 			case core.Feature_CATEGORICAL:
 				if pcat := predictor.Category(x); core.IsCat(pcat) {
-					s.observeRC(tval, pcat, weight)
+					s.updateRC(tval, pcat, weight)
 				}
 			case core.Feature_NUMERICAL:
 				if pval := predictor.Number(x); core.IsNum(pval) {
-					s.observeRN(tval, pval, weight)
+					s.updateRN(tval, pval, weight)
 				}
 			}
 		}
 	}
 }
 
-func (s *LeafNode_Stats) observeCC(tcat, pcat core.Category, weight float64) {
+func (s *LeafNode_Stats) updateCC(tcat, pcat core.Category, weight float64) {
 	acc := s.GetCC()
 	if acc == nil {
 		acc = new(LeafNode_Stats_ClassificationCategorical)
@@ -77,7 +47,7 @@ func (s *LeafNode_Stats) observeCC(tcat, pcat core.Category, weight float64) {
 	acc.Stats.Add(int(pcat), int(tcat), weight)
 }
 
-func (s *LeafNode_Stats) observeCN(tcat core.Category, pval, weight float64) {
+func (s *LeafNode_Stats) updateCN(tcat core.Category, pval, weight float64) {
 	acc := s.GetCN()
 	if acc == nil {
 		acc = new(LeafNode_Stats_ClassificationNumerical)
@@ -86,7 +56,7 @@ func (s *LeafNode_Stats) observeCN(tcat core.Category, pval, weight float64) {
 	acc.Stats.ObserveWeight(int(tcat), pval, weight)
 }
 
-func (s *LeafNode_Stats) observeRC(tval float64, pcat core.Category, weight float64) {
+func (s *LeafNode_Stats) updateRC(tval float64, pcat core.Category, weight float64) {
 	acc := s.GetRC()
 	if acc == nil {
 		acc = new(LeafNode_Stats_RegressionCategorical)
@@ -95,21 +65,62 @@ func (s *LeafNode_Stats) observeRC(tval float64, pcat core.Category, weight floa
 	acc.Stats.ObserveWeight(int(pcat), tval, weight)
 }
 
-func (s *LeafNode_Stats) observeRN(tval, pval, weight float64) {
+func (s *LeafNode_Stats) updateRN(tval, pval, weight float64) {
 	acc := s.GetRN()
 	if acc == nil {
 		acc = new(LeafNode_Stats_RegressionNumerical)
 		acc.Stats.MaxBuckets = 12
 		s.Kind = &LeafNode_Stats_RN{RN: acc}
 	}
-	acc.Stats.ObserveWeight(tval, pval, weight)
+	acc.Stats.ObserveWeight(pval, tval, weight)
 }
 
 // --------------------------------------------------------------------
 
-// PostSplit calculates a post-split distribution from previous observations.
-func (s *LeafNode_Stats_ClassificationCategorical) PostSplit(_ float64) PostSplit {
-	return PostSplit{Classification: &s.Stats}
+// EvaluateSplit evaluates a split.
+func (s *LeafNode_Stats_ClassificationCategorical) evaluateSplit(crit treeutil.SplitCriterion, pre *util.Vector) *SplitCandidate {
+	if s.numCategories() < 2 {
+		return nil
+	}
+
+	post := PostSplit{Classification: &s.Stats}
+	return &SplitCandidate{
+		Range:     crit.ClassificationRange(pre),
+		Merit:     crit.ClassificationMerit(pre, post.Classification),
+		PostSplit: post,
+	}
+}
+
+func (s *LeafNode_Stats_ClassificationCategorical) numCategories() (n int) {
+	rows := s.Stats.NumRows()
+	for i := 0; i < rows; i++ {
+		if !s.Stats.IsRowZero(i) {
+			n++
+		}
+	}
+	return
+}
+
+// --------------------------------------------------------------------
+
+// EvaluateSplit evaluates a split.
+func (s *LeafNode_Stats_ClassificationNumerical) evaluateSplit(crit treeutil.SplitCriterion, pre *util.Vector) (sc *SplitCandidate) {
+	rang := crit.ClassificationRange(pre)
+
+	for _, pivot := range s.PivotPoints() {
+		post := s.PostSplit(pivot)
+		merit := crit.ClassificationMerit(pre, post.Classification)
+
+		if sc == nil || merit > sc.Merit {
+			sc = &SplitCandidate{
+				Merit:     merit,
+				Range:     rang,
+				Pivot:     pivot,
+				PostSplit: post,
+			}
+		}
+	}
+	return
 }
 
 // PostSplit calculates a post-split distribution from previous observations.
@@ -153,9 +164,43 @@ func (s *LeafNode_Stats_ClassificationNumerical) PivotPoints() []float64 {
 	return pivotPoints(min, max)
 }
 
-// PostSplit calculates a post-split distribution from previous observations.
-func (s *LeafNode_Stats_RegressionCategorical) PostSplit(_ float64) PostSplit {
-	return PostSplit{Regression: &s.Stats}
+// --------------------------------------------------------------------
+
+// EvaluateSplit evaluates a split.
+func (s *LeafNode_Stats_RegressionCategorical) evaluateSplit(crit treeutil.SplitCriterion, pre *util.NumStream) *SplitCandidate {
+	if n := s.Stats.NumCategories(); n < 2 {
+		return nil
+	}
+
+	post := PostSplit{Regression: &s.Stats}
+	return &SplitCandidate{
+		Range:     crit.RegressionRange(pre),
+		Merit:     crit.RegressionMerit(pre, post.Regression),
+		PostSplit: post,
+	}
+}
+
+// --------------------------------------------------------------------
+
+// EvaluateSplit evaluates a split.
+func (s *LeafNode_Stats_RegressionNumerical) evaluateSplit(crit treeutil.SplitCriterion, pre *util.NumStream) (sc *SplitCandidate) {
+	rang := crit.RegressionRange(pre)
+
+	for i := 0; i < len(s.Stats.Buckets)-1; i++ {
+		pivot := s.Stats.Buckets[i].Threshold
+		post := s.PostSplit(pivot)
+		merit := crit.RegressionMerit(pre, post.Regression)
+
+		if sc == nil || merit > sc.Merit {
+			sc = &SplitCandidate{
+				Range:     rang,
+				Merit:     merit,
+				Pivot:     pivot,
+				PostSplit: post,
+			}
+		}
+	}
+	return
 }
 
 // PostSplit calculates a post-split distribution from previous observations.
