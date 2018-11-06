@@ -7,8 +7,8 @@ import (
 )
 
 // NewClassificationNumerical inits a classification observer for numerical features.
-func NewClassificationNumerical() *ClassificationNumerical {
-	return new(ClassificationNumerical)
+func NewClassificationNumerical(maxBuckets uint32) *ClassificationNumerical {
+	return &ClassificationNumerical{MaxBuckets: maxBuckets}
 }
 
 // Observe adds a new observation.
@@ -26,10 +26,6 @@ func (o *ClassificationNumerical) ObserveWeight(val float64, target core.Categor
 
 // EvaluateSplit evaluates a split.
 func (o *ClassificationNumerical) EvaluateSplit(crit split.Criterion, pre *util.Vector) (merit, pivot float64, post *util.Matrix) {
-	if o.MaxBuckets == 0 {
-		o.MaxBuckets = 11
-	}
-
 	min, max := o.boundaries()
 	inc := (max - min) / float64(o.MaxBuckets+1)
 	if inc <= 0 {

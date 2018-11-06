@@ -2,7 +2,6 @@ package hoeffding_test
 
 import (
 	"bytes"
-	"os"
 
 	"github.com/bsm/mlmetrics"
 	"github.com/bsm/reason/classifier/hoeffding"
@@ -134,7 +133,6 @@ var _ = Describe("Tree", func() {
 	DescribeTable("regression",
 		func(n int, expInfo *hoeffding.TreeInfo, exp *testdata.RegressionScore) {
 			tree, model, examples := runTraining("regression", n)
-			tree.WriteText(os.Stdout)
 			Expect(tree.Info()).To(Equal(expInfo))
 
 			metric := mlmetrics.NewRegression()

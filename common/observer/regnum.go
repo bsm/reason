@@ -24,11 +24,6 @@ func (o *RegressionNumerical) ObserveWeight(target, prediction, weight float64) 
 		return
 	}
 
-	// ensure buckets are set
-	if o.MaxBuckets == 0 {
-		o.MaxBuckets = 12
-	}
-
 	// upsert bucket
 	slot := o.findSlot(target)
 	if slot < len(o.Dist) {

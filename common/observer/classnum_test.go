@@ -20,7 +20,7 @@ var _ = Describe("ClassificationNumerical", func() {
 	crit := split.DefaultCriterion(target)
 
 	BeforeEach(func() {
-		subject = observer.NewClassificationNumerical()
+		subject = observer.NewClassificationNumerical(11)
 		pre = util.NewVector()
 		for _, x := range testdata.SimpleDataSet {
 			subject.Observe(feat.Number(x), target.Category(x)*2)
