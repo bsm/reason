@@ -48,7 +48,7 @@ func Example_classification() {
 	}
 
 	// Predict
-	prediction := tree.PredictCategory(core.MapExample{
+	prediction := tree.PredictMC(core.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",
@@ -105,7 +105,7 @@ func Example_regression() {
 	}
 
 	// Predict
-	prediction := tree.PredictValue(core.MapExample{
+	prediction := tree.PredictNum(core.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",

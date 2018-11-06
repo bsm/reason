@@ -48,8 +48,8 @@ func (m *Matrix) Set(i, j int, w float64) {
 	m.Data[i*int(m.Stride)+j] = w
 }
 
-// Add increments the weight of cell (i, j) by delta.
-func (m *Matrix) Add(i, j int, delta float64) {
+// Incr increments the weight of cell (i, j) by delta.
+func (m *Matrix) Incr(i, j int, delta float64) {
 	if i < 0 || j < 0 {
 		return
 	}

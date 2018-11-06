@@ -38,7 +38,7 @@ var _ = Describe("Optimizer", func() {
 		b1 := new(bytes.Buffer)
 		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
 
-		t2, err := ftrl.Load(b1, nil)
+		t2, err := ftrl.LoadFrom(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(t2.Predict(examples[4001])).To(BeNumerically("~", 0.785, 0.001))
 	})

@@ -17,10 +17,6 @@ func (h *Histogram) Observe(value float64) {
 
 // ObserveWeight adds a new observation with a weight.
 func (h *Histogram) ObserveWeight(value, weight float64) {
-	if math.IsNaN(value) || math.IsInf(value, 0) || weight <= 0 {
-		return
-	}
-
 	// update min/max
 	if h.Weight == 0 || value < h.Min {
 		h.Min = value

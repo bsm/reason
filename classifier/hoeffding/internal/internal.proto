@@ -4,6 +4,7 @@ package blacksquaremedia.reason.classifier.hoeffding;
 
 import "core/core.proto";
 import "util/util.proto";
+import "common/observer/observer.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -71,24 +72,11 @@ message LeafNode {
   // Stats maintain information based on
   // observation of a particular feature.
   message Stats {
-    message ClassificationNumerical {
-      util.NumStreams stats = 1 [(gogoproto.nullable) = false];
-    }
-    message ClassificationCategorical {
-      util.Matrix stats = 1 [(gogoproto.nullable) = false];
-    }
-    message RegressionNumerical {
-      util.NumStreamBuckets stats = 1 [(gogoproto.nullable) = false];
-    }
-    message RegressionCategorical {
-      util.NumStreams stats = 1 [(gogoproto.nullable) = false];
-    }
-
     oneof kind {
-      ClassificationNumerical cn = 1 [(gogoproto.customname)="CN"];
-      ClassificationCategorical cc = 2 [(gogoproto.customname)="CC"];
-      RegressionNumerical rn = 3 [(gogoproto.customname)="RN"];
-      RegressionCategorical rc = 4 [(gogoproto.customname)="RC"];
+      common.observer.ClassificationNumerical cn = 1 [(gogoproto.customname)="CN"];
+      common.observer.ClassificationCategorical cc = 2 [(gogoproto.customname)="CC"];
+      common.observer.RegressionNumerical rn = 3 [(gogoproto.customname)="RN"];
+      common.observer.RegressionCategorical rc = 4 [(gogoproto.customname)="RC"];
     }
   }
 

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package blacksquaremedia.reason.common.observer;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "util/util.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.goproto_stringer_all) = true;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+option go_package = "github.com/bsm/reason/common/observer";
+option java_package = "com.blacksquaremedia.reason.common";
+option java_outer_classname = "ObserverProtos";
+
+// ClassificationCategorical is a classification observer for categorical features.
+message ClassificationCategorical {
+  // Dist is a distribution by feature category.
+  util.Matrix dist = 1 [(gogoproto.nullable) = false];
+}
+
+// ClassificationNumerical is a classification observer for numeric features
+// using gaussian estimators.
+message ClassificationNumerical {
+  // Dist is a distribution by target category.
+  util.NumStreams dist = 1 [(gogoproto.nullable)=false];
+  uint32 max_buckets = 2;
+}
+
+// RegressionCategorical is a regression observer for categorical features.
+message RegressionCategorical {
+  // Dist is a distribution by feature category.
+  util.NumStreams dist = 1 [(gogoproto.nullable)=false];
+}
+
+// RegressionNumerical is a regression observer for numerical features.
+message RegressionNumerical {
+  message Bucket {
+    double threshold = 1;
+    util.NumStream stream = 2 [(gogoproto.nullable)=false, (gogoproto.embed)=true];
+  }
+
+  repeated Bucket dist = 1 [(gogoproto.nullable)=false];
+  uint32 max_buckets = 2;
+}

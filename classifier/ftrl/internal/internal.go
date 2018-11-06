@@ -11,8 +11,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-// NewOptimizer inits a new model with defaults
-func NewOptimizer(model *core.Model, target string, size int) *Optimizer {
+// New inits a new optimiser from model with defaults.
+func New(model *core.Model, target string, size int) *Optimizer {
 	return &Optimizer{
 		Model:   model,
 		Target:  target,
@@ -26,41 +26,17 @@ func (o *Optimizer) WriteTo(w io.Writer) (int64, error) {
 	wc := &iocount.Writer{W: w}
 	wp := &protoio.Writer{Writer: bufio.NewWriter(wc)}
 
-	if o.Model != nil {
-		if err := wp.WriteMessageField(1, o.Model); err != nil {
-			return wc.N, err
-		}
+	if err := wp.WriteMessageField(1, o.Model); err != nil {
+		return wc.N, err
 	}
-	if o.Target != "" {
-		if err := wp.WriteStringField(2, o.Target); err != nil {
-			return wc.N, err
-		}
+	if err := wp.WriteStringField(2, o.Target); err != nil {
+		return wc.N, err
 	}
-	if len(o.Sums) != 0 {
-		if err := wp.WriteField(3, proto.WireBytes); err != nil {
-			return wc.N, err
-		}
-		if err := wp.WriteVarint(uint64(len(o.Sums) * 8)); err != nil {
-			return wc.N, err
-		}
-		for _, f := range o.Sums {
-			if err := wp.WriteDouble(f); err != nil {
-				return wc.N, err
-			}
-		}
+	if err := wp.WriteDoubleSliceField(3, o.Sums); err != nil {
+		return wc.N, err
 	}
-	if len(o.Weights) != 0 {
-		if err := wp.WriteField(4, proto.WireBytes); err != nil {
-			return wc.N, err
-		}
-		if err := wp.WriteVarint(uint64(len(o.Weights) * 8)); err != nil {
-			return wc.N, err
-		}
-		for _, f := range o.Weights {
-			if err := wp.WriteDouble(f); err != nil {
-				return wc.N, err
-			}
-		}
+	if err := wp.WriteDoubleSliceField(4, o.Weights); err != nil {
+		return wc.N, err
 	}
 	return wc.N, wp.Flush()
 }
@@ -104,7 +80,7 @@ func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			slice, err := readFloatSlice(rp)
+			slice, err := rp.ReadDoubleSlice(nil)
 			if err != nil {
 				return rc.N, err
 			}
@@ -114,31 +90,13 @@ func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			slice, err := readFloatSlice(rp)
+			slice, err := rp.ReadDoubleSlice(nil)
 			if err != nil {
 				return rc.N, err
 			}
 			o.Weights = slice
 		default:
-			return rc.N, fmt.Errorf("hoeffding: unexpected field tag %d", tag)
+			return rc.N, fmt.Errorf("ftrl: unexpected field tag %d", tag)
 		}
 	}
-}
-
-func readFloatSlice(rp *protoio.Reader) ([]float64, error) {
-	u, err := rp.ReadVarint()
-	if err != nil {
-		return nil, err
-	}
-	n := int(u / 8)
-	slice := make([]float64, 0, n)
-
-	for i := 0; i < n; i++ {
-		f, err := rp.ReadDouble()
-		if err != nil {
-			return nil, err
-		}
-		slice = append(slice, f)
-	}
-	return slice, nil
 }

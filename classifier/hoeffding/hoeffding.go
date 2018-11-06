@@ -1,3 +1,4 @@
+// Package hoeffding implements a Hoeffding tree classifier and regressor.
 package hoeffding
 
 import (

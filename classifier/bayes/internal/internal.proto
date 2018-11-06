@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package blacksquaremedia.reason.classifier.bayes;
+
+import "core/core.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.goproto_stringer_all) = true;
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+option go_package = "github.com/bsm/reason/classifier/ftrl/internal";
+option java_package = "com.blacksquaremedia.reason.classifier";
+option java_outer_classname = "BayesProtos";
+
+// Optimizer wraps the optimizer data.
+message Optimizer {
+  // The underlying model.
+  core.Model model = 1;
+
+  // The target feature.
+  string target = 2;
+
+  // The gradient sums.
+  repeated double sums = 3;
+
+  // The weights.
+  repeated double weights = 4;
+}

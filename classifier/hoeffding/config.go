@@ -1,8 +1,8 @@
 package hoeffding
 
 import (
+	"github.com/bsm/reason/common/split"
 	"github.com/bsm/reason/core"
-	"github.com/bsm/reason/util/treeutil"
 )
 
 // Config configures behaviour
@@ -18,8 +18,8 @@ type Config struct {
 	PrunePeriod int
 
 	// The split criterion to use for evaluating splits
-	// Default: treeutil.DefaultSplitCriterion()
-	SplitCriterion treeutil.SplitCriterion
+	// Default: tree.DefaultSplitCriterion()
+	SplitCriterion split.Criterion
 
 	// The maximum number of active/learning leaf nodes. To prevent a
 	// tree from growing too large and to avoid unnecessary computation
@@ -62,6 +62,6 @@ func (c *Config) norm(target *core.Feature) {
 		c.TieThreshold = 0.05
 	}
 	if c.SplitCriterion == nil {
-		c.SplitCriterion = treeutil.DefaultSplitCriterion(target)
+		c.SplitCriterion = split.DefaultCriterion(target)
 	}
 }

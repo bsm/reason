@@ -2,8 +2,8 @@ package testdata
 
 import "github.com/bsm/reason/core"
 
-// DataSet contains a simple test dataset.
-var DataSet = []core.MapExample{
+// SimpleDataSet contains a simple test dataset.
+var SimpleDataSet = []core.MapExample{
 	{"outlook": "rainy", "temp": "hot", "humidity": "high", "humidex": 61, "windy": "false", "hours": 25, "play": "no"},
 	{"outlook": "rainy", "temp": "hot", "humidity": "high", "humidex": 58, "windy": "true", "hours": 30, "play": "no"},
 	{"outlook": "overcast", "temp": "hot", "humidity": "high", "humidex": 60, "windy": "false", "hours": 46, "play": "yes"},
@@ -20,36 +20,19 @@ var DataSet = []core.MapExample{
 	{"outlook": "sunny", "temp": "mild", "humidity": "high", "humidex": 64, "windy": "true", "hours": 30, "play": "no"},
 }
 
-// ClassificationScore is used to compare results.
-type ClassificationScore struct {
-	Accuracy, Kappa, LogLoss float64
-}
+// SimpleModel is a simple test model.
+var SimpleModel = core.NewModel(
+	core.NewCategoricalFeature("play", []string{"yes", "no"}),
+	core.NewNumericalFeature("hours"),
+	core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
+	core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
+	core.NewCategoricalFeature("humidity", []string{"high", "normal"}),
+	core.NewNumericalFeature("humidex"),
+	core.NewCategoricalFeature("windy", []string{"true", "false"}),
+)
 
-// ClassificationModel is a simple test model.
-func ClassificationModel() *core.Model {
-	return core.NewModel(
-		core.NewCategoricalFeature("play", []string{"yes", "no"}),
-		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
-		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
-		core.NewCategoricalFeature("humidity", []string{"high", "normal"}),
-		core.NewNumericalFeature("humidex"),
-		core.NewCategoricalFeature("windy", []string{"true", "false"}),
-	)
-}
+// ClassificationScore is used to compare results.
+type ClassificationScore struct{ Accuracy, Kappa, LogLoss float64 }
 
 // RegressionScore is used to compare results.
-type RegressionScore struct {
-	R2, RMSE float64
-}
-
-// RegressionModel is a simple test model.
-func RegressionModel() *core.Model {
-	return core.NewModel(
-		core.NewNumericalFeature("hours"),
-		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
-		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
-		core.NewCategoricalFeature("humidity", []string{"high", "normal"}),
-		core.NewNumericalFeature("humidex"),
-		core.NewCategoricalFeature("windy", []string{"true", "false"}),
-	)
-}
+type RegressionScore struct{ R2, RMSE float64 }

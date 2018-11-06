@@ -13,6 +13,13 @@ import (
 	"github.com/bsm/reason/core"
 )
 
+var (
+	_ classifier.SupervisedLearner = (*Tree)(nil)
+	_ classifier.Binary            = (*Tree)(nil)
+	_ classifier.MultiCategory     = (*Tree)(nil)
+	_ classifier.Regressor         = (*Tree)(nil)
+)
+
 // TreeInfo contains tree information/stats.
 type TreeInfo struct {
 	NumNodes    int // the total number of nodes
@@ -147,8 +154,14 @@ func (t *Tree) TrainWeight(x core.Example, weight float64) {
 	}
 }
 
-// PredictCategory performs a classification and returns a prediction.
-func (t *Tree) PredictCategory(x core.Example) classifier.MultiCategoryClassification {
+// Predict implements classifier.Binary.
+func (t *Tree) Predict(x core.Example) float64 {
+	p := t.PredictMC(x)
+	return p.Prob(p.Category())
+}
+
+// PredictMC performs a classification and returns a prediction.
+func (t *Tree) PredictMC(x core.Example) classifier.MultiCategoryClassification {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -175,8 +188,8 @@ func (t *Tree) PredictCategory(x core.Example) classifier.MultiCategoryClassific
 	return classificationResult{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
 }
 
-// PredictValue performs a regression and returns a prediction.
-func (t *Tree) PredictValue(x core.Example) classifier.Regression {
+// PredictNum performs a regression and returns a prediction.
+func (t *Tree) PredictNum(x core.Example) classifier.Regression {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 

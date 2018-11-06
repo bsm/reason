@@ -1,8 +1,8 @@
 package internal
 
 import (
+	"github.com/bsm/reason/common/split"
 	core "github.com/bsm/reason/core"
-	"github.com/bsm/reason/util/treeutil"
 )
 
 // GetChild retrieves the child nref at pos.
@@ -90,7 +90,7 @@ func (n *LeafNode) ObserveExample(m *core.Model, target *core.Feature, x core.Ex
 
 // EvaluateSplit evaluates a split for a fiven feature.
 // Returns nil if a split is not possible.
-func (n *LeafNode) EvaluateSplit(feature string, crit treeutil.SplitCriterion, node *Node) *SplitCandidate {
+func (n *LeafNode) EvaluateSplit(feature string, crit split.Criterion, node *Node) *SplitCandidate {
 	if n.IsDisabled {
 		return nil
 	}
@@ -108,23 +108,54 @@ func (n *LeafNode) EvaluateSplit(feature string, crit treeutil.SplitCriterion, n
 	switch kind := stats.GetKind().(type) {
 	case *LeafNode_Stats_CN:
 		if nstat := node.GetClassification(); nstat != nil {
-			sc = kind.CN.evaluateSplit(crit, &nstat.Vector)
+			pre := &nstat.Vector
+			if merit, pivot, post := kind.CN.EvaluateSplit(crit, pre); merit > 0 {
+				sc = &SplitCandidate{
+					Feature:   feature,
+					Range:     crit.ClassificationRange(pre),
+					Merit:     merit,
+					Pivot:     pivot,
+					PostSplit: PostSplit{Classification: post},
+				}
+			}
 		}
 	case *LeafNode_Stats_CC:
 		if nstat := node.GetClassification(); nstat != nil {
-			sc = kind.CC.evaluateSplit(crit, &nstat.Vector)
+			pre := &nstat.Vector
+			if merit, post := kind.CC.EvaluateSplit(crit, pre); merit > 0 {
+				sc = &SplitCandidate{
+					Feature:   feature,
+					Range:     crit.ClassificationRange(pre),
+					Merit:     merit,
+					PostSplit: PostSplit{Classification: post},
+				}
+			}
 		}
 	case *LeafNode_Stats_RN:
 		if nstat := node.GetRegression(); nstat != nil {
-			sc = kind.RN.evaluateSplit(crit, &nstat.NumStream)
+			pre := &nstat.NumStream
+			if merit, pivot, post := kind.RN.EvaluateSplit(crit, pre); merit > 0 {
+				sc = &SplitCandidate{
+					Feature:   feature,
+					Range:     crit.RegressionRange(pre),
+					Merit:     merit,
+					Pivot:     pivot,
+					PostSplit: PostSplit{Regression: post},
+				}
+			}
 		}
 	case *LeafNode_Stats_RC:
 		if nstat := node.GetRegression(); nstat != nil {
-			sc = kind.RC.evaluateSplit(crit, &nstat.NumStream)
+			pre := &nstat.NumStream
+			if merit, post := kind.RC.EvaluateSplit(crit, pre); merit > 0 {
+				sc = &SplitCandidate{
+					Feature:   feature,
+					Range:     crit.RegressionRange(pre),
+					Merit:     merit,
+					PostSplit: PostSplit{Regression: post},
+				}
+			}
 		}
-	}
-	if sc != nil {
-		sc.Feature = feature
 	}
 	return sc
 }
@@ -162,7 +193,7 @@ func (n *Node) incrementStats(target *core.Feature, x core.Example, weight float
 				stats = new(Node_ClassificationStats)
 				n.Stats = &Node_Classification{Classification: stats}
 			}
-			stats.Add(int(cat), weight)
+			stats.Incr(int(cat), weight)
 			return true
 		}
 	case core.Feature_NUMERICAL:

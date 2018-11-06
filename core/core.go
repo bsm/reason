@@ -12,4 +12,4 @@ type Category int
 func IsCat(cat Category) bool { return cat > NoCategory }
 
 // IsNum returns true if num is a valid number.
-func IsNum(num float64) bool { return !math.IsNaN(num) }
+func IsNum(num float64) bool { return num < math.MaxFloat64 && num > -math.MaxFloat64 }

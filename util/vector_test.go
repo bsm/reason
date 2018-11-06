@@ -41,13 +41,13 @@ var _ = Describe("Vector", func() {
 		Expect(subject.At(6)).To(Equal(8.0))
 	})
 
-	It("should observe", func() {
+	It("should incr", func() {
 		Expect(subject.At(0)).To(Equal(2.0))
 		Expect(subject.At(1)).To(Equal(0.0))
 
-		subject.Add(0, 1.0)
-		subject.Add(1, 7.0)
-		subject.Add(-1, 6.0)
+		subject.Incr(0, 1.0)
+		subject.Incr(1, 7.0)
+		subject.Incr(-1, 6.0)
 		Expect(subject.At(0)).To(Equal(3.0))
 		Expect(subject.At(1)).To(Equal(7.0))
 	})
@@ -131,7 +131,7 @@ func BenchmarkVector_NNZ(b *testing.B) {
 	}
 }
 
-func BenchmarkVector_Add(b *testing.B) {
+func BenchmarkVector_Incr(b *testing.B) {
 	for _, n := range []int{100, 1000, 10000} {
 		vv := util.NewVector()
 		rnd := rand.New(rand.NewSource(10))
@@ -139,7 +139,7 @@ func BenchmarkVector_Add(b *testing.B) {
 
 		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				vv.Add(rnd.Intn(n), 1.0)
+				vv.Incr(rnd.Intn(n), 1.0)
 			}
 		})
 	}

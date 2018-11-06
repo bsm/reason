@@ -12,10 +12,10 @@ import (
 
 var _ = Describe("Optimizer", func() {
 	var subject *internal.Optimizer
-	model := testdata.RegressionModel()
+	model := testdata.SimpleModel
 
 	BeforeEach(func() {
-		subject = internal.NewOptimizer(model, "hours", 10)
+		subject = internal.New(model, "hours", 10)
 	})
 
 	It("should init", func() {
@@ -29,10 +29,10 @@ var _ = Describe("Optimizer", func() {
 
 	It("should write and read", func() {
 		buf := new(bytes.Buffer)
-		Expect(subject.WriteTo(buf)).To(Equal(int64(370)))
+		Expect(subject.WriteTo(buf)).To(Equal(int64(397)))
 
 		dup := new(internal.Optimizer)
-		Expect(dup.ReadFrom(buf)).To(Equal(int64(370)))
+		Expect(dup.ReadFrom(buf)).To(Equal(int64(397)))
 		Expect(dup).To(Equal(subject))
 	})
 })

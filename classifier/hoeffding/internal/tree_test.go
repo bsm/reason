@@ -15,7 +15,7 @@ import (
 var _ = Describe("Tree", func() {
 	var subject *internal.Tree
 
-	model := testdata.ClassificationModel()
+	model := testdata.SimpleModel
 	postSplit := internal.PostSplit{Classification: &util.Matrix{
 		Stride: 2,
 		Data: []float64{
@@ -31,7 +31,7 @@ var _ = Describe("Tree", func() {
 
 	It("should marshal to writer", func() {
 		buf := new(bytes.Buffer)
-		Expect(subject.WriteTo(buf)).To(Equal(int64(220)))
+		Expect(subject.WriteTo(buf)).To(Equal(int64(238)))
 
 		t := new(internal.Tree)
 		Expect(proto.Unmarshal(buf.Bytes(), t)).To(Succeed())

@@ -2,12 +2,11 @@ package hoeffding_test
 
 import (
 	"bytes"
+	"os"
 
 	"github.com/bsm/mlmetrics"
-
-	"github.com/bsm/reason/util/treeutil"
-
 	"github.com/bsm/reason/classifier/hoeffding"
+	"github.com/bsm/reason/common/split"
 	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
@@ -18,13 +17,13 @@ import (
 var _ = Describe("Tree", func() {
 
 	It("should validate target", func() {
-		model := testdata.ClassificationModel()
+		model := testdata.SimpleModel
 
 		_, err := hoeffding.New(model, "unknown", nil)
 		Expect(err).To(MatchError(`hoeffding: unknown feature "unknown"`))
 
 		_, err = hoeffding.New(model, "play", &hoeffding.Config{
-			SplitCriterion: treeutil.VarianceReduction{},
+			SplitCriterion: split.VarianceReduction{},
 		})
 		Expect(err).To(MatchError(`hoeffding: split criterion is incompatible with target "play"`))
 	})
@@ -32,7 +31,7 @@ var _ = Describe("Tree", func() {
 	It("should dump/load", func() {
 		t1, _, examples := runTraining("classification", 3000)
 		Expect(t1.Info()).To(Equal(&hoeffding.TreeInfo{NumNodes: 11, NumLearning: 9, MaxDepth: 3}))
-		Expect(t1.PredictCategory(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
+		Expect(t1.PredictMC(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
 
 		b1 := new(bytes.Buffer)
 		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
@@ -40,7 +39,7 @@ var _ = Describe("Tree", func() {
 		t2, err := hoeffding.LoadFrom(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(t2.Info()).To(Equal(&hoeffding.TreeInfo{NumNodes: 11, NumLearning: 9, MaxDepth: 3}))
-		Expect(t2.PredictCategory(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
+		Expect(t2.PredictMC(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
 	})
 
 	It("should prune", func() {
@@ -91,7 +90,7 @@ var _ = Describe("Tree", func() {
 			m1 := mlmetrics.NewConfusionMatrix()
 			m2 := mlmetrics.NewLogLoss()
 			for _, x := range examples[n:] {
-				prediction := tree.PredictCategory(x)
+				prediction := tree.PredictMC(x)
 				actual := model.Feature("target").Category(x)
 
 				m1.Observe(int(actual), int(prediction.Category()))
@@ -135,11 +134,12 @@ var _ = Describe("Tree", func() {
 	DescribeTable("regression",
 		func(n int, expInfo *hoeffding.TreeInfo, exp *testdata.RegressionScore) {
 			tree, model, examples := runTraining("regression", n)
+			tree.WriteText(os.Stdout)
 			Expect(tree.Info()).To(Equal(expInfo))
 
 			metric := mlmetrics.NewRegression()
 			for _, x := range examples[n:] {
-				prediction := tree.PredictValue(x).Number()
+				prediction := tree.PredictNum(x).Number()
 				actual := model.Feature("target").Number(x)
 				metric.Observe(actual, prediction)
 			}
@@ -163,7 +163,7 @@ var _ = Describe("Tree", func() {
 			R2:   0.899,
 			RMSE: 1.280,
 		}),
-		Entry("10,000", 10000, &hoeffding.TreeInfo{
+		FEntry("10,000", 10000, &hoeffding.TreeInfo{
 			NumNodes:    81,
 			NumLearning: 50,
 			NumDisabled: 0,

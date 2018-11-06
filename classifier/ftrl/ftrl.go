@@ -1,4 +1,4 @@
-// Package FTRL performs Follow-The-Regularized-Leader adaptive learning.
+// Package ftrl performs Follow-The-Regularized-Leader adaptive learning and binary classification.
 package ftrl
 
 import (

@@ -2,9 +2,9 @@ package internal_test
 
 import (
 	"github.com/bsm/reason/classifier/hoeffding/internal"
+	"github.com/bsm/reason/common/split"
 	"github.com/bsm/reason/testdata"
 	"github.com/bsm/reason/util"
-	"github.com/bsm/reason/util/treeutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -34,28 +34,28 @@ var _ = Describe("LeafNode", func() {
 	})
 
 	Describe("classification", func() {
-		crit := treeutil.InformationGain{MinBranchFraction: 0.1}
+		crit := split.InformationGain{MinBranchFraction: 0.1}
 
 		BeforeEach(func() {
-			model := testdata.ClassificationModel()
+			model := testdata.SimpleModel
 			target := model.Feature("play")
-			for _, x := range testdata.DataSet {
+			for _, x := range testdata.SimpleDataSet {
 				subject.ObserveExample(model, target, x, 1.0, node)
 			}
 		})
 
 		It("should observe examples", func() {
-			Expect(subject.FeatureStats).To(HaveLen(5))
+			Expect(subject.FeatureStats).To(HaveLen(6))
 			Expect(node.GetClassification()).To(Equal(&internal.Node_ClassificationStats{
 				Vector: util.Vector{Data: []float64{9, 5}},
 			}))
 		})
 
 		It("should allow to disable/enable", func() {
-			Expect(subject.FeatureStats).To(HaveLen(5))
+			Expect(subject.FeatureStats).To(HaveLen(6))
 			Expect(subject.IsDisabled).To(BeFalse())
 			subject.Enable()
-			Expect(subject.FeatureStats).To(HaveLen(5))
+			Expect(subject.FeatureStats).To(HaveLen(6))
 			Expect(subject.IsDisabled).To(BeFalse())
 			Expect(subject.EvaluateSplit("outlook", crit, node)).NotTo(BeNil())
 
@@ -88,18 +88,18 @@ var _ = Describe("LeafNode", func() {
 	})
 
 	Describe("regression", func() {
-		crit := treeutil.VarianceReduction{MinWeight: 1.0}
+		crit := split.VarianceReduction{MinWeight: 1.0}
 
 		BeforeEach(func() {
-			model := testdata.RegressionModel()
+			model := testdata.SimpleModel
 			target := model.Feature("hours")
-			for _, x := range testdata.DataSet {
+			for _, x := range testdata.SimpleDataSet {
 				subject.ObserveExample(model, target, x, 1.0, node)
 			}
 		})
 
 		It("should observe examples", func() {
-			Expect(subject.FeatureStats).To(HaveLen(5))
+			Expect(subject.FeatureStats).To(HaveLen(6))
 			Expect(node.GetRegression()).To(Equal(&internal.Node_RegressionStats{
 				NumStream: util.NumStream{
 					Min:        23,

@@ -50,6 +50,28 @@ func (r *Reader) ReadDouble() (float64, error) {
 	return math.Float64frombits(binary.LittleEndian.Uint64(b)), nil
 }
 
+// ReadDoubleSlice reads a slice of float64s.
+func (r *Reader) ReadDoubleSlice(dst []float64) ([]float64, error) {
+	u, err := r.ReadVarint()
+	if err != nil {
+		return dst, err
+	}
+
+	n := int(u / 8)
+	if dst == nil {
+		dst = make([]float64, 0, n)
+	}
+
+	for i := 0; i < n; i++ {
+		f, err := r.ReadDouble()
+		if err != nil {
+			return dst, err
+		}
+		dst = append(dst, f)
+	}
+	return dst, nil
+}
+
 // ReadMessage reads a message.
 func (r *Reader) ReadMessage(m proto.Message) error {
 	b, err := r.readBytes()
@@ -79,7 +101,7 @@ func (r *Reader) getBuffer(n int) []byte {
 
 // ---------------------------------------------------------------------
 
-// Reader reads raw protobuf protocol from streams.
+// Writer writes protobuf to streams.
 type Writer struct {
 	*bufio.Writer
 
@@ -110,6 +132,10 @@ func (w *Writer) WriteDouble(v float64) error {
 
 // WriteVarintField writes a number field.
 func (w *Writer) WriteVarintField(tag uint32, u uint64) error {
+	if u == 0 {
+		return nil
+	}
+
 	if err := w.WriteField(tag, proto.WireVarint); err != nil {
 		return err
 	}
@@ -118,6 +144,10 @@ func (w *Writer) WriteVarintField(tag uint32, u uint64) error {
 
 // WriteStringField writes a string.
 func (w *Writer) WriteStringField(tag uint32, s string) error {
+	if s == "" {
+		return nil
+	}
+
 	if err := w.WriteField(tag, proto.WireBytes); err != nil {
 		return err
 	}
@@ -132,6 +162,10 @@ func (w *Writer) WriteStringField(tag uint32, s string) error {
 
 // WriteMessageField writes a message.
 func (w *Writer) WriteMessageField(tag uint32, m proto.Message) error {
+	if m == nil {
+		return nil
+	}
+
 	data, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -147,6 +181,26 @@ func (w *Writer) WriteMessageField(tag uint32, m proto.Message) error {
 
 	_, err = w.Write(data)
 	return err
+}
+
+// WriteDoubleSliceField writes a slice of float64s.
+func (w *Writer) WriteDoubleSliceField(tag uint32, slice []float64) error {
+	if len(slice) == 0 {
+		return nil
+	}
+
+	if err := w.WriteField(tag, proto.WireBytes); err != nil {
+		return err
+	}
+	if err := w.WriteVarint(uint64(len(slice) * 8)); err != nil {
+		return err
+	}
+	for _, f := range slice {
+		if err := w.WriteDouble(f); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (w *Writer) getBuffer(n int) []byte {

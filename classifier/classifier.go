@@ -10,22 +10,22 @@ type SupervisedLearner interface {
 	TrainWeight(x core.Example, weight float64)
 }
 
-// BinaryClassifier supports binary classification.
-type BinaryClassifier interface {
-	// PredictProb returns the probability of the primary outcome.
-	PredictProb(core.Example) float64
+// Binary supports binary classification.
+type Binary interface {
+	// Predict returns the probability of the primary outcome.
+	Predict(core.Example) float64
 }
 
-// MultiCategoryClassifier supports category classification.
-type MultiCategoryClassifier interface {
-	// PredictCategory returns the classification
-	PredictCategory(core.Example) *MultiCategoryClassification
+// MultiCategory supports category classification.
+type MultiCategory interface {
+	// PredictMC returns the classification.
+	PredictMC(core.Example) MultiCategoryClassification
 }
 
 // Regressor supports simple regression.
 type Regressor interface {
-	// PredictValue returns the predicted value.
-	PredictValue(core.Example) float64
+	// PredictNum returns the predicted regression.
+	PredictNum(core.Example) Regression
 }
 
 // --------------------------------------------------------------------
@@ -42,7 +42,7 @@ type MultiCategoryClassification interface {
 	Weight() float64
 }
 
-// Regression is a minimal regression prediction result.
+// Regression is a regression prediction result.
 type Regression interface {
 	// Number returns the predicted regression value.
 	Number() float64

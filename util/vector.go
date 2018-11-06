@@ -110,9 +110,9 @@ func (vv *Vector) Set(index int, weight float64) (expanded bool) {
 	return
 }
 
-// Add increments a weight at index by delta.
+// Incr increments a weight at index by delta.
 // Returns true if the vector has expanded.
-func (vv *Vector) Add(index int, delta float64) (expanded bool) {
+func (vv *Vector) Incr(index int, delta float64) (expanded bool) {
 	if index < 0 {
 		return
 	}

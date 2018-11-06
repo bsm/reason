@@ -47,10 +47,10 @@ var _ = Describe("Matrix", func() {
 		Expect(subject.At(1, 1)).To(Equal(8.0))
 	})
 
-	It("should observe", func() {
+	It("should incr", func() {
 		Expect(subject.At(1, 1)).To(Equal(5.0))
-		subject.Add(1, 1, 4.0)
-		subject.Add(-1, 0, 4.0)
+		subject.Incr(1, 1, 4.0)
+		subject.Incr(-1, 0, 4.0)
 		Expect(subject.At(1, 1)).To(Equal(9.0))
 	})
 

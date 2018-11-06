@@ -2,7 +2,6 @@ package util_test
 
 import (
 	"math"
-	"math/rand"
 
 	"github.com/bsm/reason/util"
 	. "github.com/onsi/ginkgo"
@@ -161,39 +160,5 @@ var _ = Describe("NumStreams", func() {
 		Expect(subject.NumCategories()).To(Equal(2))
 		subject.Observe(7, 3.3)
 		Expect(subject.NumCategories()).To(Equal(3))
-	})
-})
-
-var _ = Describe("NumStreamBuckets", func() {
-	var subject *util.NumStreamBuckets
-
-	BeforeEach(func() {
-		subject = util.NewNumStreamBuckets(4)
-		rnd := rand.New(rand.NewSource(10))
-		for _, tv := range []float64{39, 15, 43, 7, 43, 36, 47, 6, 40, 49, 41} {
-			pv := math.Ceil(tv * (rnd.Float64() + 0.5))
-			subject.Observe(tv, pv)
-		}
-	})
-
-	It("should observe", func() {
-		Expect(subject.WeightSum()).To(Equal(11.0))
-
-		Expect(subject.Buckets).To(HaveLen(4))
-		Expect(subject.Buckets[0].Threshold).To(Equal(6.5))
-		Expect(subject.Buckets[0].Weight).To(Equal(2.0))
-		Expect(subject.Buckets[0].Sum).To(Equal(15.0))
-
-		Expect(subject.Buckets[1].Threshold).To(Equal(15.0))
-		Expect(subject.Buckets[1].Weight).To(Equal(1.0))
-		Expect(subject.Buckets[1].Sum).To(Equal(14.0))
-
-		Expect(subject.Buckets[2].Threshold).To(Equal(39.0))
-		Expect(subject.Buckets[2].Weight).To(Equal(4.0))
-		Expect(subject.Buckets[2].Sum).To(Equal(204.0))
-
-		Expect(subject.Buckets[3].Threshold).To(Equal(45.5))
-		Expect(subject.Buckets[3].Weight).To(Equal(4.0))
-		Expect(subject.Buckets[3].Sum).To(Equal(172.0))
 	})
 })

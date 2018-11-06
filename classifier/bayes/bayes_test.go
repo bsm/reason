@@ -1,4 +1,4 @@
-package treeutil_test
+package bayes_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "util/treeutil")
+	RunSpecs(t, "classifier/bayes")
 }

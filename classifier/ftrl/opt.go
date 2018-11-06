@@ -6,8 +6,14 @@ import (
 	"math"
 	"sync"
 
+	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/ftrl/internal"
 	"github.com/bsm/reason/core"
+)
+
+var (
+	_ classifier.SupervisedLearner = (*Optimizer)(nil)
+	_ classifier.Binary            = (*Optimizer)(nil)
 )
 
 // Optimizer represents an FTRL optimiser. Regressions
@@ -22,8 +28,8 @@ type Optimizer struct {
 	mu         sync.RWMutex
 }
 
-// Load loads an Optimizer from a reader.
-func Load(r io.Reader, config *Config) (*Optimizer, error) {
+// LoadFrom loads an Optimizer from a reader.
+func LoadFrom(r io.Reader, config *Config) (*Optimizer, error) {
 	opt := new(internal.Optimizer)
 	if _, err := opt.ReadFrom(r); err != nil {
 		return nil, err
@@ -36,7 +42,7 @@ func Load(r io.Reader, config *Config) (*Optimizer, error) {
 // New inits a new Optimizer using a model, a target feature and a config.
 func New(model *core.Model, target string, config *Config) (*Optimizer, error) {
 	predictors, offsets, size := parseFeatures(model.Features, target)
-	opt := internal.NewOptimizer(model, target, size)
+	opt := internal.New(model, target, size)
 	return newOptimizer(opt, predictors, offsets, config)
 }
 
@@ -66,7 +72,7 @@ func newOptimizer(opt *internal.Optimizer, predictors []string, offsets []int, c
 	}, nil
 }
 
-// Predict performs prediction
+// Predict performs a prediction.
 func (o *Optimizer) Predict(x core.Example) float64 {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

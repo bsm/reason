@@ -2,7 +2,6 @@ package util
 
 import (
 	"math"
-	"sort"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -19,10 +18,6 @@ func (s *NumStream) Observe(value float64) {
 
 // ObserveWeight adds a new observation with a weight.
 func (s *NumStream) ObserveWeight(value, weight float64) {
-	if math.IsNaN(value) || math.IsInf(value, 0) || weight <= 0 {
-		return
-	}
-
 	if s.Weight == 0 || value < s.Min {
 		s.Min = value
 	}
@@ -109,10 +104,6 @@ func (s *NumStreams) Observe(target int, prediction float64) {
 
 // ObserveWeight adds a new observation with a weight.
 func (s *NumStreams) ObserveWeight(target int, prediction, weight float64) {
-	if target < 0 || math.IsNaN(prediction) || math.IsInf(prediction, 0) || weight <= 0 {
-		return
-	}
-
 	if n := target + 1; n > cap(s.Data) {
 		data := make([]NumStream, n, 2*n)
 		copy(data, s.Data)
@@ -158,78 +149,4 @@ func (s *NumStreams) At(target int) *NumStream {
 		}
 	}
 	return nil
-}
-
-// --------------------------------------------------------------------
-
-// NewNumStreamBuckets inits new bucketed stream distribution.
-func NewNumStreamBuckets(maxBuckets uint32) *NumStreamBuckets {
-	return &NumStreamBuckets{MaxBuckets: maxBuckets}
-}
-
-// Observe adds a new observation.
-func (s *NumStreamBuckets) Observe(target, prediction float64) {
-	s.ObserveWeight(target, prediction, 1.0)
-}
-
-// ObserveWeight adds a new observation with a weight.
-func (s *NumStreamBuckets) ObserveWeight(target, prediction, weight float64) {
-	if math.IsNaN(target) || math.IsInf(target, 0) || math.IsNaN(prediction) || math.IsInf(prediction, 0) || weight <= 0 {
-		return
-	}
-
-	// ensure buckets are set
-	if s.MaxBuckets == 0 {
-		s.MaxBuckets = 12
-	}
-
-	// upsert bucket
-	slot := s.findSlot(target)
-	if slot < len(s.Buckets) {
-		if s.Buckets[slot].Threshold != target {
-			s.Buckets = append(s.Buckets, NumStreamBuckets_Bucket{})
-			copy(s.Buckets[slot+1:], s.Buckets[slot:])
-			s.Buckets[slot] = NumStreamBuckets_Bucket{Threshold: target}
-		}
-	} else {
-		s.Buckets = append(s.Buckets, NumStreamBuckets_Bucket{Threshold: target})
-	}
-	s.Buckets[slot].ObserveWeight(prediction, weight)
-
-	// prune buckets
-	for uint32(len(s.Buckets)) > s.MaxBuckets {
-		delta := math.MaxFloat64
-		slot := 0
-		for i := 0; i < len(s.Buckets)-1; i++ {
-			if x := s.Buckets[i+1].Threshold - s.Buckets[i].Threshold; x < delta {
-				slot, delta = i, x
-			}
-		}
-
-		b1, b2 := s.Buckets[slot], s.Buckets[slot+1]
-		weightSum := b1.Weight + b2.Weight
-		threshold := (b1.Threshold*b1.Weight + b2.Threshold*b2.Weight) / weightSum
-		s.Buckets[slot+1] = NumStreamBuckets_Bucket{
-			Threshold: threshold,
-			NumStream: NumStream{
-				Weight:     weightSum,
-				Sum:        b1.Sum + b2.Sum,
-				SumSquares: b1.SumSquares + b2.SumSquares,
-			},
-		}
-		s.Buckets = s.Buckets[:slot+copy(s.Buckets[slot:], s.Buckets[slot+1:])]
-	}
-}
-
-// WeightSum returns the total weight observed.
-func (s *NumStreamBuckets) WeightSum() float64 {
-	sum := 0.0
-	for _, b := range s.Buckets {
-		sum += b.Weight
-	}
-	return sum
-}
-
-func (s *NumStreamBuckets) findSlot(v float64) int {
-	return sort.Search(len(s.Buckets), func(i int) bool { return s.Buckets[i].Threshold >= v })
 }
