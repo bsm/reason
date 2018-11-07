@@ -161,7 +161,7 @@ var _ = Describe("Tree", func() {
 			R2:   0.899,
 			RMSE: 1.280,
 		}),
-		FEntry("10,000", 10000, &hoeffding.TreeInfo{
+		Entry("10,000", 10000, &hoeffding.TreeInfo{
 			NumNodes:    81,
 			NumLearning: 50,
 			NumDisabled: 0,

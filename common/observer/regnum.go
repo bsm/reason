@@ -10,6 +10,9 @@ import (
 
 // NewRegressionNumerical inits a regression observer for numerical features.
 func NewRegressionNumerical(maxBuckets uint32) *RegressionNumerical {
+	if maxBuckets == 0 {
+		maxBuckets = 16
+	}
 	return &RegressionNumerical{MaxBuckets: maxBuckets}
 }
 
@@ -60,7 +63,7 @@ func (o *RegressionNumerical) ObserveWeight(target, prediction, weight float64) 
 func (o *RegressionNumerical) EvaluateSplit(crit split.Criterion, pre *util.NumStream) (merit, pivot float64, post *util.NumStreams) {
 	for i := 0; i < len(o.Dist)-1; i++ {
 		pv := o.Dist[i].Threshold
-		pc := o.postSplit(pivot)
+		pc := o.postSplit(pv)
 		mc := crit.RegressionMerit(pre, pc)
 
 		if post == nil || mc > merit {

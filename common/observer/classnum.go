@@ -8,6 +8,9 @@ import (
 
 // NewClassificationNumerical inits a classification observer for numerical features.
 func NewClassificationNumerical(maxBuckets uint32) *ClassificationNumerical {
+	if maxBuckets == 0 {
+		maxBuckets = 11
+	}
 	return &ClassificationNumerical{MaxBuckets: maxBuckets}
 }
 
