@@ -101,9 +101,8 @@ func (m *Matrix) RowSum(i int) float64 {
 		return 0.0
 	}
 
-	stride := int(m.Stride)
-	min := i * stride
-	max := min + stride
+	min := i * int(m.Stride)
+	max := min + int(m.Stride)
 	if max > len(m.Data) {
 		return 0.0
 	}
@@ -115,18 +114,55 @@ func (m *Matrix) RowSum(i int) float64 {
 	return sum
 }
 
+// RowNNZ counts the number of non-zero weights in row i.
+func (m *Matrix) RowNNZ(i int) int {
+	if i < 0 {
+		return 0
+	}
+
+	min := i * int(m.Stride)
+	max := min + int(m.Stride)
+	if max > len(m.Data) {
+		return 0
+	}
+
+	n := 0
+	for i := min; i < max; i++ {
+		if m.Data[i] != 0 {
+			n++
+		}
+	}
+	return n
+}
+
 // ColSum returns the sum of all weights in col i.
 func (m *Matrix) ColSum(i int) float64 {
-	if i < 0 {
+	s := int(m.Stride)
+	if i < 0 || i >= s {
 		return 0.0
 	}
 
-	stride := int(m.Stride)
 	sum := 0.0
-	for x := i; x < len(m.Data); x += stride {
+	for x := i; x < len(m.Data); x += s {
 		sum += m.Data[x]
 	}
 	return sum
+}
+
+// ColNNZ counts the number of non-zero weights in col i.
+func (m *Matrix) ColNNZ(i int) int {
+	s := int(m.Stride)
+	if i < 0 || i >= s {
+		return 0
+	}
+
+	n := 0
+	for x, s := i, int(m.Stride); x < len(m.Data); x += s {
+		if m.Data[x] != 0 {
+			n++
+		}
+	}
+	return n
 }
 
 // WeightSum returns the sum of all weights.

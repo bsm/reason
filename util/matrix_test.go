@@ -16,6 +16,7 @@ var _ = Describe("Matrix", func() {
 		subject.Set(0, 4, 3.0)
 		subject.Set(0, 6, 4.0)
 
+		subject.Set(1, 0, 2.0)
 		subject.Set(1, 1, 5.0)
 		subject.Set(1, 3, 6.0)
 		subject.Set(1, 4, 7.0)
@@ -41,7 +42,12 @@ var _ = Describe("Matrix", func() {
 	})
 
 	It("should set", func() {
-		Expect(subject.At(1, 1)).To(Equal(5.0))
+		Expect(subject.Stride).To(Equal(uint32(7)))
+		Expect(subject.Data).To(Equal([]float64{
+			1, 0, 2, 0, 3, 0, 4,
+			2, 5, 0, 6, 7, 8, 0,
+		}))
+
 		subject.Set(1, 1, 8.0)
 		subject.Set(-1, 0, 4.0)
 		Expect(subject.At(1, 1)).To(Equal(8.0))
@@ -57,7 +63,7 @@ var _ = Describe("Matrix", func() {
 	It("should returns rows", func() {
 		Expect(subject.Row(-1)).To(BeNil())
 		Expect(subject.Row(0)).To(Equal([]float64{1, 0, 2, 0, 3, 0, 4}))
-		Expect(subject.Row(1)).To(Equal([]float64{0, 5, 0, 6, 7, 8, 0}))
+		Expect(subject.Row(1)).To(Equal([]float64{2, 5, 0, 6, 7, 8, 0}))
 		Expect(subject.Row(2)).To(BeNil())
 	})
 
@@ -76,13 +82,20 @@ var _ = Describe("Matrix", func() {
 	It("should calculate row sums", func() {
 		Expect(subject.RowSum(-1)).To(Equal(0.0))
 		Expect(subject.RowSum(0)).To(Equal(10.0))
-		Expect(subject.RowSum(1)).To(Equal(26.0))
+		Expect(subject.RowSum(1)).To(Equal(28.0))
 		Expect(subject.RowSum(2)).To(Equal(0.0))
+	})
+
+	It("should count non-zero in rows", func() {
+		Expect(subject.RowNNZ(-1)).To(Equal(0))
+		Expect(subject.RowNNZ(0)).To(Equal(4))
+		Expect(subject.RowNNZ(1)).To(Equal(5))
+		Expect(subject.RowNNZ(2)).To(Equal(0))
 	})
 
 	It("should calculate col sums", func() {
 		Expect(subject.ColSum(-1)).To(Equal(0.0))
-		Expect(subject.ColSum(0)).To(Equal(1.0))
+		Expect(subject.ColSum(0)).To(Equal(3.0))
 		Expect(subject.ColSum(1)).To(Equal(5.0))
 		Expect(subject.ColSum(2)).To(Equal(2.0))
 		Expect(subject.ColSum(3)).To(Equal(6.0))
@@ -92,7 +105,19 @@ var _ = Describe("Matrix", func() {
 		Expect(subject.ColSum(7)).To(Equal(0.0))
 	})
 
+	It("should count non-zero in cols", func() {
+		Expect(subject.ColNNZ(-1)).To(Equal(0))
+		Expect(subject.ColNNZ(0)).To(Equal(2))
+		Expect(subject.ColNNZ(1)).To(Equal(1))
+		Expect(subject.ColNNZ(2)).To(Equal(1))
+		Expect(subject.ColNNZ(3)).To(Equal(1))
+		Expect(subject.ColNNZ(4)).To(Equal(2))
+		Expect(subject.ColNNZ(5)).To(Equal(1))
+		Expect(subject.ColNNZ(6)).To(Equal(1))
+		Expect(subject.ColNNZ(7)).To(Equal(0))
+	})
+
 	It("should calculate weight sum", func() {
-		Expect(subject.WeightSum()).To(Equal(36.0))
+		Expect(subject.WeightSum()).To(Equal(38.0))
 	})
 })

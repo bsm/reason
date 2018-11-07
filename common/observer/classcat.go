@@ -23,6 +23,18 @@ func (o *ClassificationCategorical) ObserveWeight(cat, target core.Category, wei
 	}
 }
 
+// Prob determines the probability of feature cat given a target.
+func (o *ClassificationCategorical) Prob(cat, target core.Category) float64 {
+	sum := o.Dist.ColSum(int(target))
+	if sum == 0.0 {
+		return 0.0
+	}
+
+	val := o.Dist.At(int(cat), int(target))
+	cnt := o.Dist.ColNNZ(int(target))
+	return (val + 1) / (sum + float64(cnt))
+}
+
 // EvaluateSplit evaluates a split.
 func (o *ClassificationCategorical) EvaluateSplit(crit split.Criterion, pre *util.Vector) (merit float64, post *util.Matrix) {
 	if o.numCategories() > 1 {
