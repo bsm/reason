@@ -105,21 +105,22 @@ func (c *Naive) Predict(x core.Example) float64 {
 	*/
 
 	size := c.targets.NumCols()
-	votes := make([]float64, size)
+	votes := util.NewVector()
 	sum := c.targets.WeightSum()
 	if sum == 0 {
 		return 0
 	}
 
 	for target := 0; target < size; target++ {
-		votes[target] = c.targets.At(target) / sum
+		votes.Set(target, c.targets.At(target)/sum)
 		for name, stats := range c.featStats {
 			feat := c.model.Feature(name)
 			switch feat.Kind {
 			case core.Feature_CATEGORICAL:
 				if stats.C != nil {
 					if cat := feat.Category(x); core.IsCat(cat) {
-						votes[target] *= stats.C.Dist.At(int(cat), int(target))
+						prob := stats.C.Prob(cat, core.Category(target))
+						votes.Set(target, votes.At(target)*prob)
 					}
 				}
 			case core.Feature_NUMERICAL:
@@ -132,13 +133,6 @@ func (c *Naive) Predict(x core.Example) float64 {
 			}
 		}
 	}
-	// fmt.Println(votes)
-	_ = votes
-	return 0.0
-}
-
-// Info TODO
-func (c *Naive) Info() {
-	fmt.Printf("PRE %#v\n", c.targets)
-	fmt.Printf("POST %#v\n", c.featStats)
+	votes.Normalize()
+	return votes.At(0)
 }
