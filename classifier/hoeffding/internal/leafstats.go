@@ -49,7 +49,7 @@ func (s *LeafNode_Stats) updateCC(tcat, pcat core.Category, weight float64) {
 func (s *LeafNode_Stats) updateCN(tcat core.Category, pval, weight float64) {
 	acc := s.GetCN()
 	if acc == nil {
-		acc = observer.NewClassificationNumerical(11)
+		acc = observer.NewClassificationNumerical(0)
 		s.Kind = &LeafNode_Stats_CN{CN: acc}
 	}
 	acc.ObserveWeight(pval, tcat, weight)
@@ -67,7 +67,7 @@ func (s *LeafNode_Stats) updateRC(tval float64, pcat core.Category, weight float
 func (s *LeafNode_Stats) updateRN(tval, pval, weight float64) {
 	acc := s.GetRN()
 	if acc == nil {
-		acc = observer.NewRegressionNumerical(12)
+		acc = observer.NewRegressionNumerical(0)
 		s.Kind = &LeafNode_Stats_RN{RN: acc}
 	}
 	acc.ObserveWeight(pval, tval, weight)

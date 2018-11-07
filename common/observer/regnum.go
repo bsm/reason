@@ -11,7 +11,7 @@ import (
 // NewRegressionNumerical inits a regression observer for numerical features.
 func NewRegressionNumerical(maxBuckets uint32) *RegressionNumerical {
 	if maxBuckets == 0 {
-		maxBuckets = 16
+		maxBuckets = 12
 	}
 	return &RegressionNumerical{MaxBuckets: maxBuckets}
 }
