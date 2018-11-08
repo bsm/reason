@@ -27,6 +27,14 @@ func (o *ClassificationNumerical) ObserveWeight(val float64, target core.Categor
 	o.Dist.ObserveWeight(int(target), val, weight)
 }
 
+// Prob determines the probability of val given a target.
+func (o *ClassificationNumerical) Prob(val float64, target core.Category) float64 {
+	if s := o.Dist.At(int(target)); s != nil {
+		return s.Prob(val)
+	}
+	return 0.0
+}
+
 // EvaluateSplit evaluates a split.
 func (o *ClassificationNumerical) EvaluateSplit(crit split.Criterion, pre *util.Vector) (merit, pivot float64, post *util.Matrix) {
 	min, max := o.boundaries()

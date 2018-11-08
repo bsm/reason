@@ -36,28 +36,28 @@ var _ = Describe("ClassificationCategorical", func() {
 		}))
 	})
 
+	It("should calculate probabilty of a category given a target", func() {
+		yes, no := target.CategoryOf("yes")*2, target.CategoryOf("no")*2
+		rainy, overcast, sunny := feat.CategoryOf("rainy"), feat.CategoryOf("overcast"), feat.CategoryOf("sunny")
+
+		Expect(subject.Prob(sunny, -1)).To(Equal(0.0))
+		Expect(subject.Prob(sunny, 3)).To(Equal(0.0))
+
+		Expect(subject.Prob(rainy, yes)).To(BeNumerically("~", 0.25, 1e-3))
+		Expect(subject.Prob(rainy, no)).To(BeNumerically("~", 0.5, 1e-3))
+		Expect(subject.Prob(overcast, yes)).To(BeNumerically("~", 0.417, 1e-3))
+		Expect(subject.Prob(overcast, no)).To(BeNumerically("~", 0.125, 1e-3))
+		Expect(subject.Prob(sunny, yes)).To(BeNumerically("~", 0.333, 1e-3))
+		Expect(subject.Prob(sunny, no)).To(BeNumerically("~", 0.375, 1e-3))
+	})
+
 	It("should evaluate splits", func() {
 		merit, post := subject.EvaluateSplit(crit, pre)
-		Expect(merit).To(BeNumerically("~", 0.246, 0.001))
+		Expect(merit).To(BeNumerically("~", 0.246, 1e-3))
 		Expect(post.Data).To(Equal([]float64{
 			2, 0, 3,
 			4, 0, 0,
 			3, 0, 2,
 		}))
-	})
-
-	It("should calculate probabilty of a category given a target", func() {
-		yes, no := target.CategoryOf("yes")*2, target.CategoryOf("no")*2
-		sunny, overcast, rainy := feat.CategoryOf("sunny"), feat.CategoryOf("overcast"), feat.CategoryOf("rainy")
-
-		Expect(subject.Prob(sunny, -1)).To(Equal(0.0))
-		Expect(subject.Prob(sunny, 3)).To(Equal(0.0))
-
-		Expect(subject.Prob(sunny, yes)).To(BeNumerically("~", 0.333, 0.001))
-		Expect(subject.Prob(sunny, no)).To(BeNumerically("~", 0.429, 0.001))
-		Expect(subject.Prob(overcast, yes)).To(BeNumerically("~", 0.417, 0.001))
-		Expect(subject.Prob(overcast, no)).To(BeNumerically("~", 0.143, 0.001))
-		Expect(subject.Prob(rainy, yes)).To(BeNumerically("~", 0.25, 0.001))
-		Expect(subject.Prob(rainy, no)).To(BeNumerically("~", 0.571, 0.001))
 	})
 })

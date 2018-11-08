@@ -38,8 +38,8 @@ var _ = Describe("RegressionNumerical", func() {
 
 	It("should evaluate splits", func() {
 		merit, pivot, post := subject.EvaluateSplit(crit, pre)
-		Expect(merit).To(BeNumerically("~", 17.235, 0.001))
-		Expect(pivot).To(BeNumerically("~", 36.0, 0.001))
+		Expect(merit).To(BeNumerically("~", 17.235, 1e-3))
+		Expect(pivot).To(BeNumerically("~", 36.0, 1e-3))
 		Expect(post.Data).To(Equal([]util.NumStream{
 			{Weight: 2, Sum: 100, SumSquares: 5008, Min: 0, Max: 52},
 			{Weight: 12, Sum: 457, SumSquares: 18369, Min: 0, Max: 52},

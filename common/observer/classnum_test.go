@@ -36,10 +36,24 @@ var _ = Describe("ClassificationNumerical", func() {
 		}))
 	})
 
+	It("should calculate probabilty of a value given a target", func() {
+		yes, no := target.CategoryOf("yes")*2, target.CategoryOf("no")*2
+
+		Expect(subject.Prob(40, -1)).To(Equal(0.0))
+		Expect(subject.Prob(40, 3)).To(Equal(0.0))
+
+		Expect(subject.Prob(40, yes)).To(BeNumerically("~", 0.030, 1e-3))
+		Expect(subject.Prob(40, no)).To(BeNumerically("~", 0.005, 1e-3))
+		Expect(subject.Prob(50, yes)).To(BeNumerically("~", 0.034, 1e-3))
+		Expect(subject.Prob(50, no)).To(BeNumerically("~", 0.032, 1e-3))
+		Expect(subject.Prob(60, yes)).To(BeNumerically("~", 0.017, 1e-3))
+		Expect(subject.Prob(60, no)).To(BeNumerically("~", 0.046, 1e-3))
+	})
+
 	It("should evaluate splits", func() {
 		merit, pivot, post := subject.EvaluateSplit(crit, pre)
-		Expect(merit).To(BeNumerically("~", 0.176, 0.001))
-		Expect(pivot).To(BeNumerically("~", 42.25, 0.01))
+		Expect(merit).To(BeNumerically("~", 0.176, 1e-3))
+		Expect(pivot).To(BeNumerically("~", 42.25, 1e-2))
 		Expect(post.Data).To(Equal([]float64{
 			3.2587268705731476, 0, 0,
 			5.741273129426852, 0, 5,

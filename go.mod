@@ -4,6 +4,7 @@ require (
 	github.com/bsm/mlmetrics v0.1.0
 	github.com/cespare/xxhash v1.1.0
 	github.com/gogo/protobuf v1.1.1
+	github.com/golang/protobuf v1.2.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/kr/pty v1.1.3 // indirect
 	github.com/onsi/ginkgo v1.6.0

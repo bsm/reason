@@ -3,6 +3,8 @@ syntax = "proto3";
 package blacksquaremedia.reason.classifier.bayes;
 
 import "core/core.proto";
+import "util/util.proto";
+import "common/observer/observer.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -14,17 +16,27 @@ option go_package = "github.com/bsm/reason/classifier/ftrl/internal";
 option java_package = "com.blacksquaremedia.reason.classifier";
 option java_outer_classname = "BayesProtos";
 
-// Optimizer wraps the optimizer data.
-message Optimizer {
+// NaiveBayes wraps a Naive Bayes classifier.
+message NaiveBayes {
+  // Observer instances maintain information based on
+  // observation of a particular feature.
+  message Observer {
+    oneof kind {
+      common.observer.ClassificationNumerical num = 1;
+      common.observer.ClassificationCategorical cat = 2;
+    }
+  }
+
   // The underlying model.
   core.Model model = 1;
 
   // The target feature.
   string target = 2;
 
-  // The gradient sums.
-  repeated double sums = 3;
+  // Stats, by target category.
+	util.Vector target_stats = 3 [(gogoproto.nullable) = false];
 
-  // The weights.
-  repeated double weights = 4;
+  // Observer stats, by feature.
+  map<string, Observer> feature_stats = 4;
 }
+

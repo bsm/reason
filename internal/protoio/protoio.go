@@ -32,11 +32,23 @@ func (r *Reader) ReadVarint() (uint64, error) {
 
 // ReadString reads a string.
 func (r *Reader) ReadString() (string, error) {
-	b, err := r.readBytes()
+	b, err := r.ReadBytes()
 	if err != nil {
 		return "", err
 	}
 	return string(b), nil
+}
+
+// ReadBytes reads raw bytes.
+func (r *Reader) ReadBytes() ([]byte, error) {
+	u, err := r.ReadVarint()
+	if err != nil {
+		return nil, err
+	}
+
+	b := r.getBuffer(int(u))
+	_, err = io.ReadFull(r, b)
+	return b, err
 }
 
 // ReadDouble reads a float64.
@@ -74,22 +86,11 @@ func (r *Reader) ReadDoubleSlice(dst []float64) ([]float64, error) {
 
 // ReadMessage reads a message.
 func (r *Reader) ReadMessage(m proto.Message) error {
-	b, err := r.readBytes()
+	b, err := r.ReadBytes()
 	if err != nil {
 		return err
 	}
 	return proto.Unmarshal(b, m)
-}
-
-func (r *Reader) readBytes() ([]byte, error) {
-	u, err := r.ReadVarint()
-	if err != nil {
-		return nil, err
-	}
-
-	b := r.getBuffer(int(u))
-	_, err = io.ReadFull(r, b)
-	return b, err
 }
 
 func (r *Reader) getBuffer(n int) []byte {
@@ -157,6 +158,24 @@ func (w *Writer) WriteStringField(tag uint32, s string) error {
 	}
 
 	_, err := w.Writer.WriteString(s)
+	return err
+}
+
+// WriteBinaryField writes bytes.
+func (w *Writer) WriteBinaryField(tag uint32, p []byte) error {
+	if len(p) == 0 {
+		return nil
+	}
+
+	if err := w.WriteField(tag, proto.WireBytes); err != nil {
+		return err
+	}
+
+	if err := w.WriteVarint(uint64(len(p))); err != nil {
+		return err
+	}
+
+	_, err := w.Writer.Write(p)
 	return err
 }
 

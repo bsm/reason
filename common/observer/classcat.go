@@ -31,8 +31,7 @@ func (o *ClassificationCategorical) Prob(cat, target core.Category) float64 {
 	}
 
 	val := o.Dist.At(int(cat), int(target))
-	cnt := o.Dist.ColNNZ(int(target))
-	return (val + 1) / (sum + float64(cnt))
+	return (val + 1) / (sum + float64(o.Dist.NumRows()))
 }
 
 // EvaluateSplit evaluates a split.
