@@ -3,8 +3,6 @@ package hoeffding_test
 import (
 	"fmt"
 
-	"github.com/bsm/reason/classifier"
-
 	"github.com/bsm/reason/classifier/hoeffding"
 	"github.com/bsm/reason/core"
 )
@@ -108,7 +106,7 @@ func Example_regression() {
 	}
 
 	// Predict
-	prediction := tree.PredictNum(core.MapExample{
+	prediction := tree.PredictNumExtra(core.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",
@@ -118,7 +116,7 @@ func Example_regression() {
 	// Print value with weight
 	fmt.Printf("value: %.2f, weight: %.0f\n",
 		prediction.Number(),
-		prediction.(classifier.WeightedPrediction).Weight())
+		prediction.Weight())
 
 	// Output:
 	// value: 42.67, weight: 6

@@ -37,6 +37,7 @@ type Regression interface {
 	Number() float64
 }
 
+/*
 // WeightedPrediction instances expose observation weights to support
 // the accuracy of the prediction.
 type WeightedPrediction interface {
@@ -45,10 +46,11 @@ type WeightedPrediction interface {
 	Weight() float64
 }
 
-// VariancePrediction instances expose variance metrics of previous observations
+// MeasurableRegression instances expose variance metrics of previous observations
 // to support the accuracy of the prediction.
-type VariancePrediction interface {
+type MeasurableRegression interface {
 	// MSE the mean squared error of the prediction based on
 	// the observations made.
 	MSE() float64
 }
+*/

@@ -10,7 +10,6 @@ import (
 
 	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
-	cinternal "github.com/bsm/reason/classifier/internal"
 	"github.com/bsm/reason/core"
 )
 
@@ -156,11 +155,16 @@ func (t *Hoeffding) TrainWeight(x core.Example, weight float64) {
 
 // Predict performs a classification and returns a prediction.
 func (t *Hoeffding) Predict(x core.Example) classifier.Classification {
+	return t.PredictExtra(x)
+}
+
+// PredictExtra performs a classification and returns a prediction.
+func (t *Hoeffding) PredictExtra(x core.Example) Classification {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	if t.target.Kind != core.Feature_CATEGORICAL {
-		return cinternal.NoResult{}
+		return Classification{cat: core.NoCategory}
 	}
 
 	node, _, parent, _ := t.tree.Traverse(x, t.tree.Root, nil, -1)
@@ -170,25 +174,30 @@ func (t *Hoeffding) Predict(x core.Example) classifier.Classification {
 
 	stats := node.GetClassification()
 	if stats == nil {
-		return cinternal.NoResult{}
+		return Classification{cat: core.NoCategory}
 	}
 
 	weight := stats.WeightSum()
 	if weight <= 0 {
-		return cinternal.NoResult{}
+		return Classification{cat: core.NoCategory}
 	}
 
 	cat, _ := stats.Max()
-	return classification{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
+	return Classification{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
 }
 
 // PredictNum performs a regression and returns a prediction.
 func (t *Hoeffding) PredictNum(x core.Example) classifier.Regression {
+	return t.PredictNumExtra(x)
+}
+
+// PredictNumExtra performs a regression and returns a prediction.
+func (t *Hoeffding) PredictNumExtra(x core.Example) Regression {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	if t.target.Kind != core.Feature_NUMERICAL {
-		return cinternal.NoResult{}
+		return Regression{}
 	}
 
 	node, _, parent, _ := t.tree.Traverse(x, t.tree.Root, nil, -1)
@@ -198,10 +207,10 @@ func (t *Hoeffding) PredictNum(x core.Example) classifier.Regression {
 
 	stats := node.GetRegression()
 	if stats == nil {
-		return cinternal.NoResult{}
+		return Regression{}
 	}
 
-	return regression{ns: &stats.NumStream}
+	return Regression{ns: &stats.NumStream}
 }
 
 // Prune manually prunes the tree to limit it to maxLearningNodes.
