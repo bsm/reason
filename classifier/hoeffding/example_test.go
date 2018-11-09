@@ -3,13 +3,16 @@ package hoeffding_test
 import (
 	"fmt"
 
+	"github.com/bsm/reason/classifier"
+
 	"github.com/bsm/reason/classifier/hoeffding"
 	"github.com/bsm/reason/core"
 )
 
 func Example_classification() {
+	target := core.NewCategoricalFeature("play", []string{"yes", "no"})
 	model := core.NewModel(
-		core.NewCategoricalFeature("play", []string{"yes", "no"}),
+		target,
 		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
 		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
 		core.NewCategoricalFeature("humidity", []string{"normal", "high"}),
@@ -48,7 +51,7 @@ func Example_classification() {
 	}
 
 	// Predict
-	prediction := tree.PredictMC(core.MapExample{
+	prediction := tree.Predict(core.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",
@@ -56,8 +59,8 @@ func Example_classification() {
 	})
 
 	// Print categories with probabilities
-	fmt.Printf("yes: %.2f\n", prediction.Prob(0))
-	fmt.Printf(" no: %.2f\n", prediction.Prob(1))
+	fmt.Printf("yes: %.2f\n", prediction.Prob(target.CategoryOf("yes")))
+	fmt.Printf(" no: %.2f\n", prediction.Prob(target.CategoryOf("no")))
 
 	// Output:
 	// yes: 0.40
@@ -113,7 +116,9 @@ func Example_regression() {
 	})
 
 	// Print value with weight
-	fmt.Printf("value: %.2f, weight: %.0f\n", prediction.Number(), prediction.Weight())
+	fmt.Printf("value: %.2f, weight: %.0f\n",
+		prediction.Number(),
+		prediction.(classifier.WeightedPrediction).Weight())
 
 	// Output:
 	// value: 42.67, weight: 6

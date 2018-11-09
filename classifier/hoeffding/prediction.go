@@ -6,25 +6,25 @@ import (
 	"github.com/bsm/reason/util"
 )
 
-type classificationResult struct {
+type classification struct {
 	cat    core.Category
 	weight float64
 	vv     *util.Vector
 }
 
-func (c classificationResult) Category() core.Category { return c.cat }
-func (c classificationResult) Weight() float64         { return c.weight }
-func (c classificationResult) Prob(cat core.Category) float64 {
+func (c classification) Category() core.Category { return c.cat }
+func (c classification) Weight() float64         { return c.weight }
+func (c classification) Prob(cat core.Category) float64 {
 	if c.weight <= 0 {
 		return 0
 	}
 	return c.vv.At(int(cat)) / c.weight
 }
 
-type regressionResult struct {
+type regression struct {
 	ns *util.NumStream
 }
 
-func (r regressionResult) Number() float64 { return r.ns.Mean() }
-func (r regressionResult) MSE() float64    { return r.ns.Variance() }
-func (r regressionResult) Weight() float64 { return r.ns.Weight }
+func (r regression) Number() float64 { return r.ns.Mean() }
+func (r regression) MSE() float64    { return r.ns.Variance() }
+func (r regression) Weight() float64 { return r.ns.Weight }

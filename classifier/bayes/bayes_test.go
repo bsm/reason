@@ -16,8 +16,8 @@ import (
 
 var _ = Describe("NaiveBayes", func() {
 	It("should dump/load", func() {
-		t1, _, examples := runClassification(3000)
-		p1 := t1.PredictMC(examples[4001])
+		t1, _, examples := runTraining(3000)
+		p1 := t1.Predict(examples[4001])
 		Expect(p1.Prob(p1.Category())).To(BeNumerically("~", 0.824, 1e-3))
 
 		b1 := new(bytes.Buffer)
@@ -25,18 +25,17 @@ var _ = Describe("NaiveBayes", func() {
 
 		t2, err := bayes.LoadFrom(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
-		p2 := t2.PredictMC(examples[4001])
+		p2 := t2.Predict(examples[4001])
 		Expect(p2.Prob(p2.Category())).To(BeNumerically("~", 0.824, 1e-3))
 	})
 
 	DescribeTable("should train & predict",
 		func(n int, exp *testdata.ClassificationScore) {
-			cls, model, examples := runClassification(n)
+			cls, target, examples := runTraining(n)
 			met := mlmetrics.NewConfusionMatrix()
-			target := model.Feature("target")
 			for _, x := range examples[n:] {
 				actual := target.Category(x)
-				predicted := cls.PredictMC(x).Category()
+				predicted := cls.Predict(x).Category()
 				met.Observe(int(actual), int(predicted))
 
 			}
@@ -69,7 +68,7 @@ func TestSuite(t *testing.T) {
 	RunSpecs(t, "classifier/bayes")
 }
 
-func runClassification(n int) (*bayes.NaiveBayes, *core.Model, []core.Example) {
+func runTraining(n int) (*bayes.NaiveBayes, *core.Feature, []core.Example) {
 	stream, model, err := testdata.OpenBigData("classification", "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()
@@ -83,5 +82,5 @@ func runClassification(n int) (*bayes.NaiveBayes, *core.Model, []core.Example) {
 	for _, x := range examples[:n] {
 		cls.Train(x)
 	}
-	return cls, model, examples
+	return cls, model.Feature("target"), examples
 }

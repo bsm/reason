@@ -15,7 +15,7 @@ import (
 
 var (
 	_ classifier.SupervisedLearner = (*NaiveBayes)(nil)
-	_ classifier.MultiCategory     = (*NaiveBayes)(nil)
+	_ classifier.Classifier     = (*NaiveBayes)(nil)
 )
 
 // Config contains configuration options for the Classifier.
@@ -87,7 +87,7 @@ func (b *NaiveBayes) TrainWeight(x core.Example, weight float64) {
 }
 
 // PredictMC implements classifier.MultiCategory interface.
-func (b *NaiveBayes) PredictMC(x core.Example) classifier.MultiCategoryClassification {
+func (b *NaiveBayes) Predict(x core.Example) classifier.Classification {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 

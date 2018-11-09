@@ -15,25 +15,25 @@ import (
 
 var _ = Describe("FTRL", func() {
 	It("should dump/load", func() {
-		t1, _, examples := runClassification(3000)
-		Expect(t1.Predict(examples[4001])).To(BeNumerically("~", 0.785, 0.001))
+		t1, _, examples := runTraining("classification", 1000)
+		Expect(t1.Predict(examples[1101])).To(BeNumerically("~", 0.640, 0.001))
 
 		b1 := new(bytes.Buffer)
 		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
 
 		t2, err := ftrl.LoadFrom(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(t2.Predict(examples[4001])).To(BeNumerically("~", 0.785, 0.001))
+		Expect(t2.Predict(examples[1101])).To(BeNumerically("~", 0.640, 0.001))
 	})
 
-	DescribeTable("should train & predict",
+	DescribeTable("classification",
 		func(n int, exp *testdata.ClassificationScore) {
-			opt, model, examples := runClassification(n)
+			opt, target, examples := runTraining("classification", n)
 			m1 := mlmetrics.NewConfusionMatrix()
 			m2 := mlmetrics.NewLogLoss()
 			for _, x := range examples[n:] {
 				prediction := opt.Predict(x)
-				actual := model.Feature("target").Category(x)
+				actual := target.Category(x)
 				m1.Observe(int(actual), int(prediction.Category()))
 				m2.Observe(prediction.Prob(actual))
 			}
@@ -63,6 +63,37 @@ var _ = Describe("FTRL", func() {
 			LogLoss:  0.540,
 		}),
 	)
+
+	DescribeTable("regression",
+		func(n int, exp *testdata.RegressionScore) {
+			opt, target, examples := runTraining("regression", n)
+			metric := mlmetrics.NewRegression()
+			for _, x := range examples[n:] {
+				prediction := opt.PredictNum(x).Number()
+				actual := target.Number(x)
+				metric.Observe(actual, prediction)
+			}
+			Expect(metric.R2()).To(BeNumerically("~", exp.R2, 0.001))
+			Expect(metric.RMSE()).To(BeNumerically("~", exp.RMSE, 0.001))
+		},
+
+		Entry("1,000", 1000, &testdata.RegressionScore{
+			R2:   0.372,
+			RMSE: 3.247,
+		}),
+		Entry("5,000", 5000, &testdata.RegressionScore{
+			R2:   0.798,
+			RMSE: 1.815,
+		}),
+		Entry("10,000", 10000, &testdata.RegressionScore{
+			R2:   0.881,
+			RMSE: 1.396,
+		}),
+		Entry("20,000", 20000, &testdata.RegressionScore{
+			R2:   0.923,
+			RMSE: 1.119,
+		}),
+	)
 })
 
 // --------------------------------------------------------------------
@@ -72,8 +103,8 @@ func TestSuite(t *testing.T) {
 	RunSpecs(t, "classifier/ftrl")
 }
 
-func runClassification(n int) (*ftrl.FTRL, *core.Model, []core.Example) {
-	stream, model, err := testdata.OpenBigData("classification", "../../testdata")
+func runTraining(kind string, n int) (*ftrl.FTRL, *core.Feature, []core.Example) {
+	stream, model, err := testdata.OpenBigData(kind, "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()
 
@@ -86,5 +117,5 @@ func runClassification(n int) (*ftrl.FTRL, *core.Model, []core.Example) {
 	for _, x := range examples[:n] {
 		opt.Train(x)
 	}
-	return opt, model, examples
+	return opt, model.Feature("target"), examples
 }

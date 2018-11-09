@@ -8,8 +8,9 @@ import (
 )
 
 func Example() {
+	target := core.NewCategoricalFeature("play", []string{"yes", "no"})
 	model := core.NewModel(
-		core.NewCategoricalFeature("play", []string{"yes", "no"}),
+		target,
 		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
 		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
 		core.NewCategoricalFeature("humidity", []string{"normal", "high"}),
@@ -34,7 +35,7 @@ func Example() {
 	}
 
 	// Init with a model
-	opt, err := ftrl.New(model, "play", nil)
+	opt, err := ftrl.New(model, target.Name, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -55,8 +56,8 @@ func Example() {
 	})
 
 	// Print categories with probabilities
-	fmt.Printf("yes: %.2f\n", 1-prediction)
-	fmt.Printf(" no: %.2f\n", prediction)
+	fmt.Printf("yes: %.2f\n", prediction.Prob(target.CategoryOf("yes")))
+	fmt.Printf(" no: %.2f\n", prediction.Prob(target.CategoryOf("no")))
 
 	// Output:
 	// yes: 0.41

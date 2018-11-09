@@ -16,7 +16,7 @@ import (
 
 var (
 	_ classifier.SupervisedLearner = (*Hoeffding)(nil)
-	_ classifier.MultiCategory     = (*Hoeffding)(nil)
+	_ classifier.Classifier        = (*Hoeffding)(nil)
 	_ classifier.Regressor         = (*Hoeffding)(nil)
 )
 
@@ -154,8 +154,8 @@ func (t *Hoeffding) TrainWeight(x core.Example, weight float64) {
 	}
 }
 
-// PredictMC performs a classification and returns a prediction.
-func (t *Hoeffding) PredictMC(x core.Example) classifier.MultiCategoryClassification {
+// Predict performs a classification and returns a prediction.
+func (t *Hoeffding) Predict(x core.Example) classifier.Classification {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -179,7 +179,7 @@ func (t *Hoeffding) PredictMC(x core.Example) classifier.MultiCategoryClassifica
 	}
 
 	cat, _ := stats.Max()
-	return classificationResult{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
+	return classification{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
 }
 
 // PredictNum performs a regression and returns a prediction.
@@ -201,7 +201,7 @@ func (t *Hoeffding) PredictNum(x core.Example) classifier.Regression {
 		return cinternal.NoResult{}
 	}
 
-	return regressionResult{ns: &stats.NumStream}
+	return regression{ns: &stats.NumStream}
 }
 
 // Prune manually prunes the tree to limit it to maxLearningNodes.

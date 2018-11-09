@@ -8,17 +8,17 @@ import (
 
 	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/ftrl/internal"
+	cinternal "github.com/bsm/reason/classifier/internal"
 	"github.com/bsm/reason/core"
 )
 
 var (
 	_ classifier.SupervisedLearner = (*FTRL)(nil)
-	_ classifier.Binary            = (*FTRL)(nil)
+	_ classifier.Classifier        = (*FTRL)(nil)
+	_ classifier.Regressor         = (*FTRL)(nil)
 )
 
-// Optimizer represents an FTRL optimiser. Regressions
-// can only predict values between 0 and 1. For correct results,
-// please ensure that all your target values are within that range.
+// FTRL represents an FTRL optimiser.
 type FTRL struct {
 	opt        *internal.Optimizer
 	target     *core.Feature
@@ -36,17 +36,17 @@ func LoadFrom(r io.Reader, config *Config) (*FTRL, error) {
 	}
 
 	predictors, offsets, _ := parseFeatures(opt.Model.Features, opt.Target)
-	return newOptimizer(opt, predictors, offsets, config)
+	return newFTRL(opt, predictors, offsets, config)
 }
 
 // New inits a new Optimizer using a model, a target feature and a config.
 func New(model *core.Model, target string, config *Config) (*FTRL, error) {
 	predictors, offsets, size := parseFeatures(model.Features, target)
 	opt := internal.New(model, target, size)
-	return newOptimizer(opt, predictors, offsets, config)
+	return newFTRL(opt, predictors, offsets, config)
 }
 
-func newOptimizer(opt *internal.Optimizer, predictors []string, offsets []int, config *Config) (*FTRL, error) {
+func newFTRL(opt *internal.Optimizer, predictors []string, offsets []int, config *Config) (*FTRL, error) {
 	feat := opt.Model.Feature(opt.Target)
 	if feat == nil {
 		return nil, fmt.Errorf("ftrl: unknown feature %q", opt.Target)
@@ -72,12 +72,20 @@ func newOptimizer(opt *internal.Optimizer, predictors []string, offsets []int, c
 	}, nil
 }
 
-// Predict performs a prediction.
-func (o *FTRL) Predict(x core.Example) classifier.BinaryClassification {
+// Predict performs a classification.
+func (o *FTRL) Predict(x core.Example) classifier.Classification {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	return classifier.BinaryClassification(o.predict(x, nil))
+	return classification(o.predict(x, nil))
+}
+
+// PredictNum performs a regression.
+func (o *FTRL) PredictNum(x core.Example) classifier.Regression {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
+	return cinternal.StdRegression(o.predict(x, nil))
 }
 
 // Train trains the optimizer with an example.
@@ -174,5 +182,9 @@ func (o *FTRL) predict(x core.Example, t map[int]float64) float64 {
 			wTx += factor * val
 		}
 	}
-	return 1 / (1 + math.Exp(-math.Max(math.Min(wTx, 35), -35)))
+
+	if o.target.Kind == core.Feature_CATEGORICAL {
+		return 1 / (1 + math.Exp(-math.Max(math.Min(wTx, 35), -35)))
+	}
+	return wTx
 }

@@ -31,7 +31,7 @@ var _ = Describe("Hoeffding", func() {
 	It("should dump/load", func() {
 		t1, _, examples := runTraining("classification", 3000)
 		Expect(t1.Info()).To(Equal(&hoeffding.TreeInfo{NumNodes: 11, NumLearning: 9, MaxDepth: 3}))
-		Expect(t1.PredictMC(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
+		Expect(t1.Predict(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
 
 		b1 := new(bytes.Buffer)
 		Expect(t1.WriteTo(b1)).To(Equal(int64(b1.Len())))
@@ -39,7 +39,7 @@ var _ = Describe("Hoeffding", func() {
 		t2, err := hoeffding.LoadFrom(b1, nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(t2.Info()).To(Equal(&hoeffding.TreeInfo{NumNodes: 11, NumLearning: 9, MaxDepth: 3}))
-		Expect(t2.PredictMC(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
+		Expect(t2.Predict(examples[4001]).Prob(0)).To(BeNumerically("~", 0.273, 0.001))
 	})
 
 	It("should prune", func() {
@@ -84,15 +84,14 @@ var _ = Describe("Hoeffding", func() {
 
 	DescribeTable("classification",
 		func(n int, expInfo *hoeffding.TreeInfo, exp *testdata.ClassificationScore) {
-			tree, model, examples := runTraining("classification", n)
+			tree, target, examples := runTraining("classification", n)
 			Expect(tree.Info()).To(Equal(expInfo))
 
 			m1 := mlmetrics.NewConfusionMatrix()
 			m2 := mlmetrics.NewLogLoss()
 			for _, x := range examples[n:] {
-				prediction := tree.PredictMC(x)
-				actual := model.Feature("target").Category(x)
-
+				prediction := tree.Predict(x)
+				actual := target.Category(x)
 				m1.Observe(int(actual), int(prediction.Category()))
 				m2.Observe(prediction.Prob(actual))
 			}
@@ -133,13 +132,13 @@ var _ = Describe("Hoeffding", func() {
 
 	DescribeTable("regression",
 		func(n int, expInfo *hoeffding.TreeInfo, exp *testdata.RegressionScore) {
-			tree, model, examples := runTraining("regression", n)
+			tree, target, examples := runTraining("regression", n)
 			Expect(tree.Info()).To(Equal(expInfo))
 
 			metric := mlmetrics.NewRegression()
 			for _, x := range examples[n:] {
 				prediction := tree.PredictNum(x).Number()
-				actual := model.Feature("target").Number(x)
+				actual := target.Number(x)
 				metric.Observe(actual, prediction)
 			}
 			Expect(metric.R2()).To(BeNumerically("~", exp.R2, 0.001))
@@ -174,7 +173,7 @@ var _ = Describe("Hoeffding", func() {
 	)
 })
 
-func runTraining(kind string, n int) (*hoeffding.Hoeffding, *core.Model, []core.Example) {
+func runTraining(kind string, n int) (*hoeffding.Hoeffding, *core.Feature, []core.Example) {
 	stream, model, err := testdata.OpenBigData(kind, "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()
@@ -188,7 +187,7 @@ func runTraining(kind string, n int) (*hoeffding.Hoeffding, *core.Model, []core.
 	for _, x := range examples[:n] {
 		tree.Train(x)
 	}
-	return tree, model, examples
+	return tree, model.Feature("target"), examples
 }
 
 func TestSuite(t *testing.T) {
