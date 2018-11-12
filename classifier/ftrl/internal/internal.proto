@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package blacksquaremedia.reason.classifier.ftrl;
 
-import "core/core.proto";
+import "reason.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -17,7 +17,7 @@ option java_outer_classname = "FTRLProtos";
 // Optimizer wraps the optimizer data.
 message Optimizer {
   // The underlying model.
-  core.Model model = 1;
+  Model model = 1;
 
   // The target feature.
   string target = 2;

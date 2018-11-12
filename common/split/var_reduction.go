@@ -3,7 +3,7 @@ package split
 import (
 	"math"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/util"
 )
 
@@ -15,8 +15,8 @@ type VarianceReduction struct {
 }
 
 // Supports implements Criterion.
-func (VarianceReduction) Supports(target *core.Feature) bool {
-	return target != nil && target.Kind == core.Feature_NUMERICAL
+func (VarianceReduction) Supports(target *reason.Feature) bool {
+	return target != nil && target.Kind == reason.Feature_NUMERICAL
 }
 
 // ClassificationRange implements Criterion.

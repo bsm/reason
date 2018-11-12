@@ -1,4 +1,4 @@
-package core
+package reason
 
 // Example is an interface representing an example instance.
 type Example interface {

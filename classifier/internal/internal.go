@@ -3,8 +3,8 @@ package internal
 import (
 	"math"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier"
-	"github.com/bsm/reason/core"
 )
 
 var (
@@ -16,9 +16,9 @@ var (
 // NoResult is a wrapper for no-result outcomes.
 type NoResult struct{}
 
-func (NoResult) Category() core.Category    { return core.NoCategory }
-func (NoResult) Prob(core.Category) float64 { return 0.0 }
-func (NoResult) Number() float64            { return math.NaN() }
+func (NoResult) Category() reason.Category    { return reason.NoCategory }
+func (NoResult) Prob(reason.Category) float64 { return 0.0 }
+func (NoResult) Number() float64              { return math.NaN() }
 
 // StdRegression is a wrapper for minimal regression predictions.
 type StdRegression float64

@@ -3,7 +3,7 @@ package split
 import (
 	"math"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/util"
 )
 
@@ -15,8 +15,8 @@ type InformationGain struct {
 }
 
 // Supports implements Criterion.
-func (InformationGain) Supports(target *core.Feature) bool {
-	return target != nil && target.Kind == core.Feature_CATEGORICAL
+func (InformationGain) Supports(target *reason.Feature) bool {
+	return target != nil && target.Kind == reason.Feature_CATEGORICAL
 }
 
 // ClassificationRange implements Criterion.

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/internal/iocount"
 	"github.com/bsm/reason/internal/protoio"
 	"github.com/gogo/protobuf/proto"
 )
 
 // New inits a new optimiser from model with defaults.
-func New(model *core.Model, target string, size int) *Optimizer {
+func New(model *reason.Model, target string, size int) *Optimizer {
 	return &Optimizer{
 		Model:   model,
 		Target:  target,
@@ -60,7 +60,7 @@ func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			model := new(core.Model)
+			model := new(reason.Model)
 			if err := rp.ReadMessage(model); err != nil {
 				return rc.N, err
 			}

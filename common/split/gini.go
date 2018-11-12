@@ -1,7 +1,7 @@
 package split
 
 import (
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/util"
 )
 
@@ -9,8 +9,8 @@ import (
 type GiniImpurity struct{}
 
 // Supports implements Criterion.
-func (GiniImpurity) Supports(target *core.Feature) bool {
-	return target != nil && target.Kind == core.Feature_CATEGORICAL
+func (GiniImpurity) Supports(target *reason.Feature) bool {
+	return target != nil && target.Kind == reason.Feature_CATEGORICAL
 }
 
 // ClassificationRange implements Criterion.

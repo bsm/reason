@@ -8,9 +8,9 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
-	"github.com/bsm/reason/core"
 )
 
 var (
@@ -30,7 +30,7 @@ type TreeInfo struct {
 // Hoeffding is an implementation of a Hoeffding tree.
 type Hoeffding struct {
 	tree   *internal.Tree
-	target *core.Feature
+	target *reason.Feature
 
 	config  Config
 	cycles  int
@@ -49,7 +49,7 @@ func LoadFrom(r io.Reader, config *Config) (*Hoeffding, error) {
 }
 
 // New inits a new Tree using a model, a target feature and a config.
-func New(model *core.Model, target string, config *Config) (*Hoeffding, error) {
+func New(model *reason.Model, target string, config *Config) (*Hoeffding, error) {
 	return newTree(internal.NewTree(model, target), config)
 }
 
@@ -96,12 +96,12 @@ func (t *Hoeffding) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Train trains the tree with an example x.
-func (t *Hoeffding) Train(x core.Example) {
+func (t *Hoeffding) Train(x reason.Example) {
 	t.TrainWeight(x, 1.0)
 }
 
 // TrainWeight trains the tree with an example x and a custom weight.
-func (t *Hoeffding) TrainWeight(x core.Example, weight float64) {
+func (t *Hoeffding) TrainWeight(x reason.Example, weight float64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -154,17 +154,17 @@ func (t *Hoeffding) TrainWeight(x core.Example, weight float64) {
 }
 
 // Predict performs a classification and returns a prediction.
-func (t *Hoeffding) Predict(x core.Example) classifier.Classification {
+func (t *Hoeffding) Predict(x reason.Example) classifier.Classification {
 	return t.PredictFull(x)
 }
 
 // PredictFull performs a classification and returns a full prediction.
-func (t *Hoeffding) PredictFull(x core.Example) Classification {
+func (t *Hoeffding) PredictFull(x reason.Example) Classification {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if t.target.Kind != core.Feature_CATEGORICAL {
-		return Classification{cat: core.NoCategory}
+	if t.target.Kind != reason.Feature_CATEGORICAL {
+		return Classification{cat: reason.NoCategory}
 	}
 
 	node, _, parent, _ := t.tree.Traverse(x, t.tree.Root, nil, -1)
@@ -174,29 +174,29 @@ func (t *Hoeffding) PredictFull(x core.Example) Classification {
 
 	stats := node.GetClassification()
 	if stats == nil {
-		return Classification{cat: core.NoCategory}
+		return Classification{cat: reason.NoCategory}
 	}
 
 	weight := stats.WeightSum()
 	if weight <= 0 {
-		return Classification{cat: core.NoCategory}
+		return Classification{cat: reason.NoCategory}
 	}
 
 	cat, _ := stats.Max()
-	return Classification{cat: core.Category(cat), weight: weight, vv: &stats.Vector}
+	return Classification{cat: reason.Category(cat), weight: weight, vv: &stats.Vector}
 }
 
 // PredictNum performs a regression and returns a prediction.
-func (t *Hoeffding) PredictNum(x core.Example) classifier.Regression {
+func (t *Hoeffding) PredictNum(x reason.Example) classifier.Regression {
 	return t.PredictNumFull(x)
 }
 
 // PredictNumFull performs a regression and returns a full prediction.
-func (t *Hoeffding) PredictNumFull(x core.Example) Regression {
+func (t *Hoeffding) PredictNumFull(x reason.Example) Regression {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	if t.target.Kind != core.Feature_NUMERICAL {
+	if t.target.Kind != reason.Feature_NUMERICAL {
 		return Regression{}
 	}
 

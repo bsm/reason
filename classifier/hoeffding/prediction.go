@@ -4,13 +4,13 @@ package hoeffding
 import (
 	"math"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/util"
 )
 
 // Classification prediction implements classifier.Classification and exposes additional stats.
 type Classification struct {
-	cat    core.Category
+	cat    reason.Category
 	weight float64
 	vv     *util.Vector
 }
@@ -19,10 +19,10 @@ type Classification struct {
 func (c Classification) Weight() float64 { return c.weight }
 
 // Category implements classifier.Classification interface.
-func (c Classification) Category() core.Category { return c.cat }
+func (c Classification) Category() reason.Category { return c.cat }
 
 // Prob implements classifier.Classification interface.
-func (c Classification) Prob(cat core.Category) float64 {
+func (c Classification) Prob(cat reason.Category) float64 {
 	if c.weight <= 0 || c.vv == nil {
 		return 0
 	}

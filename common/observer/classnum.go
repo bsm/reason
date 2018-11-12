@@ -1,8 +1,8 @@
 package observer
 
 import (
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/common/split"
-	"github.com/bsm/reason/core"
 	util "github.com/bsm/reason/util"
 )
 
@@ -15,20 +15,20 @@ func NewClassificationNumerical(maxBuckets uint32) *ClassificationNumerical {
 }
 
 // Observe adds a new observation.
-func (o *ClassificationNumerical) Observe(val float64, target core.Category) {
+func (o *ClassificationNumerical) Observe(val float64, target reason.Category) {
 	o.ObserveWeight(val, target, 1.0)
 }
 
 // ObserveWeight adds a new observation with a weight.
-func (o *ClassificationNumerical) ObserveWeight(val float64, target core.Category, weight float64) {
-	if !(core.IsCat(target) && core.IsNum(val) && weight > 0) {
+func (o *ClassificationNumerical) ObserveWeight(val float64, target reason.Category, weight float64) {
+	if !(reason.IsCat(target) && reason.IsNum(val) && weight > 0) {
 		return
 	}
 	o.Dist.ObserveWeight(int(target), val, weight)
 }
 
 // Prob determines the probability of val given a target.
-func (o *ClassificationNumerical) Prob(val float64, target core.Category) float64 {
+func (o *ClassificationNumerical) Prob(val float64, target reason.Category) float64 {
 	if s := o.Dist.At(int(target)); s != nil {
 		return s.Prob(val)
 	}

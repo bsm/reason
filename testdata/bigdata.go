@@ -7,50 +7,50 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 )
 
-var BigClassificationModel = core.NewModel(
-	core.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c2", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c4", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c5", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewNumericalFeature("n1"),
-	core.NewNumericalFeature("n2"),
-	core.NewNumericalFeature("n3"),
-	core.NewNumericalFeature("n4"),
-	core.NewNumericalFeature("n5"),
-	core.NewCategoricalFeature("target", []string{"c1", "c2"}),
+var BigClassificationModel = reason.NewModel(
+	reason.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c2", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c4", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c5", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewNumericalFeature("n1"),
+	reason.NewNumericalFeature("n2"),
+	reason.NewNumericalFeature("n3"),
+	reason.NewNumericalFeature("n4"),
+	reason.NewNumericalFeature("n5"),
+	reason.NewCategoricalFeature("target", []string{"c1", "c2"}),
 )
 
-var BigRegressionModel = core.NewModel(
-	core.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c2", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c4", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewCategoricalFeature("c5", []string{"v1", "v2", "v3", "v4", "v5"}),
-	core.NewNumericalFeature("n1"),
-	core.NewNumericalFeature("n2"),
-	core.NewNumericalFeature("n3"),
-	core.NewNumericalFeature("n4"),
-	core.NewNumericalFeature("n5"),
-	core.NewNumericalFeature("target"),
+var BigRegressionModel = reason.NewModel(
+	reason.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c2", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c3", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c4", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewCategoricalFeature("c5", []string{"v1", "v2", "v3", "v4", "v5"}),
+	reason.NewNumericalFeature("n1"),
+	reason.NewNumericalFeature("n2"),
+	reason.NewNumericalFeature("n3"),
+	reason.NewNumericalFeature("n4"),
+	reason.NewNumericalFeature("n5"),
+	reason.NewNumericalFeature("target"),
 )
 
 // BigDataStream is a stream of test events.
 type BigDataStream struct {
 	file    *os.File
 	recs    *csv.Reader
-	model   *core.Model
+	model   *reason.Model
 	mapping map[string]int
 
-	x   core.MapExample
+	x   reason.MapExample
 	err error
 }
 
 // OpenBigData opens a bigdata stream.
-func OpenBigData(kind, root string) (*BigDataStream, *core.Model, error) {
+func OpenBigData(kind, root string) (*BigDataStream, *reason.Model, error) {
 	switch kind {
 	case "classification":
 		return bigDataClassification(root)
@@ -60,19 +60,19 @@ func OpenBigData(kind, root string) (*BigDataStream, *core.Model, error) {
 	panic("no such kind: " + kind)
 }
 
-func bigDataClassification(root string) (*BigDataStream, *core.Model, error) {
+func bigDataClassification(root string) (*BigDataStream, *reason.Model, error) {
 	return open(root, BigClassificationModel, map[string]int{
 		"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 10,
 	})
 }
 
-func bigDataRegression(root string) (*BigDataStream, *core.Model, error) {
+func bigDataRegression(root string) (*BigDataStream, *reason.Model, error) {
 	return open(root, BigRegressionModel, map[string]int{
 		"c1": 0, "c2": 1, "c3": 2, "c4": 3, "c5": 4, "n1": 5, "n2": 6, "n3": 7, "n4": 8, "n5": 9, "target": 11,
 	})
 }
 
-func open(root string, model *core.Model, mapping map[string]int) (*BigDataStream, *core.Model, error) {
+func open(root string, model *reason.Model, mapping map[string]int) (*BigDataStream, *reason.Model, error) {
 	f, err := os.Open(filepath.Join(root, "bigdata.csv"))
 	if err != nil {
 		return nil, nil, err
@@ -101,7 +101,7 @@ func (s *BigDataStream) Next() bool {
 	}
 
 	// read predictors
-	s.x = make(core.MapExample, s.recs.FieldsPerRecord)
+	s.x = make(reason.MapExample, s.recs.FieldsPerRecord)
 	for name, feat := range s.model.Features {
 		if str := row[s.mapping[name]]; str == "" {
 			continue
@@ -117,8 +117,8 @@ func (s *BigDataStream) Next() bool {
 	return true
 }
 
-func (s *BigDataStream) ReadN(n int) ([]core.Example, error) {
-	res := make([]core.Example, 0, n)
+func (s *BigDataStream) ReadN(n int) ([]reason.Example, error) {
+	res := make([]reason.Example, 0, n)
 	for s.Next() {
 		res = append(res, s.Example())
 		if len(res) == n {
@@ -135,5 +135,5 @@ func (s *BigDataStream) Err() error {
 	return s.err
 }
 
-func (s *BigDataStream) Example() core.Example { return s.x }
-func (s *BigDataStream) Close() error          { return s.file.Close() }
+func (s *BigDataStream) Example() reason.Example { return s.x }
+func (s *BigDataStream) Close() error            { return s.file.Close() }

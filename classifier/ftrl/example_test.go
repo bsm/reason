@@ -3,21 +3,21 @@ package ftrl_test
 import (
 	"fmt"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/ftrl"
-	"github.com/bsm/reason/core"
 )
 
 func Example() {
-	target := core.NewCategoricalFeature("play", []string{"yes", "no"})
-	model := core.NewModel(
+	target := reason.NewCategoricalFeature("play", []string{"yes", "no"})
+	model := reason.NewModel(
 		target,
-		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
-		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
-		core.NewCategoricalFeature("humidity", []string{"normal", "high"}),
-		core.NewCategoricalFeature("windy", []string{"true", "false"}),
+		reason.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
+		reason.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
+		reason.NewCategoricalFeature("humidity", []string{"normal", "high"}),
+		reason.NewCategoricalFeature("windy", []string{"true", "false"}),
 	)
 
-	examples := []core.MapExample{
+	examples := []reason.MapExample{
 		{"outlook": "rainy", "temp": "hot", "humidity": "high", "windy": "false", "play": "no"},
 		{"outlook": "rainy", "temp": "hot", "humidity": "high", "windy": "true", "play": "no"},
 		{"outlook": "overcast", "temp": "hot", "humidity": "high", "windy": "false", "play": "yes"},
@@ -48,7 +48,7 @@ func Example() {
 	}
 
 	// Predict
-	prediction := opt.Predict(core.MapExample{
+	prediction := opt.Predict(reason.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",

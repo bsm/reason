@@ -1,10 +1,10 @@
 package internal_test
 
 import (
+	"github.com/bsm/reason"
 	"bytes"
 
 	"github.com/bsm/reason/classifier/hoeffding/internal"
-	core "github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 	"github.com/bsm/reason/util"
 	"github.com/gogo/protobuf/proto"
@@ -38,7 +38,7 @@ var _ = Describe("Tree", func() {
 		Expect(t).To(Equal(subject))
 	})
 
-	It("should unmarshal from reader", func() {
+	It("should unmarshal from reader", func() {		
 		data, err := proto.Marshal(subject)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -88,7 +88,7 @@ var _ = Describe("Tree", func() {
 	It("should traverse", func() {
 		subject.SplitNode(1, "outlook", postSplit, 0)
 		root := subject.GetNode(1)
-		example := core.MapExample{"outlook": "overcast"}
+		example := reason.MapExample{"outlook": "overcast"}
 
 		// valid nref
 		node, nref, parent, ppos := subject.Traverse(example, 1, nil, -1)

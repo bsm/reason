@@ -3,21 +3,21 @@ package hoeffding_test
 import (
 	"fmt"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/hoeffding"
-	"github.com/bsm/reason/core"
 )
 
 func Example_classification() {
-	target := core.NewCategoricalFeature("play", []string{"yes", "no"})
-	model := core.NewModel(
+	target := reason.NewCategoricalFeature("play", []string{"yes", "no"})
+	model := reason.NewModel(
 		target,
-		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
-		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
-		core.NewCategoricalFeature("humidity", []string{"normal", "high"}),
-		core.NewCategoricalFeature("windy", []string{"true", "false"}),
+		reason.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
+		reason.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
+		reason.NewCategoricalFeature("humidity", []string{"normal", "high"}),
+		reason.NewCategoricalFeature("windy", []string{"true", "false"}),
 	)
 
-	examples := []core.MapExample{
+	examples := []reason.MapExample{
 		{"outlook": "rainy", "temp": "hot", "humidity": "high", "windy": "false", "play": "no"},
 		{"outlook": "rainy", "temp": "hot", "humidity": "high", "windy": "true", "play": "no"},
 		{"outlook": "overcast", "temp": "hot", "humidity": "high", "windy": "false", "play": "yes"},
@@ -49,7 +49,7 @@ func Example_classification() {
 	}
 
 	// Predict
-	prediction := tree.Predict(core.MapExample{
+	prediction := tree.Predict(reason.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",
@@ -66,15 +66,15 @@ func Example_classification() {
 }
 
 func Example_regression() {
-	model := core.NewModel(
-		core.NewNumericalFeature("hours"),
-		core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
-		core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
-		core.NewCategoricalFeature("humidity", []string{"normal", "high"}),
-		core.NewCategoricalFeature("windy", []string{"true", "false"}),
+	model := reason.NewModel(
+		reason.NewNumericalFeature("hours"),
+		reason.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
+		reason.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
+		reason.NewCategoricalFeature("humidity", []string{"normal", "high"}),
+		reason.NewCategoricalFeature("windy", []string{"true", "false"}),
 	)
 
-	examples := []core.MapExample{
+	examples := []reason.MapExample{
 		{"outlook": "rainy", "temp": "hot", "humidity": "high", "windy": "false", "hours": 25},
 		{"outlook": "rainy", "temp": "hot", "humidity": "high", "windy": "true", "hours": 30},
 		{"outlook": "overcast", "temp": "hot", "humidity": "high", "windy": "false", "hours": 46},
@@ -106,7 +106,7 @@ func Example_regression() {
 	}
 
 	// Predict
-	prediction := tree.PredictNumFull(core.MapExample{
+	prediction := tree.PredictNumFull(reason.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",

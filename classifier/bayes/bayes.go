@@ -6,16 +6,16 @@ import (
 	"io"
 	"sync"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/bayes/internal"
 	cinternal "github.com/bsm/reason/classifier/internal"
-	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/util"
 )
 
 var (
 	_ classifier.SupervisedLearner = (*NaiveBayes)(nil)
-	_ classifier.Classifier     = (*NaiveBayes)(nil)
+	_ classifier.Classifier        = (*NaiveBayes)(nil)
 )
 
 // Config contains configuration options for the Classifier.
@@ -24,7 +24,7 @@ type Config struct{}
 // NaiveBayes implements a Naive Bayes classifier.
 type NaiveBayes struct {
 	nb     *internal.NaiveBayes
-	target *core.Feature
+	target *reason.Feature
 
 	mu sync.RWMutex
 }
@@ -39,7 +39,7 @@ func LoadFrom(r io.Reader, config *Config) (*NaiveBayes, error) {
 }
 
 // New inits a new classifer.
-func New(model *core.Model, target string, config *Config) (*NaiveBayes, error) {
+func New(model *reason.Model, target string, config *Config) (*NaiveBayes, error) {
 	return newNaiveBayes(&internal.NaiveBayes{
 		Model:  model,
 		Target: target,
@@ -50,7 +50,7 @@ func newNaiveBayes(nb *internal.NaiveBayes, config *Config) (*NaiveBayes, error)
 	target := nb.Model.Feature(nb.Target)
 	if target == nil {
 		return nil, fmt.Errorf("bayes: unknown feature %q", nb.Target)
-	} else if target.Kind != core.Feature_CATEGORICAL {
+	} else if target.Kind != reason.Feature_CATEGORICAL {
 		return nil, fmt.Errorf("bayes: target %q is not suitable for classification", nb.Target)
 	}
 	return &NaiveBayes{nb: nb, target: target}, nil
@@ -65,18 +65,18 @@ func (b *NaiveBayes) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Train trains the optimizer with an example.
-func (b *NaiveBayes) Train(x core.Example) {
+func (b *NaiveBayes) Train(x reason.Example) {
 	b.TrainWeight(x, 1.0)
 }
 
 // TrainWeight trains the optimizer with an example and a weight.
-func (b *NaiveBayes) TrainWeight(x core.Example, weight float64) {
+func (b *NaiveBayes) TrainWeight(x reason.Example, weight float64) {
 	if weight <= 0 {
 		return
 	}
 
 	tcat := b.target.Category(x)
-	if !core.IsCat(tcat) {
+	if !reason.IsCat(tcat) {
 		return
 	}
 
@@ -87,7 +87,7 @@ func (b *NaiveBayes) TrainWeight(x core.Example, weight float64) {
 }
 
 // PredictMC implements classifier.MultiCategory interface.
-func (b *NaiveBayes) Predict(x core.Example) classifier.Classification {
+func (b *NaiveBayes) Predict(x reason.Example) classifier.Classification {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
@@ -104,16 +104,16 @@ func (b *NaiveBayes) Predict(x core.Example) classifier.Classification {
 		for name, wrap := range b.nb.FeatureStats {
 			feat := b.nb.Model.Feature(name)
 			switch feat.Kind {
-			case core.Feature_CATEGORICAL:
+			case reason.Feature_CATEGORICAL:
 				if stats := wrap.GetCat(); stats != nil {
-					if cat := feat.Category(x); core.IsCat(cat) {
-						votes.Set(col, votes.At(col)*stats.Prob(cat, core.Category(col)))
+					if cat := feat.Category(x); reason.IsCat(cat) {
+						votes.Set(col, votes.At(col)*stats.Prob(cat, reason.Category(col)))
 					}
 				}
-			case core.Feature_NUMERICAL:
+			case reason.Feature_NUMERICAL:
 				if stats := wrap.GetNum(); stats != nil {
-					if val := feat.Number(x); core.IsNum(val) {
-						votes.Set(col, votes.At(col)*stats.Prob(val, core.Category(col)))
+					if val := feat.Number(x); reason.IsNum(val) {
+						votes.Set(col, votes.At(col)*stats.Prob(val, reason.Category(col)))
 					}
 				}
 			}
@@ -126,5 +126,5 @@ func (b *NaiveBayes) Predict(x core.Example) classifier.Classification {
 	}
 
 	votes.Normalize()
-	return prediction{cat: core.Category(pos), vv: votes}
+	return prediction{cat: reason.Category(pos), vv: votes}
 }

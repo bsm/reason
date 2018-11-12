@@ -1,9 +1,9 @@
 package testdata
 
-import "github.com/bsm/reason/core"
+import "github.com/bsm/reason"
 
 // SimpleDataSet contains a simple test dataset.
-var SimpleDataSet = []core.MapExample{
+var SimpleDataSet = []reason.MapExample{
 	{"outlook": "rainy", "temp": "hot", "humidity": "high", "humidex": 61, "windy": "false", "hours": 25, "play": "no"},
 	{"outlook": "rainy", "temp": "hot", "humidity": "high", "humidex": 58, "windy": "true", "hours": 30, "play": "no"},
 	{"outlook": "overcast", "temp": "hot", "humidity": "high", "humidex": 60, "windy": "false", "hours": 46, "play": "yes"},
@@ -21,14 +21,14 @@ var SimpleDataSet = []core.MapExample{
 }
 
 // SimpleModel is a simple test model.
-var SimpleModel = core.NewModel(
-	core.NewCategoricalFeature("play", []string{"yes", "no"}),
-	core.NewNumericalFeature("hours"),
-	core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
-	core.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
-	core.NewCategoricalFeature("humidity", []string{"high", "normal"}),
-	core.NewNumericalFeature("humidex"),
-	core.NewCategoricalFeature("windy", []string{"true", "false"}),
+var SimpleModel = reason.NewModel(
+	reason.NewCategoricalFeature("play", []string{"yes", "no"}),
+	reason.NewNumericalFeature("hours"),
+	reason.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"}),
+	reason.NewCategoricalFeature("temp", []string{"hot", "mild", "cool"}),
+	reason.NewCategoricalFeature("humidity", []string{"high", "normal"}),
+	reason.NewNumericalFeature("humidex"),
+	reason.NewCategoricalFeature("windy", []string{"true", "false"}),
 )
 
 // ClassificationScore is used to compare results.

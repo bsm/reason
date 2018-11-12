@@ -1,4 +1,4 @@
-package core_test
+package reason_test
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "core")
+	RunSpecs(t, "reason")
 }
 
 type (

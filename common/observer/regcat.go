@@ -1,8 +1,8 @@
 package observer
 
 import (
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/common/split"
-	"github.com/bsm/reason/core"
 	util "github.com/bsm/reason/util"
 )
 
@@ -12,13 +12,13 @@ func NewRegressionCategorical() *RegressionCategorical {
 }
 
 // Observe adds a new observation.
-func (o *RegressionCategorical) Observe(cat core.Category, target float64) {
+func (o *RegressionCategorical) Observe(cat reason.Category, target float64) {
 	o.ObserveWeight(cat, target, 1.0)
 }
 
 // ObserveWeight updates stats based on a weighted observation.
-func (o *RegressionCategorical) ObserveWeight(cat core.Category, target float64, weight float64) {
-	if core.IsCat(cat) && core.IsNum(target) && weight > 0 {
+func (o *RegressionCategorical) ObserveWeight(cat reason.Category, target float64, weight float64) {
+	if reason.IsCat(cat) && reason.IsNum(target) && weight > 0 {
 		o.Dist.ObserveWeight(int(cat), target, weight)
 	}
 }

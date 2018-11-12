@@ -5,16 +5,16 @@ import (
 	"math"
 	"sort"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 )
 
-func featureBV(feat *core.Feature, x core.Example, offset int) (int, float64) {
+func featureBV(feat *reason.Feature, x reason.Example, offset int) (int, float64) {
 	switch feat.Kind {
-	case core.Feature_CATEGORICAL:
-		if cat := feat.Category(x); cat != core.NoCategory {
+	case reason.Feature_CATEGORICAL:
+		if cat := feat.Category(x); cat != reason.NoCategory {
 			return offset + int(cat), 1.0
 		}
-	case core.Feature_NUMERICAL:
+	case reason.Feature_NUMERICAL:
 		if num := feat.Number(x); !math.IsNaN(num) {
 			return offset, num
 		}
@@ -22,7 +22,7 @@ func featureBV(feat *core.Feature, x core.Example, offset int) (int, float64) {
 	return -1, 0.0
 }
 
-func parseFeatures(features map[string]*core.Feature, target string) (predictors []string, offsets []int, size int) {
+func parseFeatures(features map[string]*reason.Feature, target string) (predictors []string, offsets []int, size int) {
 	predictors = make([]string, 0, len(features)-1)
 	for _, feat := range features {
 		if feat.Name != target {
@@ -37,9 +37,9 @@ func parseFeatures(features map[string]*core.Feature, target string) (predictors
 
 		feat := features[name]
 		switch feat.Kind {
-		case core.Feature_CATEGORICAL:
+		case reason.Feature_CATEGORICAL:
 			size += feat.NumCategories()
-		case core.Feature_NUMERICAL:
+		case reason.Feature_NUMERICAL:
 			size += 1
 		}
 	}

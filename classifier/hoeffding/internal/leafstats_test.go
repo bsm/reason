@@ -1,8 +1,8 @@
 package internal_test
 
 import (
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
-	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,10 +11,10 @@ import (
 var _ = Describe("LeafNode_Stats", func() {
 	var subject *internal.LeafNode_Stats
 
-	play := core.NewCategoricalFeature("play", []string{"yes", "no"})
-	outlook := core.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"})
-	hours := core.NewNumericalFeature("hours")
-	humidex := core.NewNumericalFeature("humidex")
+	play := reason.NewCategoricalFeature("play", []string{"yes", "no"})
+	outlook := reason.NewCategoricalFeature("outlook", []string{"rainy", "overcast", "sunny"})
+	hours := reason.NewNumericalFeature("hours")
+	humidex := reason.NewNumericalFeature("humidex")
 
 	BeforeEach(func() {
 		subject = new(internal.LeafNode_Stats)

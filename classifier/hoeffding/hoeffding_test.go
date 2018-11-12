@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/bsm/mlmetrics"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/hoeffding"
 	"github.com/bsm/reason/common/split"
-	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -173,7 +173,7 @@ var _ = Describe("Hoeffding", func() {
 	)
 })
 
-func runTraining(kind string, n int) (*hoeffding.Hoeffding, *core.Feature, []core.Example) {
+func runTraining(kind string, n int) (*hoeffding.Hoeffding, *reason.Feature, []reason.Example) {
 	stream, model, err := testdata.OpenBigData(kind, "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()

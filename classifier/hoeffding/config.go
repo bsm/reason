@@ -1,8 +1,8 @@
 package hoeffding
 
 import (
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/common/split"
-	"github.com/bsm/reason/core"
 )
 
 // Config configures behaviour
@@ -45,7 +45,7 @@ type Config struct {
 	EnableTracing bool
 }
 
-func (c *Config) norm(target *core.Feature) {
+func (c *Config) norm(target *reason.Feature) {
 	if c.GracePeriod <= 0 {
 		c.GracePeriod = 200
 	}

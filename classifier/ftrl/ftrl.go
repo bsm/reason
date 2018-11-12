@@ -6,10 +6,10 @@ import (
 	"math"
 	"sync"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier"
 	"github.com/bsm/reason/classifier/ftrl/internal"
 	cinternal "github.com/bsm/reason/classifier/internal"
-	"github.com/bsm/reason/core"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 // FTRL represents an FTRL optimiser.
 type FTRL struct {
 	opt        *internal.Optimizer
-	target     *core.Feature
+	target     *reason.Feature
 	predictors []string
 	offsets    []int
 	config     Config
@@ -40,7 +40,7 @@ func LoadFrom(r io.Reader, config *Config) (*FTRL, error) {
 }
 
 // New inits a new Optimizer using a model, a target feature and a config.
-func New(model *core.Model, target string, config *Config) (*FTRL, error) {
+func New(model *reason.Model, target string, config *Config) (*FTRL, error) {
 	predictors, offsets, size := parseFeatures(model.Features, target)
 	opt := internal.New(model, target, size)
 	return newFTRL(opt, predictors, offsets, config)
@@ -52,7 +52,7 @@ func newFTRL(opt *internal.Optimizer, predictors []string, offsets []int, config
 		return nil, fmt.Errorf("ftrl: unknown feature %q", opt.Target)
 	}
 	for _, feat := range opt.Model.Features {
-		if feat.Strategy != core.Feature_VOCABULARY {
+		if feat.Strategy != reason.Feature_VOCABULARY {
 			return nil, fmt.Errorf("ftrl: feature's %q strategy %q is not supported", feat.Name, feat.Strategy.String())
 		}
 	}
@@ -73,7 +73,7 @@ func newFTRL(opt *internal.Optimizer, predictors []string, offsets []int, config
 }
 
 // Predict performs a classification.
-func (o *FTRL) Predict(x core.Example) classifier.Classification {
+func (o *FTRL) Predict(x reason.Example) classifier.Classification {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
@@ -81,7 +81,7 @@ func (o *FTRL) Predict(x core.Example) classifier.Classification {
 }
 
 // PredictNum performs a regression.
-func (o *FTRL) PredictNum(x core.Example) classifier.Regression {
+func (o *FTRL) PredictNum(x reason.Example) classifier.Regression {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
@@ -89,29 +89,29 @@ func (o *FTRL) PredictNum(x core.Example) classifier.Regression {
 }
 
 // Train trains the optimizer with an example.
-func (o *FTRL) Train(x core.Example) {
+func (o *FTRL) Train(x reason.Example) {
 	o.TrainWeight(x, 1.0)
 }
 
 // TrainWeight trains the optimizer with an example and a weight.
-func (o *FTRL) TrainWeight(x core.Example, weight float64) {
+func (o *FTRL) TrainWeight(x reason.Example, weight float64) {
 	if weight <= 0 {
 		return
 	}
 
 	y := 0.0 // target
 	switch o.target.Kind {
-	case core.Feature_CATEGORICAL:
+	case reason.Feature_CATEGORICAL:
 		cat := o.target.Category(x)
-		if !core.IsCat(cat) {
+		if !reason.IsCat(cat) {
 			return
 		}
 		if cat > 0 {
 			y = 1.0
 		}
-	case core.Feature_NUMERICAL:
+	case reason.Feature_NUMERICAL:
 		val := o.target.Number(x)
-		if !core.IsNum(val) {
+		if !reason.IsNum(val) {
 			return
 		}
 		y = val
@@ -153,7 +153,7 @@ func (o *FTRL) WriteTo(w io.Writer) (int64, error) {
 	return o.opt.WriteTo(w)
 }
 
-func (o *FTRL) predict(x core.Example, t map[int]float64) float64 {
+func (o *FTRL) predict(x reason.Example, t map[int]float64) float64 {
 	var wTx float64
 
 	for i, name := range o.predictors {
@@ -183,7 +183,7 @@ func (o *FTRL) predict(x core.Example, t map[int]float64) float64 {
 		}
 	}
 
-	if o.target.Kind == core.Feature_CATEGORICAL {
+	if o.target.Kind == reason.Feature_CATEGORICAL {
 		return 1 / (1 + math.Exp(-math.Max(math.Min(wTx, 35), -35)))
 	}
 	return wTx

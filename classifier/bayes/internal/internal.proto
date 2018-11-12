@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package blacksquaremedia.reason.classifier.bayes;
 
-import "core/core.proto";
+import "reason.proto";
 import "util/util.proto";
 import "common/observer/observer.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
@@ -28,7 +28,7 @@ message NaiveBayes {
   }
 
   // The underlying model.
-  core.Model model = 1;
+  Model model = 1;
 
   // The target feature.
   string target = 2;

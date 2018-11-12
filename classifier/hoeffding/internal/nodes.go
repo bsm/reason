@@ -1,8 +1,8 @@
 package internal
 
 import (
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/common/split"
-	core "github.com/bsm/reason/core"
 )
 
 // GetChild retrieves the child nref at pos.
@@ -25,11 +25,11 @@ func (n *SplitNode) SetChild(pos int, nref int64) {
 	n.Children[pos] = nref
 }
 
-func (n *SplitNode) childPos(feat *core.Feature, x core.Example) int {
+func (n *SplitNode) childPos(feat *reason.Feature, x reason.Example) int {
 	switch feat.Kind {
-	case core.Feature_CATEGORICAL:
+	case reason.Feature_CATEGORICAL:
 		return int(feat.Category(x))
-	case core.Feature_NUMERICAL:
+	case reason.Feature_NUMERICAL:
 		if feat.Number(x) < n.Pivot {
 			return 0
 		}
@@ -56,7 +56,7 @@ func (n *LeafNode) Disable() {
 }
 
 // ObserveExample observes an example and updates internal stats.
-func (n *LeafNode) ObserveExample(m *core.Model, target *core.Feature, x core.Example, weight float64, me *Node) {
+func (n *LeafNode) ObserveExample(m *reason.Model, target *reason.Feature, x reason.Example, weight float64, me *Node) {
 	// Observe example, update node stats
 	if success := me.incrementStats(target, x, weight); !success {
 		return
@@ -184,10 +184,10 @@ func (n *Node) IsSufficient() bool {
 	return false
 }
 
-func (n *Node) incrementStats(target *core.Feature, x core.Example, weight float64) (success bool) {
+func (n *Node) incrementStats(target *reason.Feature, x reason.Example, weight float64) (success bool) {
 	switch target.Kind {
-	case core.Feature_CATEGORICAL:
-		if cat := target.Category(x); core.IsCat(cat) {
+	case reason.Feature_CATEGORICAL:
+		if cat := target.Category(x); reason.IsCat(cat) {
 			stats := n.GetClassification()
 			if stats == nil {
 				stats = new(Node_ClassificationStats)
@@ -196,8 +196,8 @@ func (n *Node) incrementStats(target *core.Feature, x core.Example, weight float
 			stats.Incr(int(cat), weight)
 			return true
 		}
-	case core.Feature_NUMERICAL:
-		if num := target.Number(x); core.IsNum(num) {
+	case reason.Feature_NUMERICAL:
+		if num := target.Number(x); reason.IsNum(num) {
 			stats := n.GetRegression()
 			if stats == nil {
 				stats = new(Node_RegressionStats)

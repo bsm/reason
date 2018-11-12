@@ -1,8 +1,8 @@
 package observer
 
 import (
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/common/split"
-	"github.com/bsm/reason/core"
 	util "github.com/bsm/reason/util"
 )
 
@@ -12,19 +12,19 @@ func NewClassificationCategorical() *ClassificationCategorical {
 }
 
 // Observe adds a new observation.
-func (o *ClassificationCategorical) Observe(cat, target core.Category) {
+func (o *ClassificationCategorical) Observe(cat, target reason.Category) {
 	o.ObserveWeight(cat, target, 1.0)
 }
 
 // ObserveWeight updates stats based on a weighted observation.
-func (o *ClassificationCategorical) ObserveWeight(cat, target core.Category, weight float64) {
-	if core.IsCat(cat) && core.IsCat(target) && weight > 0 {
+func (o *ClassificationCategorical) ObserveWeight(cat, target reason.Category, weight float64) {
+	if reason.IsCat(cat) && reason.IsCat(target) && weight > 0 {
 		o.Dist.Incr(int(cat), int(target), weight)
 	}
 }
 
 // Prob determines the probability of feature cat given a target.
-func (o *ClassificationCategorical) Prob(cat, target core.Category) float64 {
+func (o *ClassificationCategorical) Prob(cat, target reason.Category) float64 {
 	sum := o.Dist.ColSum(int(target))
 	if sum == 0.0 {
 		return 0.0

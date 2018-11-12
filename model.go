@@ -1,4 +1,4 @@
-package core
+package reason
 
 // NewModel initializes a new model
 func NewModel(features ...*Feature) *Model {

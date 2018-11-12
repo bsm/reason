@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/bsm/mlmetrics"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/ftrl"
-	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -103,7 +103,7 @@ func TestSuite(t *testing.T) {
 	RunSpecs(t, "classifier/ftrl")
 }
 
-func runTraining(kind string, n int) (*ftrl.FTRL, *core.Feature, []core.Example) {
+func runTraining(kind string, n int) (*ftrl.FTRL, *reason.Feature, []reason.Example) {
 	stream, model, err := testdata.OpenBigData(kind, "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()

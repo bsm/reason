@@ -5,7 +5,7 @@ package split
 import (
 	"math"
 
-	"github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/util"
 )
 
@@ -13,7 +13,7 @@ import (
 // for classifications.
 type Criterion interface {
 	// Supports returns true if the target feature is supported.
-	Supports(target *core.Feature) bool
+	Supports(target *reason.Feature) bool
 
 	// ClassificationRange applies to classifications only and
 	// determines the split range.
@@ -33,9 +33,9 @@ type Criterion interface {
 }
 
 // DefaultCriterion returns the default split criterion for the given target.
-func DefaultCriterion(target *core.Feature) Criterion {
+func DefaultCriterion(target *reason.Feature) Criterion {
 	switch target.Kind {
-	case core.Feature_NUMERICAL:
+	case reason.Feature_NUMERICAL:
 		return VarianceReduction{MinWeight: 4.0}
 	}
 	return InformationGain{MinBranchFraction: 0.1}

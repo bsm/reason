@@ -5,14 +5,14 @@ import (
 	fmt "fmt"
 	"io"
 
-	core "github.com/bsm/reason/core"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/internal/iocount"
 	"github.com/bsm/reason/internal/protoio"
 	"github.com/gogo/protobuf/proto"
 )
 
 // NewTree inits a brand-new tree
-func NewTree(model *core.Model, target string) *Tree {
+func NewTree(model *reason.Model, target string) *Tree {
 	t := &Tree{
 		Model:  model,
 		Target: target,
@@ -90,7 +90,7 @@ func (t *Tree) SplitNode(nref int64, feature string, postSplit PostSplit, pivot 
 }
 
 // Traverse traverses the tree with an example x starting at a given nref.
-func (t *Tree) Traverse(x core.Example, nref int64, parent *Node, ppos int) (*Node, int64, *Node, int) {
+func (t *Tree) Traverse(x reason.Example, nref int64, parent *Node, ppos int) (*Node, int64, *Node, int) {
 	node := t.GetNode(nref)
 	if node == nil {
 		return node, nref, parent, ppos
@@ -128,7 +128,7 @@ func (t *Tree) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			model := new(core.Model)
+			model := new(reason.Model)
 			if err := rp.ReadMessage(model); err != nil {
 				return rc.N, err
 			}
@@ -284,7 +284,7 @@ func (t *Tree) WriteDOT(w io.Writer, nref int64, name, label string) (written in
 }
 
 // nodeCondition
-func nodeCondition(feat *core.Feature, pos int, pivot float64) string {
+func nodeCondition(feat *reason.Feature, pos int, pivot float64) string {
 	if feat.Kind.IsNumerical() {
 		if pos == 0 {
 			return fmt.Sprintf(`%s <= %.2f`, feat.Name, pivot)
@@ -293,6 +293,6 @@ func nodeCondition(feat *core.Feature, pos int, pivot float64) string {
 		}
 	}
 
-	cat := core.Category(pos)
+	cat := reason.Category(pos)
 	return fmt.Sprintf(`%s = %s`, feat.Name, feat.ValueOf(cat))
 }

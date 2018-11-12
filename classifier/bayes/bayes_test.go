@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/bsm/mlmetrics"
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/bayes"
-	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/testdata"
 
 	. "github.com/onsi/ginkgo"
@@ -68,7 +68,7 @@ func TestSuite(t *testing.T) {
 	RunSpecs(t, "classifier/bayes")
 }
 
-func runTraining(n int) (*bayes.NaiveBayes, *core.Feature, []core.Example) {
+func runTraining(n int) (*bayes.NaiveBayes, *reason.Feature, []reason.Example) {
 	stream, model, err := testdata.OpenBigData("classification", "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()

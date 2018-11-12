@@ -6,15 +6,15 @@ import (
 	fmt "fmt"
 	"io"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/common/observer"
-	"github.com/bsm/reason/core"
 	"github.com/bsm/reason/internal/iocount"
 	"github.com/bsm/reason/internal/protoio"
 	"github.com/gogo/protobuf/proto"
 )
 
 // New inits a new NaiveBayes classifier.
-func New(model *core.Model, target string) *NaiveBayes {
+func New(model *reason.Model, target string) *NaiveBayes {
 	return &NaiveBayes{Model: model, Target: target}
 }
 
@@ -37,7 +37,7 @@ func (n *NaiveBayes) ReadFrom(r io.Reader) (int64, error) {
 				return rc.N, proto.ErrInternalBadWireType
 			}
 
-			model := new(core.Model)
+			model := new(reason.Model)
 			if err := rp.ReadMessage(model); err != nil {
 				return rc.N, err
 			}
@@ -147,7 +147,7 @@ func (n *NaiveBayes) WriteTo(w io.Writer) (int64, error) {
 }
 
 // ObserveWeight observes example and updates stats.
-func (n *NaiveBayes) ObserveWeight(x core.Example, tcat core.Category, weight float64) {
+func (n *NaiveBayes) ObserveWeight(x reason.Example, tcat reason.Category, weight float64) {
 	n.TargetStats.Incr(int(tcat), weight)
 
 	for name, feat := range n.Model.Features {
@@ -157,7 +157,7 @@ func (n *NaiveBayes) ObserveWeight(x core.Example, tcat core.Category, weight fl
 	}
 }
 
-func (n *NaiveBayes) observeFeat(x core.Example, feat *core.Feature, tcat core.Category, weight float64) {
+func (n *NaiveBayes) observeFeat(x reason.Example, feat *reason.Feature, tcat reason.Category, weight float64) {
 	if n.FeatureStats == nil {
 		n.FeatureStats = make(map[string]*NaiveBayes_Observer)
 	}
@@ -169,14 +169,14 @@ func (n *NaiveBayes) observeFeat(x core.Example, feat *core.Feature, tcat core.C
 	}
 
 	switch feat.Kind {
-	case core.Feature_CATEGORICAL:
+	case reason.Feature_CATEGORICAL:
 		obs := wrp.GetCat()
 		if obs == nil {
 			obs = observer.NewClassificationCategorical()
 			wrp.Kind = &NaiveBayes_Observer_Cat{Cat: obs}
 		}
 		obs.ObserveWeight(feat.Category(x), tcat, weight)
-	case core.Feature_NUMERICAL:
+	case reason.Feature_NUMERICAL:
 		obs := wrp.GetNum()
 		if obs == nil {
 			obs = observer.NewClassificationNumerical(0)
