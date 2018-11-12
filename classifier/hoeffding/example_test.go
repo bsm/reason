@@ -106,7 +106,7 @@ func Example_regression() {
 	}
 
 	// Predict
-	prediction := tree.PredictNumExtra(core.MapExample{
+	prediction := tree.PredictNumFull(core.MapExample{
 		"outlook":  "rainy",
 		"temp":     "mild",
 		"humidity": "high",

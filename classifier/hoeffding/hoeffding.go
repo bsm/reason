@@ -155,11 +155,11 @@ func (t *Hoeffding) TrainWeight(x core.Example, weight float64) {
 
 // Predict performs a classification and returns a prediction.
 func (t *Hoeffding) Predict(x core.Example) classifier.Classification {
-	return t.PredictExtra(x)
+	return t.PredictFull(x)
 }
 
-// PredictExtra performs a classification and returns a prediction.
-func (t *Hoeffding) PredictExtra(x core.Example) Classification {
+// PredictFull performs a classification and returns a full prediction.
+func (t *Hoeffding) PredictFull(x core.Example) Classification {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -188,11 +188,11 @@ func (t *Hoeffding) PredictExtra(x core.Example) Classification {
 
 // PredictNum performs a regression and returns a prediction.
 func (t *Hoeffding) PredictNum(x core.Example) classifier.Regression {
-	return t.PredictNumExtra(x)
+	return t.PredictNumFull(x)
 }
 
-// PredictNumExtra performs a regression and returns a prediction.
-func (t *Hoeffding) PredictNumExtra(x core.Example) Regression {
+// PredictNumFull performs a regression and returns a full prediction.
+func (t *Hoeffding) PredictNumFull(x core.Example) Regression {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
