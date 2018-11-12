@@ -1,9 +1,9 @@
 package internal_test
 
 import (
-	"github.com/bsm/reason"
 	"bytes"
 
+	"github.com/bsm/reason"
 	"github.com/bsm/reason/classifier/hoeffding/internal"
 	"github.com/bsm/reason/testdata"
 	"github.com/bsm/reason/util"
@@ -38,7 +38,7 @@ var _ = Describe("Tree", func() {
 		Expect(t).To(Equal(subject))
 	})
 
-	It("should unmarshal from reader", func() {		
+	It("should unmarshal from reader", func() {
 		data, err := proto.Marshal(subject)
 		Expect(err).NotTo(HaveOccurred())
 
