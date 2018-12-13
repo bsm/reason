@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/bsm/reason"
-	"github.com/bsm/reason/internal/iocount"
+	"github.com/bsm/reason/internal/ioutilx"
 	"github.com/bsm/reason/internal/protoio"
 	"github.com/gogo/protobuf/proto"
 )
@@ -23,7 +23,7 @@ func New(model *reason.Model, target string, size int) *Optimizer {
 
 // WriteTo writes a tree to a Writer.
 func (o *Optimizer) WriteTo(w io.Writer) (int64, error) {
-	wc := &iocount.Writer{W: w}
+	wc := &ioutilx.CountingWriter{W: w}
 	wp := &protoio.Writer{Writer: bufio.NewWriter(wc)}
 
 	if err := wp.WriteMessageField(1, o.Model); err != nil {
@@ -43,7 +43,7 @@ func (o *Optimizer) WriteTo(w io.Writer) (int64, error) {
 
 // ReadFrom reads an optimizer from a Reader.
 func (o *Optimizer) ReadFrom(r io.Reader) (int64, error) {
-	rc := &iocount.Reader{R: r}
+	rc := &ioutilx.CountingReader{R: r}
 	rp := &protoio.Reader{Reader: bufio.NewReader(rc)}
 
 	for {
