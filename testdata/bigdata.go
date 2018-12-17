@@ -109,16 +109,3 @@ func (s *BigDataStream) Close() error {
 	_ = s.CSVStream.Close()
 	return s.file.Close()
 }
-
-// func (s *BigDataStream) ReadN(n int) ([]reason.Example, error) {
-// 	res := make([]reason.Example, 0, n)
-// 	for s.Next() {
-// 		res = append(res, s.Example())
-// 		if len(res) == n {
-// 			break
-// 		}
-// 	}
-// 	return res, s.Err()
-// }
-
-// func (s *BigDataStream) Close() error { return s.file.Close() }
