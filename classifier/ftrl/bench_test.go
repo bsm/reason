@@ -10,7 +10,7 @@ import (
 func BenchmarkOptimizer_Train(b *testing.B) {
 	const N = 1000
 
-	stream, model, err := testdata.OpenBigData("regression", "../../testdata")
+	stream, err := testdata.OpenBigData("regression", "../../testdata")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func BenchmarkOptimizer_Train(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	tree, err := ftrl.New(model, "target", nil)
+	tree, err := ftrl.New(stream.Model(), "target", nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func BenchmarkOptimizer_Train(b *testing.B) {
 func BenchmarkOptimizer_Train_parallel(b *testing.B) {
 	const N = 1000
 
-	stream, model, err := testdata.OpenBigData("regression", "../../testdata")
+	stream, err := testdata.OpenBigData("regression", "../../testdata")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func BenchmarkOptimizer_Train_parallel(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	tree, err := ftrl.New(model, "target", nil)
+	tree, err := ftrl.New(stream.Model(), "target", nil)
 	if err != nil {
 		b.Fatal(err)
 	}

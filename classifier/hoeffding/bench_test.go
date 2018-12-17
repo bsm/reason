@@ -10,7 +10,7 @@ import (
 func BenchmarkTree_Train_classification(b *testing.B) {
 	const N = 1000
 
-	stream, model, err := testdata.OpenBigData("classification", "../../testdata")
+	stream, err := testdata.OpenBigData("classification", "../../testdata")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func BenchmarkTree_Train_classification(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	tree, err := hoeffding.New(model, "target", nil)
+	tree, err := hoeffding.New(stream.Model(), "target", nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func BenchmarkTree_Train_classification(b *testing.B) {
 func BenchmarkTree_Train_classification_parallel(b *testing.B) {
 	const N = 1000
 
-	stream, model, err := testdata.OpenBigData("classification", "../../testdata")
+	stream, err := testdata.OpenBigData("classification", "../../testdata")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func BenchmarkTree_Train_classification_parallel(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	tree, err := hoeffding.New(model, "target", nil)
+	tree, err := hoeffding.New(stream.Model(), "target", nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func BenchmarkTree_Train_classification_parallel(b *testing.B) {
 func BenchmarkTree_Train_regression(b *testing.B) {
 	const N = 1000
 
-	stream, model, err := testdata.OpenBigData("regression", "../../testdata")
+	stream, err := testdata.OpenBigData("regression", "../../testdata")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func BenchmarkTree_Train_regression(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	tree, err := hoeffding.New(model, "target", nil)
+	tree, err := hoeffding.New(stream.Model(), "target", nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func BenchmarkTree_Train_regression(b *testing.B) {
 func BenchmarkTree_Train_regression_parallel(b *testing.B) {
 	const N = 1000
 
-	stream, model, err := testdata.OpenBigData("regression", "../../testdata")
+	stream, err := testdata.OpenBigData("regression", "../../testdata")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func BenchmarkTree_Train_regression_parallel(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	tree, err := hoeffding.New(model, "target", nil)
+	tree, err := hoeffding.New(stream.Model(), "target", nil)
 	if err != nil {
 		b.Fatal(err)
 	}

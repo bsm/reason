@@ -24,14 +24,14 @@ var _ = Describe("CSVStream", func() {
 		defer stream.Close()
 
 		Expect(stream.Next()).To(Equal(reason.MapExample{
-			"FC1": "v1", "FC2": "v4", "FC3": "v3", "FC4": "v4", "FC5": "v5",
-			"FN1": 0.036235, "FN2": 0.658867, "FN3": 0.71074, "FN4": 0.152736, "FN5": 0.159578,
-			"CC": "c1", "CN": 13.9,
+			"c1": "v1", "c2": "v4", "c3": "v3", "c4": "v4", "c5": "v5",
+			"n1": 0.036235, "n2": 0.658867, "n3": 0.71074, "n4": 0.152736, "n5": 0.159578,
+			"tc": "c1", "tn": 13.9,
 		}))
 		Expect(stream.Next()).To(Equal(reason.MapExample{
-			"FC1": "v5", "FC2": "v3", "FC3": "v3", "FC4": "v2", "FC5": "v5",
-			"FN1": 0.397174, "FN2": 0.347518, "FN3": 0.294057, "FN4": 0.506484, "FN5": 0.115967,
-			"CC": "c2", "CN": 11.9,
+			"c1": "v5", "c2": "v3", "c3": "v3", "c4": "v2", "c5": "v5",
+			"n1": 0.397174, "n2": 0.347518, "n3": 0.294057, "n4": 0.506484, "n5": 0.115967,
+			"tc": "c2", "tn": 11.9,
 		}))
 
 		Expect(stream.Close()).To(Succeed())
@@ -48,13 +48,13 @@ var _ = Describe("CSVStream", func() {
 
 		model := stream.Model()
 		Expect(model.Features).To(HaveLen(12))
-		Expect(model.Feature("FC1")).To(Equal(&reason.Feature{
-			Name:       "FC1",
+		Expect(model.Feature("c1")).To(Equal(&reason.Feature{
+			Name:       "c1",
 			Kind:       reason.Feature_CATEGORICAL,
 			Vocabulary: []string{"v1", "v2", "v3", "v4", "v5"},
 		}))
-		Expect(model.Feature("FN1")).To(Equal(&reason.Feature{
-			Name: "FN1",
+		Expect(model.Feature("n1")).To(Equal(&reason.Feature{
+			Name: "n1",
 			Kind: reason.Feature_NUMERICAL,
 		}))
 
@@ -75,9 +75,9 @@ var _ = Describe("CSVStream", func() {
 		defer file.Close()
 
 		model := reason.NewModel(
-			reason.NewCategoricalFeature("FC1", []string{"v1", "v2", "v3", "v4", "v5"}),
-			reason.NewNumericalFeature("FN1"),
-			reason.NewNumericalFeature("FN4"),
+			reason.NewCategoricalFeature("c1", []string{"v1", "v2", "v3", "v4", "v5"}),
+			reason.NewNumericalFeature("n1"),
+			reason.NewNumericalFeature("n4"),
 		)
 
 		stream, err := ingest.NewCSVStream(file, model, nil)
@@ -85,10 +85,10 @@ var _ = Describe("CSVStream", func() {
 		defer stream.Close()
 
 		Expect(stream.Next()).To(Equal(reason.MapExample{
-			"FC1": "v1", "FN1": 0.036235, "FN4": 0.152736,
+			"c1": "v1", "n1": 0.036235, "n4": 0.152736,
 		}))
 		Expect(stream.Next()).To(Equal(reason.MapExample{
-			"FC1": "v5", "FN1": 0.397174, "FN4": 0.506484,
+			"c1": "v5", "n1": 0.397174, "n4": 0.506484,
 		}))
 
 		Expect(stream.Close()).To(Succeed())
@@ -100,17 +100,17 @@ var _ = Describe("CSVStream", func() {
 		defer file.Close()
 
 		stream, err := ingest.NewCSVStream(file, nil, &ingest.CSVOptions{
-			Headers:  []string{"FC1", "", "", "", "", "FN1", "", "", "FN4"},
+			Headers:  []string{"c1", "", "", "", "", "n1", "", "", "n4"},
 			SkipRows: 1,
 		})
 		Expect(err).NotTo(HaveOccurred())
 		defer stream.Close()
 
 		Expect(stream.Next()).To(Equal(reason.MapExample{
-			"FC1": "v1", "FN1": 0.036235, "FN4": 0.152736,
+			"c1": "v1", "n1": 0.036235, "n4": 0.152736,
 		}))
 		Expect(stream.Next()).To(Equal(reason.MapExample{
-			"FC1": "v5", "FN1": 0.397174, "FN4": 0.506484,
+			"c1": "v5", "n1": 0.397174, "n4": 0.506484,
 		}))
 
 		Expect(stream.Close()).To(Succeed())

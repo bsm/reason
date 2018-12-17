@@ -174,20 +174,20 @@ var _ = Describe("Hoeffding", func() {
 })
 
 func runTraining(kind string, n int) (*hoeffding.Hoeffding, *reason.Feature, []reason.Example) {
-	stream, model, err := testdata.OpenBigData(kind, "../../testdata")
+	stream, err := testdata.OpenBigData(kind, "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()
 
 	examples, err := stream.ReadN(n * 2)
 	Expect(err).NotTo(HaveOccurred())
 
-	tree, err := hoeffding.New(model, "target", nil)
+	tree, err := hoeffding.New(stream.Model(), "target", nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, x := range examples[:n] {
 		tree.Train(x)
 	}
-	return tree, model.Feature("target"), examples
+	return tree, stream.Model().Feature("target"), examples
 }
 
 func TestSuite(t *testing.T) {

@@ -104,18 +104,18 @@ func TestSuite(t *testing.T) {
 }
 
 func runTraining(kind string, n int) (*ftrl.FTRL, *reason.Feature, []reason.Example) {
-	stream, model, err := testdata.OpenBigData(kind, "../../testdata")
+	stream, err := testdata.OpenBigData(kind, "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()
 
 	examples, err := stream.ReadN(n * 2)
 	Expect(err).NotTo(HaveOccurred())
 
-	opt, err := ftrl.New(model, "target", nil)
+	opt, err := ftrl.New(stream.Model(), "target", nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, x := range examples[:n] {
 		opt.Train(x)
 	}
-	return opt, model.Feature("target"), examples
+	return opt, stream.Model().Feature("target"), examples
 }

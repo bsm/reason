@@ -69,18 +69,18 @@ func TestSuite(t *testing.T) {
 }
 
 func runTraining(n int) (*bayes.NaiveBayes, *reason.Feature, []reason.Example) {
-	stream, model, err := testdata.OpenBigData("classification", "../../testdata")
+	stream, err := testdata.OpenBigData("classification", "../../testdata")
 	Expect(err).NotTo(HaveOccurred())
 	defer stream.Close()
 
 	examples, err := stream.ReadN(n * 2)
 	Expect(err).NotTo(HaveOccurred())
 
-	cls, err := bayes.New(model, "target", nil)
+	cls, err := bayes.New(stream.Model(), "target", nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, x := range examples[:n] {
 		cls.Train(x)
 	}
-	return cls, model.Feature("target"), examples
+	return cls, stream.Model().Feature("target"), examples
 }
